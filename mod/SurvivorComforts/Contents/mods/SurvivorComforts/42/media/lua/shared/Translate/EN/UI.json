@@ -8,5 +8,8 @@
     "UI_SurvivorComforts_F08_Sidebar": "Show button on the left sidebar",
     "UI_SurvivorComforts_F08_Sidebar_Tooltip": "Adds a button below the icons on the left of the screen that opens/closes the skills window.",
     "UI_SurvivorComforts_F08_HideTab": "Hide skills tab in character info",
-    "UI_SurvivorComforts_F08_HideTab_Tooltip": "Removes the Skills tab from the Info/Health/Protection window. The vanilla skills key then opens the skills window instead."
+    "UI_SurvivorComforts_F08_HideTab_Tooltip": "Removes the Skills tab from the Info/Health/Protection window. The vanilla skills key then opens the skills window instead.",
+    "UI_SurvivorComforts_F07_Name": "Group ingredients when cooking",
+    "UI_SurvivorComforts_F07_Tooltip": "In the add-ingredient menu (soup, salad, etc.), the same ingredient is listed once and the one with the least left is used first.",
+    "UI_SurvivorComforts_F07_Count": "(x%1)"
 }

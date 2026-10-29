@@ -8,5 +8,8 @@
     "UI_SurvivorComforts_F08_Sidebar": "左のアイコンにボタンを表示する",
     "UI_SurvivorComforts_F08_Sidebar_Tooltip": "画面左のアイコンの一番下に、スキルウィンドウを開く/閉じるボタンを追加します。",
     "UI_SurvivorComforts_F08_HideTab": "キャラクター情報のスキルタブを隠す",
-    "UI_SurvivorComforts_F08_HideTab_Tooltip": "情報・健康・保護などのウィンドウからスキルのタブを外します。本体のスキルのキーを押すと、代わりにスキルウィンドウが開きます。"
+    "UI_SurvivorComforts_F08_HideTab_Tooltip": "情報・健康・保護などのウィンドウからスキルのタブを外します。本体のスキルのキーを押すと、代わりにスキルウィンドウが開きます。",
+    "UI_SurvivorComforts_F07_Name": "料理の食材をまとめる",
+    "UI_SurvivorComforts_F07_Tooltip": "スープやサラダなどに食材を加えるメニューで、同じ食材を1行にまとめ、残りが一番少ないものから使います。",
+    "UI_SurvivorComforts_F07_Count": "（%1個）"
 }
