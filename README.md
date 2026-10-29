@@ -2,6 +2,9 @@
 
 Project Zomboid（Build 42.21 以降）用の MOD です。身内のマルチプレイサーバーで使う、ちょっとした便利機能をまとめています。
 
+- Steam ワークショップ（限定公開）：https://steamcommunity.com/sharedfiles/filedetails/?id=3829529741
+- Workshop ID：`3829529741` / MOD ID：`SurvivorComforts`
+
 - 1つの MOD に複数の機能が入っていて、機能ごとに「オプション」→「MOD」→「Survivor Comforts」で ON/OFF できます
 - 新しいアイテム・レシピ・ゲームのルールは追加しません（ゲームバランスを変えません）
 - 基本的にワールド（セーブデータ）には書き込みません。例外は「みんなのウィッシュリスト」だけで、MOD を外してもデータが残るだけで害はありません
@@ -23,11 +26,24 @@ Project Zomboid（Build 42.21 以降）用の MOD です。身内のマルチプ
 
 ### サーバーで使う
 
-Steam ワークショップに限定公開でアップロードし、サーバーの MOD リストに `SurvivorComforts` を追加します（ワークショップへのアップロードはまだです）。
+[Steam ワークショップ](https://steamcommunity.com/sharedfiles/filedetails/?id=3829529741)に限定公開（未掲載）でアップロードしています。検索には出ないので、上の URL から開いてください。
 
+サーバーの設定（`<サーバー名>.ini`）に次の2つを追加します。ほかの MOD がある場合は `;` で区切って並べます。
+
+```
+WorkshopItems=3829529741
+Mods=SurvivorComforts
+```
+
+- ゲーム内のサーバー設定の画面の「Steam ワークショップ」「MOD」から選んでも同じです
 - サーバー側の処理（みんなのウィッシュリスト）も同じ MOD に入っているので、追加の導入作業はありません
+- プレイヤーは、サーバーに接続すると自動でダウンロードされます。自分でサブスクライブする必要はありません
 
-### 手元で試す
+### 一人で遊ぶ
+
+[ワークショップのページ](https://steamcommunity.com/sharedfiles/filedetails/?id=3829529741)でサブスクライブし、メインメニュー →「MOD」で **Survivor Comforts** を有効にします。
+
+### 手元で試す（開発用）
 
 1. JDK（13 以降）を入れておきます（構文チェックに使います）
 2. 構文チェックをして、ゲームから読める場所（`%USERPROFILE%\Zomboid\Workshop\SurvivorComforts`）へコピーします
