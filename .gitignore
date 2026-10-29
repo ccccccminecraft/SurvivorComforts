@@ -1,0 +1,5 @@
+# Compiled syntax checker (rebuilt by tools/check.ps1)
+tools/build/
+
+# Written by the game after a Workshop upload (kept only in %USERPROFILE%\Zomboid\Workshop)
+workshop.txt
