@@ -3,7 +3,7 @@
 ## フォルダ構成
 
 ```
-D:\Document\claude\Zomboid\
+SurvivorComforts\           リポジトリのルート（git clone した場所）
 ├── docs\                     調査メモ、機能リスト、このガイド
 ├── tools\
 │   ├── check.ps1             Luaの構文チェック（ゲーム本体のコンパイラを使う）
@@ -44,6 +44,15 @@ D:\Document\claude\Zomboid\
    ```
    powershell -File tools\check.ps1
    ```
+   - JDK（13以降）が必要。チェッカーをコンパイルするのに使う（実行にはゲーム本体のJavaを使う）
+   - ゲームと javac の場所は自動で探す
+     - ゲーム：Steamのライブラリフォルダ（レジストリと `libraryfolders.vdf`）の `steamapps\common\ProjectZomboid`
+     - javac：`JAVA_HOME`、PATH上の `javac`、`C:\Program Files\Java\jdk*` の順
+   - 見つからないときや別の場所を使うときは、引数か環境変数で指定する
+     ```
+     powershell -File tools\check.ps1 -GameDir "E:\Games\ProjectZomboid" -Javac "C:\jdk\bin\javac.exe"
+     ```
+     （環境変数なら `PZ_GAME_DIR` と `JAVAC`）
 2. ゲームから読める場所へコピー（`%USERPROFILE%\Zomboid\Workshop\SurvivorComforts`）
    ```
    powershell -File tools\deploy.ps1
