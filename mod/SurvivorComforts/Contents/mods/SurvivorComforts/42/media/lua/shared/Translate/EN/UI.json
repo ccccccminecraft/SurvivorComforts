@@ -32,6 +32,16 @@
     "UI_SurvivorComforts_F06_RemoveItem": "Remove: %1",
     "UI_SurvivorComforts_F06_Remove": "Remove selected",
     "UI_SurvivorComforts_F06_Empty": "Right-click an item to add it",
+    "UI_SurvivorComforts_F06_EmptyShared": "The shared list is empty",
+    "UI_SurvivorComforts_F06_UseShared": "Use the shared list",
+    "UI_SurvivorComforts_F06_UseShared_Tooltip": "Uses a wishlist shared by everyone on the server. Anyone can add or remove items; they are shown in light blue.",
+    "UI_SurvivorComforts_F06_AddToPersonal": "Add to my list",
+    "UI_SurvivorComforts_F06_RemoveFromPersonal": "Remove from my list",
+    "UI_SurvivorComforts_F06_AddToShared": "Add to shared list",
+    "UI_SurvivorComforts_F06_RemoveFromShared": "Remove from shared list",
+    "UI_SurvivorComforts_F06_TabPersonal": "Mine",
+    "UI_SurvivorComforts_F06_TabShared": "Shared",
+    "UI_SurvivorComforts_F06_AddedBy": "(%1)",
     "UI_SurvivorComforts_F12_Name": "Show recipes for items",
     "UI_SurvivorComforts_F12_Tooltip": "Right-click an item in the inventory or loot window and choose Show recipes to open the crafting window filtered to the recipes that make it."
 }

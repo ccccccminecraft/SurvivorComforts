@@ -32,6 +32,16 @@
     "UI_SurvivorComforts_F06_RemoveItem": "外す：%1",
     "UI_SurvivorComforts_F06_Remove": "選んだものを外す",
     "UI_SurvivorComforts_F06_Empty": "アイテムを右クリックして追加できます",
+    "UI_SurvivorComforts_F06_EmptyShared": "みんなのリストは空です",
+    "UI_SurvivorComforts_F06_UseShared": "みんなのリストを使う",
+    "UI_SurvivorComforts_F06_UseShared_Tooltip": "サーバーの全員で共有するウィッシュリストを使います。誰でも追加・外すができ、水色で表示されます。",
+    "UI_SurvivorComforts_F06_AddToPersonal": "自分のリストに追加",
+    "UI_SurvivorComforts_F06_RemoveFromPersonal": "自分のリストから外す",
+    "UI_SurvivorComforts_F06_AddToShared": "みんなのリストに追加",
+    "UI_SurvivorComforts_F06_RemoveFromShared": "みんなのリストから外す",
+    "UI_SurvivorComforts_F06_TabPersonal": "自分",
+    "UI_SurvivorComforts_F06_TabShared": "みんな",
+    "UI_SurvivorComforts_F06_AddedBy": "（%1）",
     "UI_SurvivorComforts_F12_Name": "アイテムからレシピを見る",
     "UI_SurvivorComforts_F12_Tooltip": "インベントリや周りの容器のアイテムを右クリックすると「レシピを見る」が出ます。選ぶと制作の画面を開き、そのアイテムを作れるレシピに絞り込みます。"
 }

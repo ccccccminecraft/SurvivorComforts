@@ -1,18 +1,22 @@
--- F06: a personal wishlist of item types.
+-- F06: wishlists of item types, a personal one and one shared by everyone on
+-- the server.
 --
--- Right-click an item to add it to (or remove it from) the wishlist; in the
+-- Right-click an item to add it to (or remove it from) a wishlist; in the
 -- crafting and building windows, right-click an ingredient, a result or a
--- recipe in the list. Items on
--- the list are highlighted in the inventory and loot windows, so they stand
--- out when looting. The list itself can be opened in a small window.
+-- recipe in the list. Items on a list are highlighted in the inventory and
+-- loot windows, so they stand out when looting. The lists can be opened in a
+-- small window.
 --
--- The list is saved on this PC only (Zomboid/Lua/SurvivorComforts_Wishlist.txt),
--- never in the world, and is the same for every save and server.
+-- The personal list is saved on this PC only
+-- (Zomboid/Lua/SurvivorComforts_Wishlist.txt) and is the same for every save
+-- and server. The shared list is kept by the server
+-- (server/SurvivorComforts/F06_SharedWishlist.lua) and sent to every player.
 
 require "SurvivorComforts/Core"
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISButton"
+require "ISUI/ISTabPanel"
 require "ISUI/ISInventoryPane"
 require "Entity/ISUI/CraftRecipe/ISWidgetInput"
 require "Entity/ISUI/CraftRecipe/ISWidgetOutput"
@@ -25,7 +29,7 @@ require "SurvivorComforts/Sidebar"
 local FEATURE_ID = "F06"
 local FILE_NAME = "SurvivorComforts_Wishlist.txt"
 local LAYOUT_NAME = "survivorcomforts.wishlist"
-local HIGHLIGHT_COLOR = { r = 1, g = 0.65, b = 0.2 }
+local MODULE = "SurvivorComforts" -- client/server command module, see the server file
 
 SurvivorComforts.registerFeature({
     id = FEATURE_ID,
@@ -34,9 +38,14 @@ SurvivorComforts.registerFeature({
 })
 SurvivorComforts.options:addKeyBind(FEATURE_ID .. "_key", getText("UI_SurvivorComforts_F06_Key"), 0)
 SurvivorComforts.options:addTickBox(FEATURE_ID .. "_sidebar", getText("UI_SurvivorComforts_F06_Sidebar"), true, getText("UI_SurvivorComforts_F06_Sidebar_Tooltip"))
+SurvivorComforts.options:addTickBox(FEATURE_ID .. "_shared", getText("UI_SurvivorComforts_F06_UseShared"), true, getText("UI_SurvivorComforts_F06_UseShared_Tooltip"))
+
+local function sharedEnabled()
+    return SurvivorComforts.getOptionValue(FEATURE_ID .. "_shared") == true
+end
 
 ---------------------------------------------------------------------------
--- The list: item full types, in the order they were added.
+-- Personal list: item full types, in the order they were added.
 ---------------------------------------------------------------------------
 local wishlist = nil  -- { set = { [fullType] = true }, order = { fullType, ... } }
 
@@ -104,19 +113,109 @@ local function remove(fullTypes)
 end
 
 ---------------------------------------------------------------------------
+-- Shared list: a copy of what the server sent last. Changes go to the server,
+-- which sends the new list back to everyone.
+---------------------------------------------------------------------------
+local shared = { set = {}, order = {} } -- set[fullType] = name of who added it
+
+local function sharedContains(fullType)
+    return shared.set[fullType] ~= nil
+end
+
+local function sendCommand(command, args)
+    local player = getSpecificPlayer(0)
+    if player then
+        sendClientCommand(player, MODULE, command, args)
+    end
+end
+
+local function sharedAdd(fullTypes)
+    for _, fullType in ipairs(fullTypes) do
+        sendCommand("wishlistAdd", { fullType = fullType })
+    end
+end
+
+local function sharedRemove(fullTypes)
+    for _, fullType in ipairs(fullTypes) do
+        sendCommand("wishlistRemove", { fullType = fullType })
+    end
+end
+
+local function onServerCommand(module, command, args)
+    if module ~= MODULE or command ~= "wishlist" then return end
+    SurvivorComforts.safeCall(FEATURE_ID, function()
+        -- Lists lose their order on the way, so sort by the order the server keeps.
+        local received = {}
+        for _, entry in pairs(args.items or {}) do
+            if type(entry) == "table" and entry.fullType then
+                table.insert(received, entry)
+            end
+        end
+        table.sort(received, function(a, b) return (a.order or 0) < (b.order or 0) end)
+        shared = { set = {}, order = {} }
+        for _, entry in ipairs(received) do
+            shared.set[entry.fullType] = entry.by or "?"
+            table.insert(shared.order, entry.fullType)
+        end
+        refreshWindows()
+    end)
+end
+
+local function onGameStart()
+    sendCommand("wishlistRequest", {})
+end
+
+-- The two lists, so the menus and the window can treat them the same way.
+local LISTS = {
+    personal = {
+        contains = contains, add = add, remove = remove,
+        getOrder = function() return getList().order end,
+        color = { r = 1, g = 0.65, b = 0.2 },
+        addText = "UI_SurvivorComforts_F06_AddToPersonal",
+        removeText = "UI_SurvivorComforts_F06_RemoveFromPersonal",
+        emptyText = "UI_SurvivorComforts_F06_Empty",
+    },
+    shared = {
+        contains = sharedContains, add = sharedAdd, remove = sharedRemove,
+        getOrder = function() return shared.order end,
+        color = { r = 0.35, g = 0.8, b = 1 },
+        addText = "UI_SurvivorComforts_F06_AddToShared",
+        removeText = "UI_SurvivorComforts_F06_RemoveFromShared",
+        emptyText = "UI_SurvivorComforts_F06_EmptyShared",
+    },
+}
+
+---------------------------------------------------------------------------
 -- Highlight in the inventory / loot windows (details view).
--- Drawn after vanilla, over the rows whose item is on the list.
+-- Drawn after vanilla, over the rows whose item is on a list. The fill uses
+-- the personal colour when the item is on both lists; the mark on the left
+-- edge shows each list.
 ---------------------------------------------------------------------------
 local function drawHighlights(pane)
     if not pane.items then return end
-    local c = HIGHLIGHT_COLOR
+    local useShared = sharedEnabled()
     for i, entry in ipairs(pane.items) do
         -- A stack header is a table with .items; a row inside an open stack is the item itself.
         local item = entry.items and entry.items[1] or entry
-        if item and item.getFullType and contains(item:getFullType()) then
-            local y = (i - 1) * pane.itemHgt + pane.headerHgt
-            pane:drawRect(1, y, pane:getWidth() - 1, pane.itemHgt, 0.12, c.r, c.g, c.b)
-            pane:drawRect(1, y, 3, pane.itemHgt, 0.9, c.r, c.g, c.b)
+        if item and item.getFullType then
+            local fullType = item:getFullType()
+            local mine = contains(fullType)
+            local theirs = useShared and sharedContains(fullType)
+            if mine or theirs then
+                local y = (i - 1) * pane.itemHgt + pane.headerHgt
+                local fill = mine and LISTS.personal.color or LISTS.shared.color
+                pane:drawRect(1, y, pane:getWidth() - 1, pane.itemHgt, 0.12, fill.r, fill.g, fill.b)
+                local x = 1
+                if mine then
+                    local c = LISTS.personal.color
+                    pane:drawRect(x, y, 3, pane.itemHgt, 0.9, c.r, c.g, c.b)
+                    x = x + 4
+                end
+                if theirs then
+                    local c = LISTS.shared.color
+                    pane:drawRect(x, y, 3, pane.itemHgt, 0.9, c.r, c.g, c.b)
+                end
+            end
         end
     end
 end
@@ -135,6 +234,8 @@ end
 ---------------------------------------------------------------------------
 SurvivorComforts_WishlistList = ISScrollingListBox:derive("SurvivorComforts_WishlistList")
 
+-- One list box per list (self.kind is "personal" or "shared"), shown in the
+-- window's tabs. self.window is the wishlist window.
 function SurvivorComforts_WishlistList:doDrawItem(y, item, alt)
     if (y + self:getYScroll() + self.itemheight < 0) or (y + self:getYScroll() >= self.height) then
         return y + self.itemheight
@@ -151,7 +252,13 @@ function SurvivorComforts_WishlistList:doDrawItem(y, item, alt)
         self:drawTextureScaledAspect(texture, 4, y + 2, iconSize, iconSize, 1, 1, 1, 1)
     end
     local textY = y + (self.itemheight - self.fontHgt) / 2
-    self:drawText(item.text, iconSize + 10, textY, 1, 1, 1, 1, self.font)
+    local textX = iconSize + 10
+    self:drawText(item.text, textX, textY, 1, 1, 1, 1, self.font)
+    -- Shared list: who added it, after the name.
+    if item.item.by then
+        local byX = textX + getTextManager():MeasureStringX(self.font, item.text) + 8
+        self:drawText(getText("UI_SurvivorComforts_F06_AddedBy", item.item.by), byX, textY, 0.6, 0.6, 0.6, 1, self.font)
+    end
     return y + self.itemheight
 end
 
@@ -160,7 +267,8 @@ function SurvivorComforts_WishlistList:onRightMouseUp(x, y)
     local row = self.items[index]
     if not row then return end
     self.selected = index
-    local playerNum = self.parent.playerNum
+    local playerNum = self.window.playerNum
+    local list = LISTS[self.kind]
     local fullType = row.item.fullType
     local context = ISContextMenu.get(playerNum, getMouseX(), getMouseY())
     local recipeOption = context:addOption(getText("UI_SurvivorComforts_ShowRecipes"), playerNum, function(num)
@@ -169,32 +277,53 @@ function SurvivorComforts_WishlistList:onRightMouseUp(x, y)
     if not SurvivorComforts.hasRecipe(fullType) then
         recipeOption.notAvailable = true
     end
-    context:addOption(getText("UI_SurvivorComforts_F06_RemoveFromList"), { fullType }, remove)
+    -- Without the shared list there is only one list, so no "personal" in the text.
+    local removeText = sharedEnabled() and list.removeText or "UI_SurvivorComforts_F06_RemoveFromList"
+    context:addOption(getText(removeText), { fullType }, list.remove)
 end
 
 function SurvivorComforts_WishlistList:render()
     ISScrollingListBox.render(self)
     if #self.items == 0 then
-        self:drawTextCentre(getText("UI_SurvivorComforts_F06_Empty"), self.width / 2, 10, 0.7, 0.7, 0.7, 1, UIFont.Small)
+        self:drawTextCentre(getText(LISTS[self.kind].emptyText), self.width / 2, 10, 0.7, 0.7, 0.7, 1, UIFont.Small)
     end
 end
 
-SurvivorComforts_WishlistWindow =ISCollapsableWindow:derive("SurvivorComforts_WishlistWindow")
+SurvivorComforts_WishlistWindow = ISCollapsableWindow:derive("SurvivorComforts_WishlistWindow")
 SurvivorComforts_WishlistWindow.instances = {}
+
+local TAB_TEXT = {
+    personal = "UI_SurvivorComforts_F06_TabPersonal",
+    shared = "UI_SurvivorComforts_F06_TabShared",
+}
 
 function SurvivorComforts_WishlistWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
     local th = self:titleBarHeight()
     local buttonHgt = getTextManager():getFontHeight(UIFont.Small) + 6
 
-    self.list = SurvivorComforts_WishlistList:new(0, th, self.width, 100)
-    self.list:initialise()
-    self.list:instantiate()
-    self.list.font = UIFont.Small
-    self.list.fontHgt = getTextManager():getFontHeight(UIFont.Small)
-    self.list.itemheight = math.max(self.list.fontHgt, 24) + 4
-    self.list.drawBorder = true
-    self:addChild(self.list)
+    -- The vanilla tab panel, with one list per tab.
+    self.tabPanel = ISTabPanel:new(0, th, self.width, 100)
+    self.tabPanel:initialise()
+    self.tabPanel:setEqualTabWidth(false)
+    self:addChild(self.tabPanel)
+
+    self.lists = {}
+    for _, kind in ipairs({ "personal", "shared" }) do
+        local list = SurvivorComforts_WishlistList:new(0, 0, self.width, 100)
+        list:initialise()
+        list:instantiate()
+        list.font = UIFont.Small
+        list.fontHgt = getTextManager():getFontHeight(UIFont.Small)
+        list.itemheight = math.max(list.fontHgt, 24) + 4
+        list.drawBorder = true
+        list.kind = kind
+        list.window = self
+        self.lists[kind] = list
+    end
+    self.tabPanel:addView(getText(TAB_TEXT.personal), self.lists.personal)
+    self.sharedTabShown = false
+    self:syncSharedTab()
 
     local removeText = getText("UI_SurvivorComforts_F06_Remove")
     local buttonWid = getTextManager():MeasureStringX(UIFont.Small, removeText) + 20
@@ -206,39 +335,72 @@ function SurvivorComforts_WishlistWindow:createChildren()
     self:refresh()
 end
 
--- Keep the list and the button fitting the window whenever it is resized.
+-- Shows the shared tab only while the shared list option is on (it may be
+-- changed while the window is open).
+function SurvivorComforts_WishlistWindow:syncSharedTab()
+    local show = sharedEnabled()
+    if show == self.sharedTabShown then return end
+    self.sharedTabShown = show
+    local shared = self.lists.shared
+    if show then
+        self.tabPanel:addView(getText(TAB_TEXT.shared), shared)
+    else
+        self.tabPanel:removeView(shared)
+        shared:setVisible(false)
+        self.lists.personal:setVisible(true)
+    end
+end
+
+-- Keep the tabs, lists and the button fitting the window whenever it is resized.
 function SurvivorComforts_WishlistWindow:prerender()
     ISCollapsableWindow.prerender(self)
-    if not self.list then return end
+    if not self.tabPanel then return end
+    self:syncSharedTab()
     local th = self:titleBarHeight()
     local rh = self:resizeWidgetHeight()
     local buttonHgt = self.removeButton:getHeight()
-    local listHgt = math.max(0, self.height - th - rh - buttonHgt - 10)
-    if self.list:getWidth() ~= self.width then self.list:setWidth(self.width) end
-    if self.list:getHeight() ~= listHgt then self.list:setHeight(listHgt) end
-    self.removeButton:setY(th + listHgt + 5)
-    self.removeButton:setEnable(self.list.items[self.list.selected] ~= nil)
+    local panel = self.tabPanel
+    local panelHgt = math.max(panel.tabHeight, self.height - th - rh - buttonHgt - 10)
+    if panel:getWidth() ~= self.width then panel:setWidth(self.width) end
+    if panel:getHeight() ~= panelHgt then panel:setHeight(panelHgt) end
+    local listHgt = panelHgt - panel.tabHeight
+    for _, list in pairs(self.lists) do
+        if list:getY() ~= panel.tabHeight then list:setY(panel.tabHeight) end
+        if list:getWidth() ~= self.width then list:setWidth(self.width) end
+        if list:getHeight() ~= listHgt then list:setHeight(listHgt) end
+    end
+    self.removeButton:setY(th + panelHgt + 5)
+    local box = self:currentListBox()
+    self.removeButton:setEnable(box.items[box.selected] ~= nil)
 end
 
+function SurvivorComforts_WishlistWindow:currentListBox()
+    local active = self.tabPanel and self.tabPanel.activeView
+    return active and active.view or self.lists.personal
+end
 
 function SurvivorComforts_WishlistWindow:refresh()
-    if not self.list then return end
-    local selected = self.list.selected
-    self.list:clear()
-    for _, fullType in ipairs(getList().order) do
-        local script = ScriptManager.instance:getItem(fullType)
-        -- An item from a mod that is no longer loaded still shows, by its type name.
-        local name = script and script:getDisplayName() or fullType
-        local texture = script and script:getNormalTexture() or nil
-        self.list:addItem(name, { fullType = fullType, texture = texture })
+    if not self.lists then return end
+    for kind, box in pairs(self.lists) do
+        local selected = box.selected
+        box:clear()
+        for _, fullType in ipairs(LISTS[kind].getOrder()) do
+            local script = ScriptManager.instance:getItem(fullType)
+            -- An item from a mod that is no longer loaded still shows, by its type name.
+            local name = script and script:getDisplayName() or fullType
+            local texture = script and script:getNormalTexture() or nil
+            local by = kind == "shared" and shared.set[fullType] or nil
+            box:addItem(name, { fullType = fullType, texture = texture, by = by })
+        end
+        box.selected = math.min(math.max(selected, 1), math.max(#box.items, 1))
     end
-    self.list.selected = math.min(math.max(selected, 1), math.max(#self.list.items, 1))
 end
 
 function SurvivorComforts_WishlistWindow:onRemove()
-    local row = self.list.items[self.list.selected]
+    local box = self:currentListBox()
+    local row = box.items[box.selected]
     if row then
-        remove({ row.item.fullType })
+        LISTS[box.kind].remove({ row.item.fullType })
     end
 end
 
@@ -314,11 +476,45 @@ SurvivorComforts.addSidebarButton({
 ---------------------------------------------------------------------------
 local MAX_MENU_ITEMS = 20
 
+-- Add or remove line for one list.
+local function addToggleOption(menu, list, fullType)
+    if list.contains(fullType) then
+        menu:addOption(getText(list.removeText), { fullType }, list.remove)
+    else
+        menu:addOption(getText(list.addText), { fullType }, list.add)
+    end
+end
+
+-- With the shared list: "Wishlist" > personal/shared lines, or for several
+-- kinds of item, "Wishlist" > item name > personal/shared lines.
+local function addBothListsMenu(context, entries)
+    local option = context:addOption(getText("UI_SurvivorComforts_F06_Menu"), nil)
+    local subMenu = context:getNew(context)
+    context:addSubMenu(option, subMenu)
+    if #entries == 1 then
+        addToggleOption(subMenu, LISTS.personal, entries[1].fullType)
+        addToggleOption(subMenu, LISTS.shared, entries[1].fullType)
+        return
+    end
+    for i, entry in ipairs(entries) do
+        if i > MAX_MENU_ITEMS then break end
+        local itemOption = subMenu:addOption(entry.name, nil)
+        local itemMenu = subMenu:getNew(subMenu)
+        subMenu:addSubMenu(itemOption, itemMenu)
+        addToggleOption(itemMenu, LISTS.personal, entry.fullType)
+        addToggleOption(itemMenu, LISTS.shared, entry.fullType)
+    end
+end
+
 -- entries = { { fullType = "Base.Hammer", name = "Hammer" }, ... }
--- One kind of item gets a plain add/remove line; several get a submenu with
--- one add/remove line each.
+-- Without the shared list: one kind of item gets a plain add/remove line;
+-- several get a submenu with one add/remove line each.
 local function addWishlistMenu(context, entries)
     if #entries == 0 then return end
+    if sharedEnabled() then
+        addBothListsMenu(context, entries)
+        return
+    end
     if #entries == 1 then
         local fullTypes = { entries[1].fullType }
         if contains(entries[1].fullType) then
@@ -508,3 +704,5 @@ end
 
 Events.OnFillInventoryObjectContextMenu.Add(onFillContextMenu)
 Events.OnKeyPressed.Add(onKeyPressed)
+Events.OnServerCommand.Add(onServerCommand)
+Events.OnGameStart.Add(onGameStart)
