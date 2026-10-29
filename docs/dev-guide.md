@@ -9,12 +9,15 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 │   ├── check.ps1             Luaの構文チェック（ゲーム本体のコンパイラを使う）
 │   ├── deploy.ps1            ゲームから読める場所へMODをコピーする
 │   ├── make_icons.ps1        左のアイコン用の画像（media\ui\SurvivorComforts）を作り直す
+│   ├── make_preview.ps1      Workshopの画像（preview.png）とMOD一覧の画像（poster.png）を作り直す
 │   └── LuaSyntaxCheck.java   check.ps1 が使うチェッカー
 └── mod\SurvivorComforts\           Workshopにアップロードする単位
+    ├── preview.png                Workshopに表示する画像（256x256ちょうど、1000KB以下）
     └── Contents\mods\SurvivorComforts\
         ├── common\                    B42で必須（空でも置いておく）
         └── 42\
             ├── mod.info
+            ├── poster.png             ゲームのMOD一覧に表示する画像
             └── media\lua\
                 ├── client\SurvivorComforts\
                 │   ├── Core.lua           共通処理とMod Options
@@ -195,8 +198,48 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 - [ ] 「有効にする」を外すと、本体と同じ一覧に戻る
 - [ ] マルチプレイ（ローカルで立てたサーバー）でも同じように動く
 
-## Workshopへのアップロード（まだ行わない）
+## Workshopへのアップロード（限定公開）
 
-- `mod\SurvivorComforts\` に `preview.png`（256x256）と、必要なら `42\poster.png` を用意する。
-- deploy した後、メインメニュー →「Workshop」から SurvivorComforts を選び、公開範囲を **限定公開（Unlisted）** にしてアップロードする。
-- 初回のアップロード後、ゲームが `%USERPROFILE%\Zomboid\Workshop\SurvivorComforts\workshop.txt` にWorkshop IDを書き込む。deploy.ps1 はこのファイルを上書きしない。
+公開範囲は **「未掲載」（Unlisted）** にする。Workshopの検索や一覧には出ず、URLを知っている人だけがサブスクライブできる。「非公開」（Private）にすると、サーバーやほかのプレイヤーがダウンロードできないので使わない。
+
+### 事前の準備
+- アップロードする前に、構文チェック・確認項目のテストを済ませておく。
+- 画像はリポジトリに入っている（`preview.png`、`poster.png`）。デザインを変えたときだけ作り直す。
+  ```
+  powershell -File tools\make_preview.ps1
+  ```
+- Steamのアカウントで、Steamワークショップの利用規約に同意している必要がある（初めてのときはアップロード画面に案内が出る）。
+
+### 初回のアップロード
+1. 最新の状態をゲームから読める場所へコピーする。
+   ```
+   powershell -File tools\deploy.ps1
+   ```
+2. ゲームを起動し、メインメニュー →「WORKSHOP」→「アイテムの作成と更新」を選ぶ。
+3. 「アイテムのディレクトリを選択」で **SurvivorComforts** を選ぶ（`%USERPROFILE%\Zomboid\Workshop\` の中のフォルダが並ぶ）。
+4. 「アイテム詳細を編集」で次を入力する。
+   - タイトル：`Survivor Comforts`
+   - 説明：README の「機能」の内容を元に書く（後からSteamのページでも直せる）
+   - タグ：Build 42、Interface など
+   - 公開設定：**未掲載**
+   - 画像プレビューに `preview.png` が表示されていることを確かめる
+5. 「新規もしくは既存のアイテムですか?」で「新規のWORKSHOPアイテムです」を選ぶ。
+6. 「アイテムの公開準備」で、必要なら「変更履歴の編集」に内容を書き、「Steam WORKSHOPにアップロード!」を押す。
+7. 終わると、ゲームが `%USERPROFILE%\Zomboid\Workshop\SurvivorComforts\workshop.txt` に **Workshop ID**（数字）を書き込む。
+   - deploy.ps1 はこのファイルを上書きしない。消すと次回「新規」扱いになり、別のアイテムができてしまうので注意。
+   - リポジトリには入れない（`.gitignore` 済み）。IDはメンバーに伝える。
+8. 「作成したアイテムをSteamオーバーレイで開く」でページを開き、公開範囲が「未掲載」になっていること、URL（`https://steamcommunity.com/sharedfiles/filedetails/?id=<Workshop ID>`）を確かめる。
+
+### 更新するとき
+1. `tools\check.ps1` → `tools\deploy.ps1` を実行する。
+2. メインメニュー →「WORKSHOP」→「アイテムの作成と更新」→ SurvivorComforts を選ぶ。`workshop.txt` があるので、既存のアイテムの更新になる。
+3. 「変更履歴の編集」に変更内容を書いてアップロードする。
+4. サーバーは再起動すると新しい版をダウンロードする。プレイヤーも、接続時に新しい版が自動で入る。
+   - `mod.info` の `modversion` を上げておくと、どの版か分かりやすい。
+
+### サーバーに入れる
+- サーバーの設定（`servertest.ini` などの `<サーバー名>.ini`）に次の2つを書く。
+  - `WorkshopItems=` に Workshop ID（ほかのMODがあれば `;` で区切って追加）
+  - `Mods=` に MOD の ID `SurvivorComforts`（同じく `;` 区切り）
+- ゲーム内の「ホスト」→ サーバー設定の編集画面の「Steamワークショップ」「MOD」から選ぶと、正しい形で書き込まれるので確実。
+- 書き方が合っているかは、サーバーを起動したときの `console.txt` に `SurvivorComforts` を読み込んだ記録が出ることで確かめる。
