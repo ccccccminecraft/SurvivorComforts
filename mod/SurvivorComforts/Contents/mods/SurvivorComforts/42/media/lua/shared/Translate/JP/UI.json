@@ -42,6 +42,8 @@
     "UI_SurvivorComforts_F06_TabPersonal": "自分",
     "UI_SurvivorComforts_F06_TabShared": "みんな",
     "UI_SurvivorComforts_F06_AddedBy": "（%1）",
-    "UI_SurvivorComforts_F12_Name": "アイテムからレシピを見る",
+    "UI_SurvivorComforts_F10_Name": "PvPの切り替えボタンを隠す",
+    "UI_SurvivorComforts_F10_Tooltip": "画面左のPvP（ドクロ）のボタンを隠し、PvPを常にオフにします。ボタンとキーでの切り替えもできなくなります。",
+    "UI_SurvivorComforts_F12_Name":"アイテムからレシピを見る",
     "UI_SurvivorComforts_F12_Tooltip": "インベントリや周りの容器のアイテムを右クリックすると「レシピを見る」が出ます。選ぶと制作の画面を開き、そのアイテムを作れるレシピに絞り込みます。"
 }
