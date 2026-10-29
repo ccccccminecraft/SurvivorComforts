@@ -17,5 +17,18 @@
     "UI_SurvivorComforts_F04_ShowGame": "Show game time (HH:MM, orange)",
     "UI_SurvivorComforts_F04_ShowReal": "Show real time (MM:SS, green)",
     "UI_SurvivorComforts_F04_GameAndReal": "Left %1 (real %2)",
-    "UI_SurvivorComforts_F04_One": "Left %1"
+    "UI_SurvivorComforts_F04_One": "Left %1",
+    "UI_SurvivorComforts_F06_Name": "Wishlist",
+    "UI_SurvivorComforts_F06_Tooltip": "Right-click an item to add it to your wishlist; it is then highlighted in the inventory and loot windows. The list is saved on this PC only, not in the world.",
+    "UI_SurvivorComforts_F06_Key": "Open/close wishlist",
+    "UI_SurvivorComforts_F06_Sidebar": "Show button on the left sidebar",
+    "UI_SurvivorComforts_F06_Sidebar_Tooltip": "Adds a button below the icons on the left of the screen that opens/closes the wishlist.",
+    "UI_SurvivorComforts_F06_Title": "Wishlist",
+    "UI_SurvivorComforts_F06_Menu": "Wishlist",
+    "UI_SurvivorComforts_F06_AddToList": "Add to wishlist",
+    "UI_SurvivorComforts_F06_RemoveFromList": "Remove from wishlist",
+    "UI_SurvivorComforts_F06_AddItem": "Add: %1",
+    "UI_SurvivorComforts_F06_RemoveItem": "Remove: %1",
+    "UI_SurvivorComforts_F06_Remove": "Remove selected",
+    "UI_SurvivorComforts_F06_Empty": "Right-click an item to add it"
 }

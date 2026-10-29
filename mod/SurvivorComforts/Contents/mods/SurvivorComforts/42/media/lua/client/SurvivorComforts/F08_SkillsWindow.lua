@@ -13,7 +13,7 @@ require "SurvivorComforts/Core"
 require "XpSystem/ISUI/ISCharacterInfo"
 require "XpSystem/ISUI/ISCharacterInfoWindow"
 require "ISUI/ISCollapsableWindow"
-require "ISUI/ISEquippedItem"
+require "SurvivorComforts/Sidebar"
 
 local FEATURE_ID = "F08"
 local LAYOUT_NAME = "survivorcomforts.skills"
@@ -197,99 +197,17 @@ local function onPlayerDeath(player)
 end
 
 ---------------------------------------------------------------------------
--- Sidebar button (ISEquippedItem, the icon column on the left)
+-- Sidebar button (see Sidebar.lua)
 ---------------------------------------------------------------------------
-local ICON_SIZES = { 48, 64, 80, 96, 128 }
-
--- The sidebar size option picks the button width; use the icon made for that width.
-local function getIcon(state, buttonWidth)
-    local size = ICON_SIZES[1]
-    for _, s in ipairs(ICON_SIZES) do
-        if s <= buttonWidth then size = s end
-    end
-    return getTexture("media/ui/SurvivorComforts/Skills_" .. state .. "_" .. size .. ".png")
-end
-
--- Same as ISEquippedItem:shrinkWrap, but leaves out the skills button while it is hidden.
-local function fitSidebar(sidebar)
-    local xMax, yMax = 0, 0
-    for _, child in pairs(sidebar:getChildren()) do
-        if child.Type == "ISButton" and (child ~= sidebar.survivorComfortsSkillsBtn or child:isVisible()) then
-            xMax = math.max(xMax, child:getRight())
-            yMax = math.max(yMax, child:getBottom())
-        end
-    end
-    sidebar:setWidth(xMax)
-    sidebar:setHeight(yMax)
-end
-
-local function onSidebarButton(sidebar, button)
-    toggleWindow(sidebar.chr:getPlayerNum())
-end
-
--- Adds the button below the last vanilla button. The sidebar is rebuilt when
--- the sidebar size option changes, which runs this again.
-local function addSidebarButton(sidebar)
-    local UI_BORDER_SPACING = 10
-    local w, h = sidebar.invBtn:getWidth(), sidebar.invBtn:getHeight()
-    local y = 0
-    for _, child in pairs(sidebar:getChildren()) do
-        if child.Type == "ISButton" then
-            y = math.max(y, child:getBottom())
-        end
-    end
-    y = y + UI_BORDER_SPACING + 5
-
-    local btn = ISButton:new(0, y, w, h, "", sidebar, onSidebarButton)
-    btn.skillsIconOn = getIcon("On", w)
-    btn.skillsIconOff = getIcon("Off", w)
-    btn:setImage(btn.skillsIconOff)
-    btn:initialise()
-    btn:instantiate()
-    btn:setDisplayBackground(false)
-    btn:ignoreWidthChange()
-    btn:ignoreHeightChange()
-    sidebar:addChild(btn)
-    sidebar.survivorComfortsSkillsBtn = btn
-
-    -- The vanilla tooltip list only needs getX/getY/getWidth/getHeight; report
-    -- zero size while hidden so no tooltip shows over the empty space.
-    local tooltipArea = {
-        getX = function() return btn:getX() end,
-        getY = function() return btn:getY() end,
-        getWidth = function() return btn:isVisible() and btn:getWidth() or 0 end,
-        getHeight = function() return btn:isVisible() and btn:getHeight() or 0 end,
-    }
-    sidebar:addMouseOverToolTipItem(tooltipArea, getText("UI_SurvivorComforts_F08_Title"))
-
-    btn:setVisible(showSidebarButton())
-    fitSidebar(sidebar)
-end
-
-local original_sidebarInitialise = ISEquippedItem.initialise
-function ISEquippedItem:initialise()
-    original_sidebarInitialise(self)
-    -- Vanilla only gives the first local player the sidebar buttons.
-    if self.invBtn then
-        SurvivorComforts.safeCall(FEATURE_ID, addSidebarButton, self)
-    end
-end
-
-local original_sidebarPrerender = ISEquippedItem.prerender
-function ISEquippedItem:prerender()
-    original_sidebarPrerender(self)
-    local btn = self.survivorComfortsSkillsBtn
-    if not btn then return end
-    -- Follow option changes made while playing.
-    local show = showSidebarButton()
-    if btn:isVisible() ~= show then
-        btn:setVisible(show)
-        fitSidebar(self)
-    end
-    if show then
-        btn:setImage(isWindowOpen(self.chr:getPlayerNum()) and btn.skillsIconOn or btn.skillsIconOff)
-    end
-end
+SurvivorComforts.addSidebarButton({
+    id = FEATURE_ID,
+    order = 1,
+    icon = "Skills",
+    tooltip = "UI_SurvivorComforts_F08_Title",
+    isShown = showSidebarButton,
+    isActive = isWindowOpen,
+    onClick = toggleWindow,
+})
 
 ---------------------------------------------------------------------------
 -- Hiding the skills tab of the vanilla character info window

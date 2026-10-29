@@ -17,5 +17,18 @@
     "UI_SurvivorComforts_F04_ShowGame": "ゲーム内の時間を表示する（時:分、オレンジ）",
     "UI_SurvivorComforts_F04_ShowReal": "現実の時間を表示する（分:秒、緑）",
     "UI_SurvivorComforts_F04_GameAndReal": "残り %1（現実 %2）",
-    "UI_SurvivorComforts_F04_One": "残り %1"
+    "UI_SurvivorComforts_F04_One": "残り %1",
+    "UI_SurvivorComforts_F06_Name": "ウィッシュリスト",
+    "UI_SurvivorComforts_F06_Tooltip": "アイテムを右クリックしてウィッシュリストに追加すると、インベントリや周りの容器の一覧でそのアイテムが色付きで表示されます。リストはこのPCにだけ保存され、ワールドには保存されません。",
+    "UI_SurvivorComforts_F06_Key": "ウィッシュリストを開く/閉じる",
+    "UI_SurvivorComforts_F06_Sidebar": "左のアイコンにボタンを表示する",
+    "UI_SurvivorComforts_F06_Sidebar_Tooltip": "画面左のアイコンの下に、ウィッシュリストを開く/閉じるボタンを追加します。",
+    "UI_SurvivorComforts_F06_Title": "ウィッシュリスト",
+    "UI_SurvivorComforts_F06_Menu": "ウィッシュリスト",
+    "UI_SurvivorComforts_F06_AddToList": "ウィッシュリストに追加",
+    "UI_SurvivorComforts_F06_RemoveFromList": "ウィッシュリストから外す",
+    "UI_SurvivorComforts_F06_AddItem": "追加：%1",
+    "UI_SurvivorComforts_F06_RemoveItem": "外す：%1",
+    "UI_SurvivorComforts_F06_Remove": "選んだものを外す",
+    "UI_SurvivorComforts_F06_Empty": "アイテムを右クリックして追加できます"
 }
