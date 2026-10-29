@@ -30,5 +30,6 @@
     "UI_SurvivorComforts_F06_AddItem": "追加：%1",
     "UI_SurvivorComforts_F06_RemoveItem": "外す：%1",
     "UI_SurvivorComforts_F06_Remove": "選んだものを外す",
+    "UI_SurvivorComforts_F06_ShowRecipes": "レシピを見る",
     "UI_SurvivorComforts_F06_Empty": "アイテムを右クリックして追加できます"
 }

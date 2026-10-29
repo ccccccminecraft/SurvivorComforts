@@ -30,5 +30,6 @@
     "UI_SurvivorComforts_F06_AddItem": "Add: %1",
     "UI_SurvivorComforts_F06_RemoveItem": "Remove: %1",
     "UI_SurvivorComforts_F06_Remove": "Remove selected",
+    "UI_SurvivorComforts_F06_ShowRecipes": "Show recipes",
     "UI_SurvivorComforts_F06_Empty": "Right-click an item to add it"
 }

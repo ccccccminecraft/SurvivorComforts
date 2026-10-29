@@ -19,6 +19,7 @@ require "Entity/ISUI/CraftRecipe/ISWidgetOutput"
 require "Entity/ISUI/CraftRecipe/ISRecipeScrollingListBox"
 require "Entity/ISUI/CraftRecipe/ISTiledIconListBox"
 require "Entity/ISUI/CraftRecipe/ISCraftInventoryPanel"
+require "Entity/ISEntityUI"
 require "SurvivorComforts/Sidebar"
 
 local FEATURE_ID = "F06"
@@ -152,6 +153,36 @@ function SurvivorComforts_WishlistList:doDrawItem(y, item, alt)
     local textY = y + (self.itemheight - self.fontHgt) / 2
     self:drawText(item.text, iconSize + 10, textY, 1, 1, 1, 1, self.font)
     return y + self.itemheight
+end
+
+-- Opens the vanilla crafting window filtered to the recipes that make the item,
+-- the same filter vanilla uses for Shift+click on an ingredient.
+local function showRecipes(playerNum, fullType)
+    local player = getSpecificPlayer(playerNum)
+    if not player then return end
+    if not ISEntityUI.IsWindowOpen(playerNum, "HandcraftWindow") then
+        ISEntityUI.OpenHandcraftWindow(player, nil)
+    end
+    local window = ISEntityUI.GetWindowInstance(playerNum, "HandcraftWindow")
+    local panel = window and window.handCraftPanel
+    local filterPanel = panel and panel.recipesPanel and panel.recipesPanel.recipeFilterPanel
+    if not filterPanel then return end
+    filterPanel:filter("!" .. fullType, getText("IGUI_FilterType_OutputName"))
+    window:bringToTop()
+end
+
+function SurvivorComforts_WishlistList:onRightMouseUp(x, y)
+    local index = self:rowAt(x, y)
+    local row = self.items[index]
+    if not row then return end
+    self.selected = index
+    local playerNum = self.parent.playerNum
+    local fullTypes = { row.item.fullType }
+    local context = ISContextMenu.get(playerNum, getMouseX(), getMouseY())
+    context:addOption(getText("UI_SurvivorComforts_F06_ShowRecipes"), playerNum, function(num)
+        SurvivorComforts.safeCall(FEATURE_ID, showRecipes, num, row.item.fullType)
+    end)
+    context:addOption(getText("UI_SurvivorComforts_F06_RemoveFromList"), fullTypes, remove)
 end
 
 function SurvivorComforts_WishlistList:render()
