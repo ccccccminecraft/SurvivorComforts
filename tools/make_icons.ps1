@@ -1,13 +1,13 @@
 # Draws the F08 sidebar icons (a rising bar chart) in the same sizes and
 # style as the vanilla sidebar icons (media/ui/Sidebar/<size>/*_<size>.png):
 # black outline, grey gradient when off, colour gradient when on.
-# Output: mod\...\42\media\ui\TeamUIPack\Skills_{On,Off}_<size>.png
+# Output: mod\...\42\media\ui\SurvivorComforts\Skills_{On,Off}_<size>.png
 # Only needs to be re-run when the icon design changes.
 
 Add-Type -AssemblyName System.Drawing
 $ErrorActionPreference = "Stop"
 
-$outDir = Join-Path $PSScriptRoot "..\mod\TeamUIPack\Contents\mods\TeamUIPack\42\media\ui\TeamUIPack"
+$outDir = Join-Path $PSScriptRoot "..\mod\SurvivorComforts\Contents\mods\SurvivorComforts\42\media\ui\SurvivorComforts"
 New-Item -ItemType Directory -Force $outDir | Out-Null
 
 # Drawn at 4x of the 128x96 icon, then scaled down to every size.

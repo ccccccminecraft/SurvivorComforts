@@ -9,40 +9,40 @@
 -- skills tab can be removed from the vanilla character info window (the
 -- vanilla skills key then opens this window instead).
 
-require "TeamUIPack/Core"
+require "SurvivorComforts/Core"
 require "XpSystem/ISUI/ISCharacterInfo"
 require "XpSystem/ISUI/ISCharacterInfoWindow"
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISEquippedItem"
 
 local FEATURE_ID = "F08"
-local LAYOUT_NAME = "teamuipack.skills"
+local LAYOUT_NAME = "survivorcomforts.skills"
 local MIN_HEIGHT = 150
 
-TeamUIPack.registerFeature({
+SurvivorComforts.registerFeature({
     id = FEATURE_ID,
-    name = "UI_TeamUIPack_F08_Name",
-    tooltip = "UI_TeamUIPack_F08_Tooltip",
+    name = "UI_SurvivorComforts_F08_Name",
+    tooltip = "UI_SurvivorComforts_F08_Tooltip",
 })
-TeamUIPack.options:addKeyBind(FEATURE_ID .. "_key", getText("UI_TeamUIPack_F08_Key"), Keyboard.KEY_K)
-TeamUIPack.options:addTickBox(FEATURE_ID .. "_sidebar", getText("UI_TeamUIPack_F08_Sidebar"), true, getText("UI_TeamUIPack_F08_Sidebar_Tooltip"))
-TeamUIPack.options:addTickBox(FEATURE_ID .. "_hideTab", getText("UI_TeamUIPack_F08_HideTab"), false, getText("UI_TeamUIPack_F08_HideTab_Tooltip"))
+SurvivorComforts.options:addKeyBind(FEATURE_ID .. "_key", getText("UI_SurvivorComforts_F08_Key"), Keyboard.KEY_K)
+SurvivorComforts.options:addTickBox(FEATURE_ID .. "_sidebar", getText("UI_SurvivorComforts_F08_Sidebar"), true, getText("UI_SurvivorComforts_F08_Sidebar_Tooltip"))
+SurvivorComforts.options:addTickBox(FEATURE_ID .. "_hideTab", getText("UI_SurvivorComforts_F08_HideTab"), false, getText("UI_SurvivorComforts_F08_HideTab_Tooltip"))
 
 local function showSidebarButton()
-    return TeamUIPack.isEnabled(FEATURE_ID) and TeamUIPack.getOptionValue(FEATURE_ID .. "_sidebar") == true
+    return SurvivorComforts.isEnabled(FEATURE_ID) and SurvivorComforts.getOptionValue(FEATURE_ID .. "_sidebar") == true
 end
 
 local function hideVanillaTab()
-    return TeamUIPack.isEnabled(FEATURE_ID) and TeamUIPack.getOptionValue(FEATURE_ID .. "_hideTab") == true
+    return SurvivorComforts.isEnabled(FEATURE_ID) and SurvivorComforts.getOptionValue(FEATURE_ID .. "_hideTab") == true
 end
 
 ---------------------------------------------------------------------------
 -- Skills panel: vanilla ISCharacterInfo that never resizes its parent.
 ---------------------------------------------------------------------------
-TeamUIPack_SkillsPanel = ISCharacterInfo:derive("TeamUIPack_SkillsPanel")
+SurvivorComforts_SkillsPanel = ISCharacterInfo:derive("SurvivorComforts_SkillsPanel")
 
 -- Width the vanilla rows need (same formula as ISCharacterInfo:render).
-function TeamUIPack_SkillsPanel:getContentWidth()
+function SurvivorComforts_SkillsPanel:getContentWidth()
     local UI_BORDER_SPACING = 10
     local SCROLL_BAR_WIDTH = 13
     local fontHgtSmall = getTextManager():getFontHeight(UIFont.Small)
@@ -56,7 +56,7 @@ end
 -- Vanilla grows the window to the widest row on every frame. Here the content
 -- width only sets the window's minimum, so the player can still resize it.
 -- (The argument is max(current width, content width), so it is not used.)
-function TeamUIPack_SkillsPanel:setWidthAndParentWidth(_width)
+function SurvivorComforts_SkillsPanel:setWidthAndParentWidth(_width)
     local window = self.parent
     local needed = self:getContentWidth()
     if not window then
@@ -70,10 +70,10 @@ function TeamUIPack_SkillsPanel:setWidthAndParentWidth(_width)
 end
 
 -- Vanilla grows the window to the content height; the window keeps its own height here.
-function TeamUIPack_SkillsPanel:setHeightAndParentHeight(height)
+function SurvivorComforts_SkillsPanel:setHeightAndParentHeight(height)
 end
 
-function TeamUIPack_SkillsPanel:new(x, y, width, height, playerNum)
+function SurvivorComforts_SkillsPanel:new(x, y, width, height, playerNum)
     local previous = ISCharacterInfo.instance
     local o = ISCharacterInfo.new(self, x, y, width, height, playerNum)
     -- ISCharacterInfo.new stores itself as the global instance (used by the tutorial); keep vanilla's.
@@ -84,20 +84,20 @@ end
 ---------------------------------------------------------------------------
 -- Window
 ---------------------------------------------------------------------------
-TeamUIPack_SkillsWindow = ISCollapsableWindow:derive("TeamUIPack_SkillsWindow")
-TeamUIPack_SkillsWindow.instances = {}
+SurvivorComforts_SkillsWindow = ISCollapsableWindow:derive("SurvivorComforts_SkillsWindow")
+SurvivorComforts_SkillsWindow.instances = {}
 
-function TeamUIPack_SkillsWindow:createChildren()
+function SurvivorComforts_SkillsWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
     local th = self:titleBarHeight()
     local rh = self:resizeWidgetHeight()
-    self.skillsPanel = TeamUIPack_SkillsPanel:new(0, th, self.width, self.height - th - rh, self.playerNum)
+    self.skillsPanel = SurvivorComforts_SkillsPanel:new(0, th, self.width, self.height - th - rh, self.playerNum)
     self.skillsPanel:initialise()
     self:addChild(self.skillsPanel)
 end
 
 -- Keep the panel filling the window whenever the player resizes it.
-function TeamUIPack_SkillsWindow:prerender()
+function SurvivorComforts_SkillsWindow:prerender()
     ISCollapsableWindow.prerender(self)
     local panel = self.skillsPanel
     if panel then
@@ -109,12 +109,12 @@ function TeamUIPack_SkillsWindow:prerender()
     end
 end
 
-function TeamUIPack_SkillsWindow:close()
+function SurvivorComforts_SkillsWindow:close()
     self:setVisible(false)
     self:removeFromUIManager()
 end
 
-function TeamUIPack_SkillsWindow:toggle()
+function SurvivorComforts_SkillsWindow:toggle()
     if self:getIsVisible() then
         self:close()
     else
@@ -124,10 +124,10 @@ function TeamUIPack_SkillsWindow:toggle()
     end
 end
 
-function TeamUIPack_SkillsWindow:new(x, y, width, height, playerNum)
+function SurvivorComforts_SkillsWindow:new(x, y, width, height, playerNum)
     local o = ISCollapsableWindow.new(self, x, y, width, height)
     o.playerNum = playerNum
-    o.title = getText("UI_TeamUIPack_F08_Title")
+    o.title = getText("UI_SurvivorComforts_F08_Title")
     o.minimumHeight = MIN_HEIGHT
     o.visibleOnStartup = false
     return o
@@ -137,11 +137,11 @@ end
 -- Lifecycle
 ---------------------------------------------------------------------------
 local function destroyWindow(playerNum)
-    local window = TeamUIPack_SkillsWindow.instances[playerNum]
+    local window = SurvivorComforts_SkillsWindow.instances[playerNum]
     if window then
         window:setVisible(false)
         window:removeFromUIManager()
-        TeamUIPack_SkillsWindow.instances[playerNum] = nil
+        SurvivorComforts_SkillsWindow.instances[playerNum] = nil
     end
 end
 
@@ -150,10 +150,10 @@ local function createWindow(playerNum)
     destroyWindow(playerNum)
     local x = getPlayerScreenLeft(playerNum) + 100
     local y = getPlayerScreenTop(playerNum) + 100
-    local window = TeamUIPack_SkillsWindow:new(x, y, 300, 400, playerNum)
+    local window = SurvivorComforts_SkillsWindow:new(x, y, 300, 400, playerNum)
     window:initialise()
     window:setVisible(false)
-    TeamUIPack_SkillsWindow.instances[playerNum] = window
+    SurvivorComforts_SkillsWindow.instances[playerNum] = window
     -- Only the first local player has a saved layout, like vanilla windows.
     if playerNum == 0 then
         ISLayoutManager.RegisterWindow(LAYOUT_NAME, ISCollapsableWindow, window)
@@ -162,29 +162,29 @@ local function createWindow(playerNum)
 end
 
 local function isWindowOpen(playerNum)
-    local window = TeamUIPack_SkillsWindow.instances[playerNum]
+    local window = SurvivorComforts_SkillsWindow.instances[playerNum]
     return window ~= nil and window:getIsVisible()
 end
 
 -- Opens or closes the window; used by the key, the sidebar button and the vanilla skills key.
 local function toggleWindow(playerNum)
-    if not TeamUIPack.isEnabled(FEATURE_ID) then return end
+    if not SurvivorComforts.isEnabled(FEATURE_ID) then return end
     local player = getSpecificPlayer(playerNum)
     if not player or player:isDead() then return end
-    TeamUIPack.safeCall(FEATURE_ID, function()
-        local window = TeamUIPack_SkillsWindow.instances[playerNum] or createWindow(playerNum)
+    SurvivorComforts.safeCall(FEATURE_ID, function()
+        local window = SurvivorComforts_SkillsWindow.instances[playerNum] or createWindow(playerNum)
         window:toggle()
     end)
 end
 
 local function onCreatePlayer(playerNum, player)
-    if not TeamUIPack.isEnabled(FEATURE_ID) then return end
-    TeamUIPack.safeCall(FEATURE_ID, createWindow, playerNum)
+    if not SurvivorComforts.isEnabled(FEATURE_ID) then return end
+    SurvivorComforts.safeCall(FEATURE_ID, createWindow, playerNum)
 end
 
 local function onKeyPressed(key)
     if key == nil or key == 0 then return end
-    if key ~= TeamUIPack.getOptionValue(FEATURE_ID .. "_key") then return end
+    if key ~= SurvivorComforts.getOptionValue(FEATURE_ID .. "_key") then return end
     local player = getPlayer()
     if not player then return end
     toggleWindow(player:getPlayerNum())
@@ -207,14 +207,14 @@ local function getIcon(state, buttonWidth)
     for _, s in ipairs(ICON_SIZES) do
         if s <= buttonWidth then size = s end
     end
-    return getTexture("media/ui/TeamUIPack/Skills_" .. state .. "_" .. size .. ".png")
+    return getTexture("media/ui/SurvivorComforts/Skills_" .. state .. "_" .. size .. ".png")
 end
 
 -- Same as ISEquippedItem:shrinkWrap, but leaves out the skills button while it is hidden.
 local function fitSidebar(sidebar)
     local xMax, yMax = 0, 0
     for _, child in pairs(sidebar:getChildren()) do
-        if child.Type == "ISButton" and (child ~= sidebar.teamUIPackSkillsBtn or child:isVisible()) then
+        if child.Type == "ISButton" and (child ~= sidebar.survivorComfortsSkillsBtn or child:isVisible()) then
             xMax = math.max(xMax, child:getRight())
             yMax = math.max(yMax, child:getBottom())
         end
@@ -250,7 +250,7 @@ local function addSidebarButton(sidebar)
     btn:ignoreWidthChange()
     btn:ignoreHeightChange()
     sidebar:addChild(btn)
-    sidebar.teamUIPackSkillsBtn = btn
+    sidebar.survivorComfortsSkillsBtn = btn
 
     -- The vanilla tooltip list only needs getX/getY/getWidth/getHeight; report
     -- zero size while hidden so no tooltip shows over the empty space.
@@ -260,7 +260,7 @@ local function addSidebarButton(sidebar)
         getWidth = function() return btn:isVisible() and btn:getWidth() or 0 end,
         getHeight = function() return btn:isVisible() and btn:getHeight() or 0 end,
     }
-    sidebar:addMouseOverToolTipItem(tooltipArea, getText("UI_TeamUIPack_F08_Title"))
+    sidebar:addMouseOverToolTipItem(tooltipArea, getText("UI_SurvivorComforts_F08_Title"))
 
     btn:setVisible(showSidebarButton())
     fitSidebar(sidebar)
@@ -271,14 +271,14 @@ function ISEquippedItem:initialise()
     original_sidebarInitialise(self)
     -- Vanilla only gives the first local player the sidebar buttons.
     if self.invBtn then
-        TeamUIPack.safeCall(FEATURE_ID, addSidebarButton, self)
+        SurvivorComforts.safeCall(FEATURE_ID, addSidebarButton, self)
     end
 end
 
 local original_sidebarPrerender = ISEquippedItem.prerender
 function ISEquippedItem:prerender()
     original_sidebarPrerender(self)
-    local btn = self.teamUIPackSkillsBtn
+    local btn = self.survivorComfortsSkillsBtn
     if not btn then return end
     -- Follow option changes made while playing.
     local show = showSidebarButton()
@@ -304,22 +304,22 @@ local function applySkillsTab(infoWindow)
     if not panel or not view then return end
     local hide = hideVanillaTab()
 
-    if hide and not infoWindow.teamUIPackHiddenTab then
+    if hide and not infoWindow.survivorComfortsHiddenTab then
         for index, entry in ipairs(panel.viewList) do
             if entry.view == view then
                 local wasActive = panel.activeView == entry
                 panel:removeView(view)
                 view:setVisible(false)
-                infoWindow.teamUIPackHiddenTab = { entry = entry, index = index }
+                infoWindow.survivorComfortsHiddenTab = { entry = entry, index = index }
                 if wasActive and panel.activeView then
                     panel:activateView(panel.activeView.name)
                 end
                 return
             end
         end
-    elseif not hide and infoWindow.teamUIPackHiddenTab then
-        local hidden = infoWindow.teamUIPackHiddenTab
-        infoWindow.teamUIPackHiddenTab = nil
+    elseif not hide and infoWindow.survivorComfortsHiddenTab then
+        local hidden = infoWindow.survivorComfortsHiddenTab
+        infoWindow.survivorComfortsHiddenTab = nil
         -- A restored layout may have moved the view into a separate window meanwhile.
         if view.parent ~= panel then return end
         table.insert(panel.viewList, math.min(hidden.index, #panel.viewList + 1), hidden.entry)
@@ -333,13 +333,13 @@ end
 local original_infoCreateChildren = ISCharacterInfoWindow.createChildren
 function ISCharacterInfoWindow:createChildren()
     original_infoCreateChildren(self)
-    TeamUIPack.safeCall(FEATURE_ID, applySkillsTab, self)
+    SurvivorComforts.safeCall(FEATURE_ID, applySkillsTab, self)
 end
 
 -- Follow option changes made while playing (only matters while the window is shown).
 local original_infoPrerender = ISCharacterInfoWindow.prerender
 function ISCharacterInfoWindow:prerender()
-    TeamUIPack.safeCall(FEATURE_ID, applySkillsTab, self)
+    SurvivorComforts.safeCall(FEATURE_ID, applySkillsTab, self)
     original_infoPrerender(self)
 end
 
@@ -347,7 +347,7 @@ end
 local original_infoToggleView = ISCharacterInfoWindow.toggleView
 function ISCharacterInfoWindow:toggleView(viewName)
     if viewName == xpSystemText.skills and hideVanillaTab() then
-        TeamUIPack.safeCall(FEATURE_ID, applySkillsTab, self)
+        SurvivorComforts.safeCall(FEATURE_ID, applySkillsTab, self)
         toggleWindow(self.playerNum)
         return
     end

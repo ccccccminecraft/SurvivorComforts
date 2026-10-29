@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 $game = "H:\Program Files (x86)\Steam\steamapps\common\ProjectZomboid"
 $javac = "C:\Program Files\Java\jdk-13.0.2\bin\javac.exe"
 $build = Join-Path $PSScriptRoot "build"
-$luaRoot = Join-Path $PSScriptRoot "..\mod\TeamUIPack\Contents\mods\TeamUIPack"
+$luaRoot = Join-Path $PSScriptRoot "..\mod\SurvivorComforts\Contents\mods\SurvivorComforts"
 
 New-Item -ItemType Directory -Force $build | Out-Null
 & $javac --release 13 -d $build (Join-Path $PSScriptRoot "LuaSyntaxCheck.java")

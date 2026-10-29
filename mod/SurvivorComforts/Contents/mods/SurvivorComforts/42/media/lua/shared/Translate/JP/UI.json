@@ -1,0 +1,12 @@
+{
+    "UI_SurvivorComforts_Title": "Survivor Comforts",
+    "UI_SurvivorComforts_Enable": "有効にする",
+    "UI_SurvivorComforts_F08_Name": "スキルウィンドウ",
+    "UI_SurvivorComforts_F08_Tooltip": "スキルの一覧を、大きさを変えられる独立したウィンドウで表示します。",
+    "UI_SurvivorComforts_F08_Key": "スキルウィンドウを開く/閉じる",
+    "UI_SurvivorComforts_F08_Title": "スキル",
+    "UI_SurvivorComforts_F08_Sidebar": "左のアイコンにボタンを表示する",
+    "UI_SurvivorComforts_F08_Sidebar_Tooltip": "画面左のアイコンの一番下に、スキルウィンドウを開く/閉じるボタンを追加します。",
+    "UI_SurvivorComforts_F08_HideTab": "キャラクター情報のスキルタブを隠す",
+    "UI_SurvivorComforts_F08_HideTab_Tooltip": "情報・健康・保護などのウィンドウからスキルのタブを外します。本体のスキルのキーを押すと、代わりにスキルウィンドウが開きます。"
+}

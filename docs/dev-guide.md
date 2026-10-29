@@ -1,4 +1,4 @@
-# 開発ガイド（TeamUIPack）
+# 開発ガイド（SurvivorComforts）
 
 ## フォルダ構成
 
@@ -8,15 +8,15 @@ D:\Document\claude\Zomboid\
 ├── tools\
 │   ├── check.ps1             Luaの構文チェック（ゲーム本体のコンパイラを使う）
 │   ├── deploy.ps1            ゲームから読める場所へMODをコピーする
-│   ├── make_icons.ps1        左のアイコン用の画像（media\ui\TeamUIPack）を作り直す
+│   ├── make_icons.ps1        左のアイコン用の画像（media\ui\SurvivorComforts）を作り直す
 │   └── LuaSyntaxCheck.java   check.ps1 が使うチェッカー
-└── mod\TeamUIPack\           Workshopにアップロードする単位
-    └── Contents\mods\TeamUIPack\
+└── mod\SurvivorComforts\           Workshopにアップロードする単位
+    └── Contents\mods\SurvivorComforts\
         ├── common\                    B42で必須（空でも置いておく）
         └── 42\
             ├── mod.info
             └── media\lua\
-                ├── client\TeamUIPack\
+                ├── client\SurvivorComforts\
                 │   ├── Core.lua           共通処理とMod Options
                 │   └── F08_SkillsWindow.lua
                 └── shared\Translate\
@@ -24,10 +24,10 @@ D:\Document\claude\Zomboid\
                     └── JP\UI.json
 ```
 
-- 機能ごとに `client\TeamUIPack\Fxx_機能名.lua` を1ファイル作る。
-- 各機能は `TeamUIPack.registerFeature()` で Mod Options に「有効にする」のチェックボックスを登録し、処理の入口で `TeamUIPack.isEnabled("Fxx")` を確認する。
-- 処理は `TeamUIPack.safeCall()` で囲み、エラーがほかの機能に波及しないようにする。
-- 表示する文字列は `UI.json`（EN と JP）に追加し、`getText("UI_TeamUIPack_...")` で使う。
+- 機能ごとに `client\SurvivorComforts\Fxx_機能名.lua` を1ファイル作る。
+- 各機能は `SurvivorComforts.registerFeature()` で Mod Options に「有効にする」のチェックボックスを登録し、処理の入口で `SurvivorComforts.isEnabled("Fxx")` を確認する。
+- 処理は `SurvivorComforts.safeCall()` で囲み、エラーがほかの機能に波及しないようにする。
+- 表示する文字列は `UI.json`（EN と JP）に追加し、`getText("UI_SurvivorComforts_...")` で使う。
 
 ## 変更してから試すまで
 
@@ -35,18 +35,18 @@ D:\Document\claude\Zomboid\
    ```
    powershell -File tools\check.ps1
    ```
-2. ゲームから読める場所へコピー（`%USERPROFILE%\Zomboid\Workshop\TeamUIPack`）
+2. ゲームから読める場所へコピー（`%USERPROFILE%\Zomboid\Workshop\SurvivorComforts`）
    ```
    powershell -File tools\deploy.ps1
    ```
-3. ゲームを起動し、メインメニューの「MOD」で **Team UI Pack** を有効にする。
+3. ゲームを起動し、メインメニューの「MOD」で **Survivor Comforts** を有効にする。
 4. シングルプレイ（またはホストしたマルチプレイ）で確認する。
-   - エラーは `%USERPROFILE%\Zomboid\console.txt` に出る。`[TeamUIPack]` で検索する。
+   - エラーは `%USERPROFILE%\Zomboid\console.txt` に出る。`[SurvivorComforts]` で検索する。
    - デバッグモード（起動オプション `-debug`）なら、ゲーム内でLuaを再読み込みできる。
 
 ## F08 スキルウィンドウの確認項目
 
-- [ ] オプション →「MOD」タブに「Team UI Pack」→「スキルウィンドウ」が表示される
+- [ ] オプション →「MOD」タブに「Survivor Comforts」→「スキルウィンドウ」が表示される
 - [ ] `K` キー（変更可）でウィンドウが開閉する
 - [ ] ウィンドウの右下をドラッグして大きさを変えられ、勝手に縦に伸びない
 - [ ] スキルが多いとスクロールできる（マウスホイール）
@@ -72,6 +72,6 @@ D:\Document\claude\Zomboid\
 
 ## Workshopへのアップロード（まだ行わない）
 
-- `mod\TeamUIPack\` に `preview.png`（256x256）と、必要なら `42\poster.png` を用意する。
-- deploy した後、メインメニュー →「Workshop」から TeamUIPack を選び、公開範囲を **限定公開（Unlisted）** にしてアップロードする。
-- 初回のアップロード後、ゲームが `%USERPROFILE%\Zomboid\Workshop\TeamUIPack\workshop.txt` にWorkshop IDを書き込む。deploy.ps1 はこのファイルを上書きしない。
+- `mod\SurvivorComforts\` に `preview.png`（256x256）と、必要なら `42\poster.png` を用意する。
+- deploy した後、メインメニュー →「Workshop」から SurvivorComforts を選び、公開範囲を **限定公開（Unlisted）** にしてアップロードする。
+- 初回のアップロード後、ゲームが `%USERPROFILE%\Zomboid\Workshop\SurvivorComforts\workshop.txt` にWorkshop IDを書き込む。deploy.ps1 はこのファイルを上書きしない。
