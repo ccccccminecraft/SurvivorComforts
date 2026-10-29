@@ -11,5 +11,11 @@
     "UI_SurvivorComforts_F08_HideTab_Tooltip": "情報・健康・保護などのウィンドウからスキルのタブを外します。本体のスキルのキーを押すと、代わりにスキルウィンドウが開きます。",
     "UI_SurvivorComforts_F07_Name": "料理の食材をまとめる",
     "UI_SurvivorComforts_F07_Tooltip": "スープやサラダなどに食材を加えるメニューで、同じ食材を1行にまとめ、残りが一番少ないものから使います。",
-    "UI_SurvivorComforts_F07_Count": "（%1個）"
+    "UI_SurvivorComforts_F07_Count": "（%1個）",
+    "UI_SurvivorComforts_F04_Name": "読書の残り時間",
+    "UI_SurvivorComforts_F04_Tooltip": "読書中、読み終わるまでの時間をキャラクターの足元に表示します。ゲーム内の時間はオレンジ、現実の時間は緑で表示します。",
+    "UI_SurvivorComforts_F04_ShowGame": "ゲーム内の時間を表示する（時:分、オレンジ）",
+    "UI_SurvivorComforts_F04_ShowReal": "現実の時間を表示する（分:秒、緑）",
+    "UI_SurvivorComforts_F04_GameAndReal": "残り %1（現実 %2）",
+    "UI_SurvivorComforts_F04_One": "残り %1"
 }
