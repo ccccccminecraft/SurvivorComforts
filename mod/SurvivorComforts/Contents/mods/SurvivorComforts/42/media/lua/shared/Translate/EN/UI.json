@@ -1,6 +1,7 @@
 {
     "UI_SurvivorComforts_Title": "Survivor Comforts",
     "UI_SurvivorComforts_Enable": "Enable",
+    "UI_SurvivorComforts_ShowRecipes": "Show recipes",
     "UI_SurvivorComforts_F08_Name": "Skills window",
     "UI_SurvivorComforts_F08_Tooltip": "Shows the skill list in its own resizable window.",
     "UI_SurvivorComforts_F08_Key": "Open/close skills window",
@@ -30,6 +31,7 @@
     "UI_SurvivorComforts_F06_AddItem": "Add: %1",
     "UI_SurvivorComforts_F06_RemoveItem": "Remove: %1",
     "UI_SurvivorComforts_F06_Remove": "Remove selected",
-    "UI_SurvivorComforts_F06_ShowRecipes": "Show recipes",
-    "UI_SurvivorComforts_F06_Empty": "Right-click an item to add it"
+    "UI_SurvivorComforts_F06_Empty": "Right-click an item to add it",
+    "UI_SurvivorComforts_F12_Name": "Show recipes for items",
+    "UI_SurvivorComforts_F12_Tooltip": "Right-click an item in the inventory or loot window and choose Show recipes to open the crafting window filtered to the recipes that make it."
 }

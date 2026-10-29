@@ -1,6 +1,7 @@
 {
     "UI_SurvivorComforts_Title": "Survivor Comforts",
     "UI_SurvivorComforts_Enable": "有効にする",
+    "UI_SurvivorComforts_ShowRecipes": "レシピを見る",
     "UI_SurvivorComforts_F08_Name": "スキルウィンドウ",
     "UI_SurvivorComforts_F08_Tooltip": "スキルの一覧を、大きさを変えられる独立したウィンドウで表示します。",
     "UI_SurvivorComforts_F08_Key": "スキルウィンドウを開く/閉じる",
@@ -30,6 +31,7 @@
     "UI_SurvivorComforts_F06_AddItem": "追加：%1",
     "UI_SurvivorComforts_F06_RemoveItem": "外す：%1",
     "UI_SurvivorComforts_F06_Remove": "選んだものを外す",
-    "UI_SurvivorComforts_F06_ShowRecipes": "レシピを見る",
-    "UI_SurvivorComforts_F06_Empty": "アイテムを右クリックして追加できます"
+    "UI_SurvivorComforts_F06_Empty": "アイテムを右クリックして追加できます",
+    "UI_SurvivorComforts_F12_Name": "アイテムからレシピを見る",
+    "UI_SurvivorComforts_F12_Tooltip": "インベントリや周りの容器のアイテムを右クリックすると「レシピを見る」が出ます。選ぶと制作の画面を開き、そのアイテムを作れるレシピに絞り込みます。"
 }
