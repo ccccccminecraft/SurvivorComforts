@@ -12,7 +12,7 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 │   ├── test_server.ps1       テスト用のサーバーとゲーム2つを Steam なしで起動する（1台で複数人を試す）
 │   ├── GameDir.ps1           ゲームのフォルダを探す共通処理
 │   ├── make_icons.ps1        左のアイコン用の画像（media\ui\SurvivorComforts）を作り直す
-│   ├── make_preview.ps1      Workshopの画像（preview.png）とMOD一覧の画像（poster.png）を作り直す
+│   ├── make_preview.ps1      Workshopの画像（preview.png）とMOD一覧の画像（poster.png、icon.png）を作り直す
 │   └── LuaSyntaxCheck.java   check.ps1 が使うチェッカー
 └── mod\SurvivorComforts\           Workshopにアップロードする単位
     ├── preview.png                Workshopに表示する画像（256x256ちょうど、1000KB以下）
@@ -21,6 +21,7 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
         └── 42\
             ├── mod.info
             ├── poster.png             ゲームのMOD一覧に表示する画像
+            ├── icon.png               ゲームのMOD一覧で名前の横に出すアイコン（64x64）
             └── media\lua\
                 ├── client\SurvivorComforts\
                 │   ├── Core.lua           共通処理とMod Options
@@ -94,7 +95,7 @@ powershell -File tools\test_server.ps1
 
 ### 事前の準備
 - アップロードする前に、構文チェック・確認項目のテストを済ませておく。
-- 画像はリポジトリに入っている（`preview.png`、`poster.png`）。デザインを変えたときだけ作り直す。
+- 画像はリポジトリに入っている（`preview.png`、`poster.png`、`icon.png`）。デザインを変えたときだけ作り直す。
   ```
   powershell -File tools\make_preview.ps1
   ```

@@ -1,6 +1,7 @@
 # Draws the Workshop preview image and the in-game mod list poster.
 #   mod\SurvivorComforts\preview.png                                  (Workshop, exactly 256x256, under 1000 KB)
 #   mod\SurvivorComforts\Contents\mods\SurvivorComforts\42\poster.png (mod list, set by poster= in mod.info)
+#   mod\SurvivorComforts\Contents\mods\SurvivorComforts\42\icon.png   (mod list icon, set by icon= in mod.info, 64x64)
 # Only needs to be re-run when the design changes.
 
 Add-Type -AssemblyName System.Drawing
@@ -98,3 +99,50 @@ foreach ($file in @((Join-Path $root "preview.png"), (Join-Path $root "Contents\
 }
 $out.Dispose()
 $bmp.Dispose()
+
+# Mod list icon (icon= in mod.info): the preview without the title - bar
+# chart and star with the warm glow, on a rounded square. The mod list draws
+# it at about 28-40 px, so the shapes are larger and the outlines thicker.
+$IconSize = 64
+$ibmp = New-Object System.Drawing.Bitmap $S, $S
+$g = [System.Drawing.Graphics]::FromImage($ibmp)
+$g.SmoothingMode = "AntiAlias"
+$g.Clear([System.Drawing.Color]::Transparent)
+$box = New-RoundedRect 16 16 992 992 170
+$boxBrush = New-Object System.Drawing.Drawing2D.LinearGradientBrush (New-Object System.Drawing.Point 0, 0), (New-Object System.Drawing.Point 0, $S), (Color 58 66 56), (Color 24 28 26)
+$g.FillPath($boxBrush, $box)
+$g.SetClip($box)
+$iconGlow = New-Object System.Drawing.Drawing2D.GraphicsPath
+$iconGlow.AddEllipse(120, 140, 820, 700)
+$iconGlowBrush = New-Object System.Drawing.Drawing2D.PathGradientBrush $iconGlow
+$iconGlowBrush.CenterColor = Color 255 190 90 110
+$iconGlowBrush.SurroundColors = @(Color 255 190 90 0)
+$g.FillPath($iconGlowBrush, $iconGlow)
+$g.ResetClip()
+
+$iconOutline = New-Object System.Drawing.Pen (Color 20 20 20), 34
+$iconOutline.LineJoin = "Round"
+$iconBlue = New-Object System.Drawing.Drawing2D.LinearGradientBrush (New-Object System.Drawing.Point 0, 300), (New-Object System.Drawing.Point 0, 860), (Color 150 220 255), (Color 50 130 190)
+$iconAmber = New-Object System.Drawing.Drawing2D.LinearGradientBrush (New-Object System.Drawing.Point 0, 180), (New-Object System.Drawing.Point 0, 780), (Color 255 222 130), (Color 196 120 30)
+$iconBase = 860
+foreach ($bar in @(@(110, 220), @(250, 360), @(390, 500))) {   # x, height
+    $path = New-RoundedRect $bar[0] ($iconBase - $bar[1]) 115 $bar[1] 22
+    $g.FillPath($iconBlue, $path)
+    $g.DrawPath($iconOutline, $path)
+}
+$iconStar = New-Star 705 480 290 122
+$g.FillPath($iconAmber, $iconStar)
+$g.DrawPath($iconOutline, $iconStar)
+$g.Dispose()
+
+$iout = New-Object System.Drawing.Bitmap $IconSize, $IconSize
+$g = [System.Drawing.Graphics]::FromImage($iout)
+$g.InterpolationMode = "HighQualityBicubic"
+$g.PixelOffsetMode = "HighQuality"
+$g.DrawImage($ibmp, 0, 0, $IconSize, $IconSize)
+$g.Dispose()
+$file = Join-Path $root "Contents\mods\SurvivorComforts\42\icon.png"
+$iout.Save($file, [System.Drawing.Imaging.ImageFormat]::Png)
+Write-Host "Written $file ($((Get-Item $file).Length) bytes)"
+$iout.Dispose()
+$ibmp.Dispose()
