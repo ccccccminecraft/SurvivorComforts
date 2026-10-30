@@ -50,6 +50,9 @@ Project Zomboid（Build 42.21 以降）用の、ちょっとした便利機能�
 
 [*][b]アイテムからレシピを見る[/b]
 アイテムを右クリック →「レシピを見る」で、そのアイテムを作れるレシピに絞り込んだ制作の画面を開きます。作れるレシピがないときは赤く表示されます。
+
+[*][b]材料のレシピをたどる[/b]
+制作・建築の画面で材料を右クリック →「レシピを見る」で、その材料を作れるレシピに絞り込みます。検索欄の左の「戻る」で、たどる前の表示に戻れます。
 [/list]
 
 [h2]導入[/h2]
@@ -108,6 +111,9 @@ Hides the skull button on the left of the screen and keeps PvP off. The G key no
 
 [*][b]Show recipes for an item[/b]
 Right-click an item and choose "Show recipes" to open the crafting window filtered to recipes that make it. The option is shown in red when no recipe makes the item.
+
+[*][b]Follow ingredient recipes[/b]
+In the crafting and building windows, right-click an ingredient and choose "Show recipes" to see the recipes that make it. The Back button left of the search box returns to what was shown before.
 [/list]
 
 [h2]Installation[/h2]
@@ -141,4 +147,9 @@ Subscribe, then enable Survivor Comforts in Main Menu > Mods.
 
 ```
 ・プレイヤー一覧を追加（オンラインの人と、7日以内に来ていた人を最終ログイン付きで表示。マルチプレイのみ）
+```
+
+```
+・材料のレシピをたどるを追加（制作・建築の画面で材料を右クリック →「レシピを見る」、検索欄の左の「戻る」で前の表示に戻る）
+・ウィッシュリストの共有を変更（自分のリストのアイテムを「共有する」と、みんなのリストに出る。共有を解除できるのは本人と管理者だけ）
 ```

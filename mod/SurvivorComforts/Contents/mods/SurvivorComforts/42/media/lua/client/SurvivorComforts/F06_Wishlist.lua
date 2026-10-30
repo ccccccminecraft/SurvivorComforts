@@ -19,13 +19,9 @@ require "ISUI/ISScrollingListBox"
 require "ISUI/ISButton"
 require "ISUI/ISTabPanel"
 require "ISUI/ISInventoryPane"
-require "Entity/ISUI/CraftRecipe/ISWidgetInput"
-require "Entity/ISUI/CraftRecipe/ISWidgetOutput"
-require "Entity/ISUI/CraftRecipe/ISRecipeScrollingListBox"
-require "Entity/ISUI/CraftRecipe/ISTiledIconListBox"
-require "Entity/ISUI/CraftRecipe/ISCraftInventoryPanel"
 require "SurvivorComforts/Recipes"
 require "SurvivorComforts/Sidebar"
+require "SurvivorComforts/CraftMenu"
 
 local FEATURE_ID = "F06"
 local FILE_NAME = "SurvivorComforts_Wishlist.txt"
@@ -669,15 +665,6 @@ local function addWishlistMenu(context, entries)
     end
 end
 
--- Adds a script item (scripts.Item) to entries once.
-local function addScriptEntry(entries, seen, script)
-    local fullType = script and script:getFullName()
-    if fullType and not seen[fullType] then
-        seen[fullType] = true
-        table.insert(entries, { fullType = fullType, name = script:getDisplayName() })
-    end
-end
-
 -- Items, from the inventory and loot windows.
 local function onFillContextMenu(playerNum, context, items)
     if not SurvivorComforts.isEnabled(FEATURE_ID) then return end
@@ -695,135 +682,17 @@ local function onFillContextMenu(playerNum, context, items)
 end
 
 ---------------------------------------------------------------------------
--- Crafting and building windows. Vanilla has no right-click there, so a
--- right-click opens a menu with only the wishlist entries.
+-- Crafting and building windows: the wishlist lines in the shared
+-- right-click menu (see CraftMenu.lua).
 ---------------------------------------------------------------------------
-local function showMenu(player, entries)
-    if #entries == 0 then return end
-    local context = ISContextMenu.get(player:getPlayerNum(), getMouseX(), getMouseY())
-    addWishlistMenu(context, entries)
-end
-
-local function showMenuForScripts(player, scriptLists)
-    local entries, seen = {}, {}
-    for _, list in ipairs(scriptLists) do
-        for i = 0, list:size() - 1 do
-            addScriptEntry(entries, seen, list:get(i))
-        end
-    end
-    showMenu(player, entries)
-end
-
--- The item an ingredient or result icon is showing right now. An ingredient
--- that several items can be used for cycles through them (or shows the one
--- the player has).
-local function shownItemEntry(values)
-    if not values or not values.script or values.script:getResourceType() ~= ResourceType.Item then return nil end
-    local fullType = values.inputFullName
-    if not fullType then return nil end
-    local script = ScriptManager.instance:getItem(fullType)
-    return { fullType = fullType, name = values.iconText or (script and script:getDisplayName()) or fullType }
-end
-
--- Item results of a recipe (fluids and energy are skipped; build recipes have none).
-local function recipeResultLists(recipe)
-    local lists = {}
-    local outputs = recipe:getOutputs()
-    for i = 0, outputs:size() - 1 do
-        local output = outputs:get(i)
-        if output:getResourceType() == ResourceType.Item then
-            table.insert(lists, output:getPossibleResultItems())
-        end
-    end
-    return lists
-end
-
--- Clicks on a child (the icon, the label) reach the widget through either
--- onRightMouseUp or onRightMouseUpOutside, so the menu is opened only once per click.
-local lastMenuMs = 0
-local function openCraftMenu(fn, ...)
-    if not SurvivorComforts.isEnabled(FEATURE_ID) then return end
-    local now = getTimestampMs()
-    if now - lastMenuMs < 100 then return end
-    lastMenuMs = now
-    SurvivorComforts.safeCall(FEATURE_ID, fn, ...)
-end
-
-local function hookRightClick(class, handler)
-    if not class then return end
-    local original_up = class.onRightMouseUp
-    function class:onRightMouseUp(x, y)
-        openCraftMenu(handler, self, x, y)
-        if original_up then return original_up(self, x, y) end
-    end
-    local original_outside = class.onRightMouseUpOutside
-    function class:onRightMouseUpOutside(x, y)
-        if self:isMouseOver() then
-            openCraftMenu(handler, self, x, y)
-        end
-        if original_outside then return original_outside(self, x, y) end
-    end
-end
-
--- Ingredient and result of the selected recipe: the item the icon shows.
-local function onIconRightClick(self)
-    local entry = shownItemEntry(self.primary)
-    if entry then
-        showMenu(self.player, { entry })
-    end
-end
-hookRightClick(ISWidgetInput, onIconRightClick)
-hookRightClick(ISWidgetOutput, onIconRightClick)
-
--- The list of items that can be used for an ingredient (opened by clicking an
--- ingredient). Its list box is a plain ISScrollingListBox, so the handler is
--- set on the instance.
-local function onInventoryListRightClick(listBox, x, y)
-    local row = listBox.items[listBox:rowAt(x, y)]
-    local data = row and row.item
-    -- Headers have no script; fluid rows have no item script.
-    if data and data.script then
-        local entries = {}
-        addScriptEntry(entries, {}, data.script)
-        showMenu(listBox.survivorComfortsPlayer, entries)
-    end
-end
-
-if ISCraftInventoryPanel then
-    local original_createChildren = ISCraftInventoryPanel.createChildren
-    function ISCraftInventoryPanel:createChildren()
-        original_createChildren(self)
-        local listBox = self.itemListBox
-        if listBox then
-            listBox.survivorComfortsPlayer = self.player
-            local original_up = listBox.onRightMouseUp
-            listBox.onRightMouseUp = function(_self, x, y)
-                openCraftMenu(onInventoryListRightClick, _self, x, y)
-                if original_up then return original_up(_self, x, y) end
-            end
-        end
-    end
-end
-
--- Recipe list (list view).
-hookRightClick(ISRecipeScrollingListBox, function(self, x, y)
-    local row = self.items[self:rowAt(x, y)]
-    local recipe = row and not row.groupNode and row.item
-    if recipe then
-        showMenuForScripts(self.player, recipeResultLists(recipe))
-    end
-end)
-
--- Recipe list (icon view). The same tile list is used elsewhere, so only recipes are handled.
-hookRightClick(ISTiledIconListBox, function(self, x, y)
-    local recipe = self:getTileForCoordinate(x, y)
-    if recipe and instanceof(recipe, "CraftRecipe") then
-        local player = getSpecificPlayer(0)
-        local panel = self.parent
-        if panel and panel.player then player = panel.player end
-        showMenuForScripts(player, recipeResultLists(recipe))
-    end
-end)
+SurvivorComforts.addCraftMenuProvider({
+    id = FEATURE_ID,
+    order = 2,
+    isEnabled = function() return SurvivorComforts.isEnabled(FEATURE_ID) end,
+    fill = function(context, playerNum, entries, kind)
+        addWishlistMenu(context, entries)
+    end,
+})
 
 local function onKeyPressed(key)
     if key == nil or key == 0 then return end
