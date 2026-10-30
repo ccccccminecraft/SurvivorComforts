@@ -61,4 +61,4 @@ Mods=SurvivorComforts
 | --- | --- |
 | `mod/SurvivorComforts/` | MOD 本体（ワークショップにアップロードする単位） |
 | `tools/` | 構文チェック、ゲームへのコピー、アイコン画像の生成 |
-| `docs/` | 機能リスト（`features.md`）と開発ガイド（`dev-guide.md`） |
+| `docs/` | 機能リスト（`features.md`）、開発ガイド（`dev-guide.md`）、ワークショップのページの原稿（`workshop.md`） |
