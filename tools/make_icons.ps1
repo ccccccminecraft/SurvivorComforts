@@ -3,6 +3,7 @@
 # when off, colour gradient when on.
 #   Skills   (F08): a rising bar chart
 #   Wishlist (F06): a star
+#   Players  (F09): two people
 # Output: mod\...\42\media\ui\SurvivorComforts\<Name>_{On,Off}_<size>.png
 # Only needs to be re-run when the icon design changes.
 
@@ -55,6 +56,19 @@ function Draw-Wishlist($g, $brush, $pen) {
     $g.DrawPath($pen, $path)
 }
 
+function Draw-Players($g, $brush, $pen) {
+    # The one behind first, so the front one is drawn over it.
+    foreach ($p in @(@(350, 112, 50, 280, 430, 196), @(214, 128, 62, 108, 320, 212))) {   # head x, y, r, body left, right, top
+        $head = New-Object System.Drawing.Drawing2D.GraphicsPath
+        $head.AddEllipse($p[0] - $p[2], $p[1] - $p[2], $p[2] * 2, $p[2] * 2)
+        $body = New-RoundedRect $p[3] $p[5] ($p[4] - $p[3]) ($BaseY - $p[5]) 60
+        foreach ($path in $body, $head) {
+            $g.FillPath($brush, $path)
+            $g.DrawPath($pen, $path)
+        }
+    }
+}
+
 function Draw-Icon($shape, $top, $bottom) {
     $bmp = New-Object System.Drawing.Bitmap $W, $H
     $g = [System.Drawing.Graphics]::FromImage($bmp)
@@ -73,7 +87,7 @@ $offBottom = [System.Drawing.Color]::FromArgb(90, 90, 90)
 $onTop = [System.Drawing.Color]::FromArgb(255, 222, 130)
 $onBottom = [System.Drawing.Color]::FromArgb(176, 112, 28)
 
-foreach ($icon in "Skills", "Wishlist") {
+foreach ($icon in "Skills", "Wishlist", "Players") {
     $shape = Get-Command "Draw-$icon"
     $variants = @{
         Off = Draw-Icon $shape $offTop $offBottom

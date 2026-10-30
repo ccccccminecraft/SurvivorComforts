@@ -8,6 +8,8 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 ├── tools\
 │   ├── check.ps1             Luaの構文チェック（ゲーム本体のコンパイラを使う）
 │   ├── deploy.ps1            ゲームから読める場所へMODをコピーする
+│   ├── test_server.ps1       テスト用のサーバーとゲーム2つを Steam なしで起動する（1台で複数人を試す）
+│   ├── GameDir.ps1           ゲームのフォルダを探す共通処理
 │   ├── make_icons.ps1        左のアイコン用の画像（media\ui\SurvivorComforts）を作り直す
 │   ├── make_preview.ps1      Workshopの画像（preview.png）とMOD一覧の画像（poster.png）を作り直す
 │   └── LuaSyntaxCheck.java   check.ps1 が使うチェッカー
@@ -25,12 +27,14 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
                 │   ├── F06_Wishlist.lua
                 │   ├── F07_CookingStack.lua
                 │   ├── F08_SkillsWindow.lua
+                │   ├── F09_PlayerList.lua
                 │   ├── F10_HidePvP.lua
                 │   ├── F12_ItemRecipes.lua
                 │   ├── Recipes.lua        「レシピを見る」の処理（F06・F12で共通）
-                │   └── Sidebar.lua        画面左のアイコンにボタンを並べる（F06・F08で共通）
+                │   └── Sidebar.lua        画面左のアイコンにボタンを並べる（F06・F08・F09で共通）
                 ├── server\SurvivorComforts\
-                │   └── F06_SharedWishlist.lua  みんなのウィッシュリストの保存と配信（サーバーで動く）
+                │   ├── F06_SharedWishlist.lua  みんなのウィッシュリストの保存と配信（サーバーで動く）
+                │   └── F09_PlayerList.lua      最終ログインの記録と配信（サーバーで動く。シングルでは動かない）
                 └── shared\Translate\
                     ├── EN\UI.json
                     └── JP\UI.json
@@ -157,6 +161,29 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 - [ ] 後からログインした人にも、みんなのリストが届く
 - [ ] 「みんなのリストを使う」をOFFにすると、タブ・水色・メニューの2行目が消え、前と同じ表示に戻る
 - [ ] サーバーの `console.txt` に `[SurvivorComforts] F06 server` のエラーが出ていない
+
+## F09 プレイヤー一覧の確認項目
+
+準備：1台で2人分を試すときは、次のコマンドでテスト用のサーバーとゲーム2つを起動し、それぞれ別のユーザー名で `127.0.0.1`（ポート `16261`）に入る。MODを直したら、サーバーを止めて（サーバーの画面で `quit`）もう一度実行する。
+```
+powershell -File tools\test_server.ps1
+```
+- Steam なしで動かすので、データは `%USERPROFILE%\PZTest` の下に分けて置かれ、普段のセーブやオプションには触れない
+- サーバーのログは `%USERPROFILE%\PZTest\server\server-console.txt`、設定は `server\Server\sctest.ini`（管理者のパスワードは `admin`）
+- サーバー・ゲームとも最大3GBずつメモリを使う。合わせて10GB前後空けておく
+- 2人目に入ってもらえるなら、ゲーム内の「ホスト」で立てたサーバーでもよい
+
+- [ ] オプション →「MOD」に「プレイヤー一覧」が表示される
+- [ ] シングルプレイでは、画面左に人のボタンが出ず、キーを押しても何も開かない。エラーも出ない
+- [ ] マルチプレイでは、画面左のウィッシュリストのボタンの下に人のボタンが出て、押すと「プレイヤー一覧」が開閉する
+- [ ] 「オンライン（2人）」の下に、自分ともう1人のユーザー名が緑の印付きで並ぶ
+- [ ] もう1人がログアウトすると、開いたままの一覧ですぐに「オフライン」に移り、右に「1分前」と出る。ログインし直すと、すぐ「オンライン」に戻る
+- [ ] 開いたままにすると、1分ごとに「○分前」が増える。1時間以上で「○時間前」、1日以上で「○日前」になる
+- [ ] オフラインの人は、最後に見かけたのが新しい順に並ぶ
+- [ ] サーバーを再起動しても、オフラインの人と「○分前」が残っている
+- [ ] 「左のアイコンにボタンを表示する」を外すとボタンが消える。キーを決めると、そのキーで開閉する（初期値はキーなし）
+- [ ] 「有効にする」を外すと、ボタンが消え、キーでも開かない
+- [ ] サーバーのログ（`server-console.txt`）に `[SurvivorComforts] F09 server` のエラーが出ていない
 
 ## F10 PvPの切り替えボタンを隠すの確認項目
 

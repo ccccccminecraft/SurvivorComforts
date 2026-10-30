@@ -45,5 +45,17 @@
     "UI_SurvivorComforts_F10_Name": "PvPの切り替えボタンを隠す",
     "UI_SurvivorComforts_F10_Tooltip": "画面左のPvP（ドクロ）のボタンを隠し、PvPを常にオフにします。ボタンとキーでの切り替えもできなくなります。",
     "UI_SurvivorComforts_F12_Name":"アイテムからレシピを見る",
-    "UI_SurvivorComforts_F12_Tooltip": "インベントリや周りの容器のアイテムを右クリックすると「レシピを見る」が出ます。選ぶと制作の画面を開き、そのアイテムを作れるレシピに絞り込みます。"
+    "UI_SurvivorComforts_F12_Tooltip": "インベントリや周りの容器のアイテムを右クリックすると「レシピを見る」が出ます。選ぶと制作の画面を開き、そのアイテムを作れるレシピに絞り込みます。",
+    "UI_SurvivorComforts_F09_Name": "プレイヤー一覧",
+    "UI_SurvivorComforts_F09_Tooltip": "サーバーにログイン中のプレイヤーと、7日以内にログインしていたプレイヤーを一覧で表示します。マルチプレイのときだけ使えます。",
+    "UI_SurvivorComforts_F09_Key": "プレイヤー一覧を開く/閉じる",
+    "UI_SurvivorComforts_F09_Sidebar": "左のアイコンにボタンを表示する",
+    "UI_SurvivorComforts_F09_Sidebar_Tooltip": "画面左のアイコンの下に、プレイヤー一覧を開く/閉じるボタンを追加します。",
+    "UI_SurvivorComforts_F09_Title": "プレイヤー一覧",
+    "UI_SurvivorComforts_F09_Online": "オンライン（%1人）",
+    "UI_SurvivorComforts_F09_Offline": "オフライン（%1人）",
+    "UI_SurvivorComforts_F09_MinutesAgo": "%1分前",
+    "UI_SurvivorComforts_F09_HoursAgo": "%1時間前",
+    "UI_SurvivorComforts_F09_DaysAgo": "%1日前",
+    "UI_SurvivorComforts_F09_Loading": "読み込み中…"
 }

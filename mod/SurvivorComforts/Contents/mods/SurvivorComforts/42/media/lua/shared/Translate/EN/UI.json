@@ -45,5 +45,17 @@
     "UI_SurvivorComforts_F10_Name": "Hide the PvP toggle",
     "UI_SurvivorComforts_F10_Tooltip": "Hides the PvP (skull) button on the left and keeps PvP off. The button and the key no longer toggle it.",
     "UI_SurvivorComforts_F12_Name":"Show recipes for items",
-    "UI_SurvivorComforts_F12_Tooltip": "Right-click an item in the inventory or loot window and choose Show recipes to open the crafting window filtered to the recipes that make it."
+    "UI_SurvivorComforts_F12_Tooltip": "Right-click an item in the inventory or loot window and choose Show recipes to open the crafting window filtered to the recipes that make it.",
+    "UI_SurvivorComforts_F09_Name": "Player list",
+    "UI_SurvivorComforts_F09_Tooltip": "Lists the players online on the server and those who were online in the last 7 days. Multiplayer only.",
+    "UI_SurvivorComforts_F09_Key": "Open/close the player list",
+    "UI_SurvivorComforts_F09_Sidebar": "Show button on the left sidebar",
+    "UI_SurvivorComforts_F09_Sidebar_Tooltip": "Adds a button below the icons on the left of the screen that opens/closes the player list.",
+    "UI_SurvivorComforts_F09_Title": "Players",
+    "UI_SurvivorComforts_F09_Online": "Online (%1)",
+    "UI_SurvivorComforts_F09_Offline": "Offline (%1)",
+    "UI_SurvivorComforts_F09_MinutesAgo": "%1 min ago",
+    "UI_SurvivorComforts_F09_HoursAgo": "%1 h ago",
+    "UI_SurvivorComforts_F09_DaysAgo": "%1 days ago",
+    "UI_SurvivorComforts_F09_Loading": "Loading..."
 }

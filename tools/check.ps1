@@ -15,23 +15,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-
-function Find-GameDir {
-    $steam = Get-ItemProperty "HKCU:\Software\Valve\Steam" -Name SteamPath -ErrorAction SilentlyContinue
-    if (-not $steam) { return $null }
-    $libraries = @($steam.SteamPath)
-    $vdf = Join-Path $steam.SteamPath "steamapps\libraryfolders.vdf"
-    if (Test-Path $vdf) {
-        foreach ($m in Select-String -Path $vdf -Pattern '"path"\s+"([^"]+)"') {
-            $libraries += $m.Matches[0].Groups[1].Value -replace '\\\\', '\'
-        }
-    }
-    foreach ($lib in $libraries) {
-        $dir = Join-Path $lib "steamapps\common\ProjectZomboid"
-        if (Test-Path (Join-Path $dir "projectzomboid.jar")) { return $dir }
-    }
-    return $null
-}
+. (Join-Path $PSScriptRoot "GameDir.ps1")
 
 function Find-Javac {
     if ($env:JAVA_HOME) {
@@ -47,10 +31,7 @@ function Find-Javac {
     return $null
 }
 
-if (-not $GameDir) { $GameDir = Find-GameDir }
-if (-not $GameDir -or -not (Test-Path (Join-Path $GameDir "projectzomboid.jar"))) {
-    throw "Project Zomboid not found. Pass -GameDir or set PZ_GAME_DIR to the game folder (the one with projectzomboid.jar)."
-}
+$GameDir = Resolve-GameDir $GameDir
 if (-not $Javac) { $Javac = Find-Javac }
 if (-not $Javac -or -not (Test-Path $Javac)) {
     throw "javac not found. Install a JDK (13 or newer), or pass -Javac / set JAVAC to javac.exe."

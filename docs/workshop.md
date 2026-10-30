@@ -23,7 +23,7 @@ Project Zomboid（Build 42.21 以降）用の、ちょっとした便利機能�
 [list]
 [*]機能ごとに「オプション」→「MOD」→「Survivor Comforts」で ON/OFF できます
 [*]新しいアイテム・レシピ・ゲームのルールは追加しません（ゲームバランスは変わりません）
-[*]セーブデータに書き込むのは「みんなのウィッシュリスト」だけです
+[*]セーブデータに書き込むのは「みんなのウィッシュリスト」と、プレイヤー一覧の最終ログインだけです
 [/list]
 
 [h2]機能[/h2]
@@ -41,6 +41,9 @@ Project Zomboid（Build 42.21 以降）用の、ちょっとした便利機能�
 
 [*][b]スキルウィンドウ[/b]
 スキルの一覧を、大きさを変えられる独立したウィンドウで表示します。画面左のボタンか [b]K[/b] キーで開きます（キーは変更できます）。
+
+[*][b]プレイヤー一覧[/b]
+サーバーにオンラインの人と、7日以内に来ていたオフラインの人を一覧で表示します。オフラインの人には「3時間前」のように最終ログインが出ます。画面左の人のボタンから開けます。マルチプレイのときだけ使えます。
 
 [*][b]PvP の切り替えボタンを隠す[/b]
 画面左のドクロのボタンを隠し、PvP を常にオフにします。G キーでの切り替えも無効になります。
@@ -66,7 +69,7 @@ Mods=SurvivorComforts
 [*]Build 42.21 以降が必要です。Build 41 では動きません
 [*]機能の ON/OFF は、各プレイヤーが自分のオプションで切り替える設定です
 [*]「PvP の切り替えボタンを隠す」は初期状態で ON です。PvP を使うサーバーでは OFF にしてください
-[*]MOD を外しても、セーブデータに残るのは「みんなのウィッシュリスト」の中身だけで、ゲームには影響しません
+[*]MOD を外しても、セーブデータに残るのは「みんなのウィッシュリスト」の中身と最終ログインの記録だけで、ゲームには影響しません
 [/list]
 
 [hr][/hr]
@@ -78,7 +81,7 @@ Made for a private multiplayer server, but it also works in single player.
 [list]
 [*]Each feature can be turned on or off in Options > Mods > Survivor Comforts
 [*]No new items, recipes or game rules (the game balance does not change)
-[*]Only the shared wishlist is saved to the world
+[*]Only the shared wishlist and the player list's last-online times are saved to the world
 [/list]
 
 [h2]Features[/h2]
@@ -96,6 +99,9 @@ In the menu for adding ingredients to soups and salads, the same ingredient is s
 
 [*][b]Skills window[/b]
 Shows your skills in a separate, resizable window. Open it with the button on the left of the screen or the [b]K[/b] key (the key can be changed).
+
+[*][b]Player list[/b]
+Lists who is online on the server, and who was online in the last 7 days with when they were last online ("3 h ago"). Open it with the people button on the left of the screen. Multiplayer only.
 
 [*][b]Hide the PvP button[/b]
 Hides the skull button on the left of the screen and keeps PvP off. The G key no longer toggles PvP.
@@ -121,7 +127,7 @@ Subscribe, then enable Survivor Comforts in Main Menu > Mods.
 [*]Requires Build 42.21 or later. Does not work on Build 41
 [*]Each player turns features on or off in their own options
 [*]"Hide the PvP button" is on by default. Turn it off on servers that use PvP
-[*]If you remove the mod, only the shared wishlist stays in the save, and it does not affect the game
+[*]If you remove the mod, only the shared wishlist and the last-online times stay in the save, and they do not affect the game
 [/list]
 ```
 
@@ -131,4 +137,8 @@ Subscribe, then enable Survivor Comforts in Main Menu > Mods.
 
 ```
 ・ワークショップ初回公開（読書の残り時間、ウィッシュリスト、料理の食材をまとめる、スキルウィンドウ、PvP の切り替えボタンを隠す、アイテムからレシピを見る）
+```
+
+```
+・プレイヤー一覧を追加（オンラインの人と、7日以内に来ていた人を最終ログイン付きで表示。マルチプレイのみ）
 ```
