@@ -1,16 +1,17 @@
--- F06: wishlists of item types, a personal one and one shared by everyone on
--- the server.
+-- F06: a wishlist of item types, and a shared list of the items players share
+-- from theirs.
 --
--- Right-click an item to add it to (or remove it from) a wishlist; in the
--- crafting and building windows, right-click an ingredient, a result or a
--- recipe in the list. Items on a list are highlighted in the inventory and
--- loot windows, so they stand out when looting. The lists can be opened in a
--- small window.
+-- Right-click an item to add it to (or remove it from) the wishlist, or to
+-- share or unshare it; in the crafting and building windows, right-click an
+-- ingredient, a result or a recipe in the list. Items on a list are
+-- highlighted in the inventory and loot windows, so they stand out when
+-- looting. The lists can be opened in a small window.
 --
 -- The personal list is saved on this PC only
 -- (Zomboid/Lua/SurvivorComforts_Wishlist.txt) and is the same for every save
 -- and server. The shared list is kept by the server
--- (server/SurvivorComforts/F06_SharedWishlist.lua) and sent to every player.
+-- (server/SurvivorComforts/F06_SharedWishlist.lua) and sent to every player;
+-- it is only for looking, and each player can unshare only their own share.
 
 require "SurvivorComforts/Core"
 require "ISUI/ISCollapsableWindow"
@@ -45,7 +46,9 @@ local function sharedEnabled()
 end
 
 ---------------------------------------------------------------------------
--- Personal list: item full types, in the order they were added.
+-- Personal list file: item full types, in the order they were added.
+-- With the shared list on, "my list" is this file plus the items this player
+-- shares on the server (see myOrder / contains below).
 ---------------------------------------------------------------------------
 local wishlist = nil  -- { set = { [fullType] = true }, order = { fullType, ... } }
 
@@ -78,25 +81,24 @@ local function getList()
     return wishlist
 end
 
-local function contains(fullType)
+local function inFile(fullType)
     return getList().set[fullType] == true
 end
 
-local refreshWindows -- defined with the window below
-
-local function add(fullTypes)
+local function addToFile(fullTypes)
     local list = getList()
+    local changed = false
     for _, fullType in ipairs(fullTypes) do
         if not list.set[fullType] then
             list.set[fullType] = true
             table.insert(list.order, fullType)
+            changed = true
         end
     end
-    save()
-    refreshWindows()
+    if changed then save() end
 end
 
-local function remove(fullTypes)
+local function removeFromFile(fullTypes)
     local list = getList()
     for _, fullType in ipairs(fullTypes) do
         list.set[fullType] = nil
@@ -109,17 +111,73 @@ local function remove(fullTypes)
     end
     list.order = order
     save()
-    refreshWindows()
 end
+
+local refreshWindows -- defined with the window below
 
 ---------------------------------------------------------------------------
 -- Shared list: a copy of what the server sent last. Changes go to the server,
 -- which sends the new list back to everyone.
 ---------------------------------------------------------------------------
-local shared = { set = {}, order = {} } -- set[fullType] = name of who added it
+-- order = { fullType, ... }, sharers[fullType] = { username, ... } (first sharer first)
+local shared = { order = {}, sharers = {} }
+
+local PERSONAL_COLOR = { r = 1, g = 0.65, b = 0.2 }
+local SHARED_COLOR = { r = 0.35, g = 0.8, b = 1 }
+
+-- The same name the server records (see playerName in the server file).
+local function myName()
+    local player = getSpecificPlayer(0)
+    if not player then return nil end
+    local name = player:getUsername()
+    if not name or name == "" then
+        name = player:getDisplayName()
+    end
+    return name
+end
+
+-- Admins (anyone who can kick players) may take shared items off for everyone;
+-- the server checks again. In single player the only player owns the game.
+local function isAdmin()
+    if not isClient() then return true end
+    local ok, result = pcall(function()
+        return getSpecificPlayer(0):getRole():hasCapability(Capability.KickUser)
+    end)
+    return ok and result == true
+end
 
 local function sharedContains(fullType)
-    return shared.set[fullType] ~= nil
+    return shared.sharers[fullType] ~= nil
+end
+
+local function sharedByMe(fullType)
+    local name = myName()
+    for _, sharer in ipairs(shared.sharers[fullType] or {}) do
+        if sharer == name then return true end
+    end
+    return false
+end
+
+-- "My list": the file, plus the items this player shares here. Those are
+-- shown even when the file has lost them (the file is the same for every
+-- server), so they can still be unshared or removed.
+local function contains(fullType)
+    return inFile(fullType) or (sharedEnabled() and sharedByMe(fullType))
+end
+
+local function myOrder()
+    local order = {}
+    for _, fullType in ipairs(getList().order) do
+        table.insert(order, fullType)
+    end
+    if sharedEnabled() then
+        for _, fullType in ipairs(shared.order) do
+            if not inFile(fullType) and sharedByMe(fullType) then
+                table.insert(order, fullType)
+            end
+        end
+    end
+    return order
 end
 
 local function sendCommand(command, args)
@@ -129,16 +187,60 @@ local function sendCommand(command, args)
     end
 end
 
-local function sharedAdd(fullTypes)
+-- The actions on "my list". Sharing and unsharing change the shared list on
+-- the server, which sends it back; the window is refreshed then.
+local function add(fullTypes)
+    addToFile(fullTypes)
+    refreshWindows()
+end
+
+-- Removing also takes off this player's share of the item.
+local function remove(fullTypes)
+    removeFromFile(fullTypes)
     for _, fullType in ipairs(fullTypes) do
-        sendCommand("wishlistAdd", { fullType = fullType })
+        if sharedByMe(fullType) then
+            sendCommand("wishlistUnshare", { fullType = fullType })
+        end
+    end
+    refreshWindows()
+end
+
+-- A shared item is kept in the file too, so it stays on my list when unshared.
+local function share(fullTypes)
+    addToFile(fullTypes)
+    for _, fullType in ipairs(fullTypes) do
+        sendCommand("wishlistShare", { fullType = fullType })
+    end
+    refreshWindows()
+end
+
+local function unshare(fullTypes)
+    addToFile(fullTypes)
+    for _, fullType in ipairs(fullTypes) do
+        sendCommand("wishlistUnshare", { fullType = fullType })
+    end
+    refreshWindows()
+end
+
+local function adminRemove(fullTypes)
+    for _, fullType in ipairs(fullTypes) do
+        sendCommand("wishlistAdminRemove", { fullType = fullType })
     end
 end
 
-local function sharedRemove(fullTypes)
-    for _, fullType in ipairs(fullTypes) do
-        sendCommand("wishlistRemove", { fullType = fullType })
+-- "（A）", "（A、B）", or "（3名以上）" after an item on the shared tab.
+local function sharersText(fullType)
+    local names = shared.sharers[fullType] or {}
+    if #names >= 3 then
+        return getText("UI_SurvivorComforts_F06_SharedByMany")
+    elseif #names == 2 then
+        return getText("UI_SurvivorComforts_F06_SharedByTwo", names[1], names[2])
     end
+    return getText("UI_SurvivorComforts_F06_AddedBy", names[1] or "?")
+end
+
+local function byOrder(a, b)
+    return (tonumber(a.order) or 0) < (tonumber(b.order) or 0)
 end
 
 local function onServerCommand(module, command, args)
@@ -147,15 +249,28 @@ local function onServerCommand(module, command, args)
         -- Lists lose their order on the way, so sort by the order the server keeps.
         local received = {}
         for _, entry in pairs(args.items or {}) do
-            if type(entry) == "table" and entry.fullType then
+            if type(entry) == "table" and type(entry.fullType) == "string" then
                 table.insert(received, entry)
             end
         end
-        table.sort(received, function(a, b) return (a.order or 0) < (b.order or 0) end)
-        shared = { set = {}, order = {} }
+        table.sort(received, byOrder)
+        shared = { order = {}, sharers = {} }
         for _, entry in ipairs(received) do
-            shared.set[entry.fullType] = entry.by or "?"
-            table.insert(shared.order, entry.fullType)
+            local sharers = {}
+            for _, sharer in pairs(entry.sharers or {}) do
+                if type(sharer) == "table" and type(sharer.name) == "string" then
+                    table.insert(sharers, sharer)
+                end
+            end
+            if #sharers > 0 then
+                table.sort(sharers, byOrder)
+                local names = {}
+                for _, sharer in ipairs(sharers) do
+                    table.insert(names, sharer.name)
+                end
+                shared.sharers[entry.fullType] = names
+                table.insert(shared.order, entry.fullType)
+            end
         end
         refreshWindows()
     end)
@@ -165,25 +280,23 @@ local function onGameStart()
     sendCommand("wishlistRequest", {})
 end
 
--- The two lists, so the menus and the window can treat them the same way.
-local LISTS = {
-    personal = {
-        contains = contains, add = add, remove = remove,
-        getOrder = function() return getList().order end,
-        color = { r = 1, g = 0.65, b = 0.2 },
-        addText = "UI_SurvivorComforts_F06_AddToPersonal",
-        removeText = "UI_SurvivorComforts_F06_RemoveFromPersonal",
-        emptyText = "UI_SurvivorComforts_F06_Empty",
-    },
-    shared = {
-        contains = sharedContains, add = sharedAdd, remove = sharedRemove,
-        getOrder = function() return shared.order end,
-        color = { r = 0.35, g = 0.8, b = 1 },
-        addText = "UI_SurvivorComforts_F06_AddToShared",
-        removeText = "UI_SurvivorComforts_F06_RemoveFromShared",
-        emptyText = "UI_SurvivorComforts_F06_EmptyShared",
-    },
-}
+-- The lines for one item on my list: share or unshare (with the shared list
+-- on), then remove. An item not on my list gets the add line.
+local function addItemOptions(menu, fullType)
+    local fullTypes = { fullType }
+    if not contains(fullType) then
+        menu:addOption(getText("UI_SurvivorComforts_F06_AddToList"), fullTypes, add)
+        return
+    end
+    if sharedEnabled() then
+        if sharedByMe(fullType) then
+            menu:addOption(getText("UI_SurvivorComforts_F06_Unshare"), fullTypes, unshare)
+        else
+            menu:addOption(getText("UI_SurvivorComforts_F06_Share"), fullTypes, share)
+        end
+    end
+    menu:addOption(getText("UI_SurvivorComforts_F06_RemoveFromList"), fullTypes, remove)
+end
 
 ---------------------------------------------------------------------------
 -- Highlight in the inventory / loot windows (details view).
@@ -203,16 +316,16 @@ local function drawHighlights(pane)
             local theirs = useShared and sharedContains(fullType)
             if mine or theirs then
                 local y = (i - 1) * pane.itemHgt + pane.headerHgt
-                local fill = mine and LISTS.personal.color or LISTS.shared.color
+                local fill = mine and PERSONAL_COLOR or SHARED_COLOR
                 pane:drawRect(1, y, pane:getWidth() - 1, pane.itemHgt, 0.12, fill.r, fill.g, fill.b)
                 local x = 1
                 if mine then
-                    local c = LISTS.personal.color
+                    local c = PERSONAL_COLOR
                     pane:drawRect(x, y, 3, pane.itemHgt, 0.9, c.r, c.g, c.b)
                     x = x + 4
                 end
                 if theirs then
-                    local c = LISTS.shared.color
+                    local c = SHARED_COLOR
                     pane:drawRect(x, y, 3, pane.itemHgt, 0.9, c.r, c.g, c.b)
                 end
             end
@@ -246,6 +359,10 @@ function SurvivorComforts_WishlistList:doDrawItem(y, item, alt)
         self:drawMouseOverHighlight(0, y, self:getWidth(), self.itemheight - 1)
     end
     self:drawRectBorder(0, y, self:getWidth(), self.itemheight, 0.5, self.borderColor.r, self.borderColor.g, self.borderColor.b)
+    -- My tab: a light blue mark on the left of the items I share.
+    if item.item.sharedByMe then
+        self:drawRect(0, y, 3, self.itemheight, 0.9, SHARED_COLOR.r, SHARED_COLOR.g, SHARED_COLOR.b)
+    end
     local iconSize = self.itemheight - 4
     local texture = item.item.texture
     if texture then
@@ -254,10 +371,10 @@ function SurvivorComforts_WishlistList:doDrawItem(y, item, alt)
     local textY = y + (self.itemheight - self.fontHgt) / 2
     local textX = iconSize + 10
     self:drawText(item.text, textX, textY, 1, 1, 1, 1, self.font)
-    -- Shared list: who added it, after the name.
+    -- Shared tab: who shares it, after the name.
     if item.item.by then
         local byX = textX + getTextManager():MeasureStringX(self.font, item.text) + 8
-        self:drawText(getText("UI_SurvivorComforts_F06_AddedBy", item.item.by), byX, textY, 0.6, 0.6, 0.6, 1, self.font)
+        self:drawText(item.item.by, byX, textY, 0.6, 0.6, 0.6, 1, self.font)
     end
     return y + self.itemheight
 end
@@ -268,7 +385,6 @@ function SurvivorComforts_WishlistList:onRightMouseUp(x, y)
     if not row then return end
     self.selected = index
     local playerNum = self.window.playerNum
-    local list = LISTS[self.kind]
     local fullType = row.item.fullType
     local context = ISContextMenu.get(playerNum, getMouseX(), getMouseY())
     local recipeOption = context:addOption(getText("UI_SurvivorComforts_ShowRecipes"), playerNum, function(num)
@@ -277,15 +393,29 @@ function SurvivorComforts_WishlistList:onRightMouseUp(x, y)
     if not SurvivorComforts.hasRecipe(fullType) then
         recipeOption.notAvailable = true
     end
-    -- Without the shared list there is only one list, so no "personal" in the text.
-    local removeText = sharedEnabled() and list.removeText or "UI_SurvivorComforts_F06_RemoveFromList"
-    context:addOption(getText(removeText), { fullType }, list.remove)
+    if self.kind == "personal" then
+        addItemOptions(context, fullType)
+        return
+    end
+    -- The shared tab is for looking: add to my list (without sharing), and
+    -- for admins, take it off for everyone.
+    if not contains(fullType) then
+        context:addOption(getText("UI_SurvivorComforts_F06_AddToMine"), { fullType }, add)
+    end
+    if isAdmin() then
+        context:addOption(getText("UI_SurvivorComforts_F06_AdminRemove"), { fullType }, adminRemove)
+    end
 end
+
+local EMPTY_TEXT = {
+    personal = "UI_SurvivorComforts_F06_Empty",
+    shared = "UI_SurvivorComforts_F06_EmptyShared",
+}
 
 function SurvivorComforts_WishlistList:render()
     ISScrollingListBox.render(self)
     if #self.items == 0 then
-        self:drawTextCentre(getText(LISTS[self.kind].emptyText), self.width / 2, 10, 0.7, 0.7, 0.7, 1, UIFont.Small)
+        self:drawTextCentre(getText(EMPTY_TEXT[self.kind]), self.width / 2, 10, 0.7, 0.7, 0.7, 1, UIFont.Small)
     end
 end
 
@@ -370,8 +500,9 @@ function SurvivorComforts_WishlistWindow:prerender()
         if list:getHeight() ~= listHgt then list:setHeight(listHgt) end
     end
     self.removeButton:setY(th + panelHgt + 5)
+    -- Only my tab can be edited; the shared tab is for looking.
     local box = self:currentListBox()
-    self.removeButton:setEnable(box.items[box.selected] ~= nil)
+    self.removeButton:setEnable(box.kind == "personal" and box.items[box.selected] ~= nil)
 end
 
 function SurvivorComforts_WishlistWindow:currentListBox()
@@ -381,16 +512,22 @@ end
 
 function SurvivorComforts_WishlistWindow:refresh()
     if not self.lists then return end
+    local orders = { personal = myOrder(), shared = shared.order }
     for kind, box in pairs(self.lists) do
         local selected = box.selected
         box:clear()
-        for _, fullType in ipairs(LISTS[kind].getOrder()) do
+        for _, fullType in ipairs(orders[kind]) do
             local script = ScriptManager.instance:getItem(fullType)
             -- An item from a mod that is no longer loaded still shows, by its type name.
             local name = script and script:getDisplayName() or fullType
             local texture = script and script:getNormalTexture() or nil
-            local by = kind == "shared" and shared.set[fullType] or nil
-            box:addItem(name, { fullType = fullType, texture = texture, by = by })
+            local row = { fullType = fullType, texture = texture }
+            if kind == "shared" then
+                row.by = sharersText(fullType)
+            elseif sharedEnabled() then
+                row.sharedByMe = sharedByMe(fullType)
+            end
+            box:addItem(name, row)
         end
         box.selected = math.min(math.max(selected, 1), math.max(#box.items, 1))
     end
@@ -399,8 +536,8 @@ end
 function SurvivorComforts_WishlistWindow:onRemove()
     local box = self:currentListBox()
     local row = box.items[box.selected]
-    if row then
-        LISTS[box.kind].remove({ row.item.fullType })
+    if row and box.kind == "personal" then
+        remove({ row.item.fullType })
     end
 end
 
@@ -476,24 +613,19 @@ SurvivorComforts.addSidebarButton({
 ---------------------------------------------------------------------------
 local MAX_MENU_ITEMS = 20
 
--- Add or remove line for one list.
-local function addToggleOption(menu, list, fullType)
-    if list.contains(fullType) then
-        menu:addOption(getText(list.removeText), { fullType }, list.remove)
-    else
-        menu:addOption(getText(list.addText), { fullType }, list.add)
+-- With the shared list: an item not on my list gets a plain add line; one on
+-- it gets "Wishlist" > share/unshare and remove. Several kinds of item get
+-- "Wishlist" > item name > those lines.
+local function addSharingMenu(context, entries)
+    if #entries == 1 and not contains(entries[1].fullType) then
+        addItemOptions(context, entries[1].fullType)
+        return
     end
-end
-
--- With the shared list: "Wishlist" > personal/shared lines, or for several
--- kinds of item, "Wishlist" > item name > personal/shared lines.
-local function addBothListsMenu(context, entries)
     local option = context:addOption(getText("UI_SurvivorComforts_F06_Menu"), nil)
     local subMenu = context:getNew(context)
     context:addSubMenu(option, subMenu)
     if #entries == 1 then
-        addToggleOption(subMenu, LISTS.personal, entries[1].fullType)
-        addToggleOption(subMenu, LISTS.shared, entries[1].fullType)
+        addItemOptions(subMenu, entries[1].fullType)
         return
     end
     for i, entry in ipairs(entries) do
@@ -501,8 +633,7 @@ local function addBothListsMenu(context, entries)
         local itemOption = subMenu:addOption(entry.name, nil)
         local itemMenu = subMenu:getNew(subMenu)
         subMenu:addSubMenu(itemOption, itemMenu)
-        addToggleOption(itemMenu, LISTS.personal, entry.fullType)
-        addToggleOption(itemMenu, LISTS.shared, entry.fullType)
+        addItemOptions(itemMenu, entry.fullType)
     end
 end
 
@@ -512,7 +643,7 @@ end
 local function addWishlistMenu(context, entries)
     if #entries == 0 then return end
     if sharedEnabled() then
-        addBothListsMenu(context, entries)
+        addSharingMenu(context, entries)
         return
     end
     if #entries == 1 then
