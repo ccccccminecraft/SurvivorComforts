@@ -37,6 +37,7 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
                 │   ├── Recipes.lua        「レシピを見る」の処理と「戻る」の履歴（F03・F06・F12で共通）
                 │   └── Sidebar.lua        画面左のアイコンにボタンを並べる。画面の下に近づいたら次の列へ。本体のボタンを隠して詰める（F06・F08・F09・F10・F13で共通）
                 ├── server\SurvivorComforts\
+                │   ├── CommandLimit.lua        1人が送れるコマンドの回数の制限（F06・F09で共通）
                 │   ├── F06_SharedWishlist.lua  みんなのウィッシュリストの保存と配信（サーバーで動く）
                 │   └── F09_PlayerList.lua      最終ログインの記録と配信（サーバーで動く。シングルでは動かない）
                 └── shared\Translate\

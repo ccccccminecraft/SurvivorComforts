@@ -19,6 +19,7 @@ require "ISUI/ISScrollingListBox"
 require "ISUI/ISButton"
 require "ISUI/ISTabPanel"
 require "ISUI/ISInventoryPane"
+require "ISUI/ISInventoryPaneContextMenu"
 require "SurvivorComforts/Recipes"
 require "SurvivorComforts/Sidebar"
 require "SurvivorComforts/CraftMenu"
@@ -178,6 +179,43 @@ local function myOrder()
     return order
 end
 
+-- Limits. The shared ones match the server file, which checks them again;
+-- here they only show a full list as an unavailable menu line.
+local MAX_PERSONAL = 100
+local MAX_SHARED_PER_PLAYER = 30
+local MAX_SHARED = 300
+
+local function personalFull()
+    return #myOrder() >= MAX_PERSONAL
+end
+
+local function sharedByMeCount()
+    local n = 0
+    for _, fullType in ipairs(shared.order) do
+        if sharedByMe(fullType) then n = n + 1 end
+    end
+    return n
+end
+
+-- The reason this item cannot be shared now, or nil.
+local function shareBlockedText(fullType)
+    if sharedByMeCount() >= MAX_SHARED_PER_PLAYER then
+        return "UI_SurvivorComforts_F06_ShareLimit"
+    end
+    if not sharedContains(fullType) and #shared.order >= MAX_SHARED then
+        return "UI_SurvivorComforts_F06_SharedFull"
+    end
+    return nil
+end
+
+-- Shows a menu line red and unselectable, with the reason on mouse-over (like vanilla).
+local function blockOption(option, textKey)
+    option.notAvailable = true
+    local tooltip = ISInventoryPaneContextMenu.addToolTip()
+    tooltip.description = getText(textKey)
+    option.toolTip = tooltip
+end
+
 local function sendCommand(command, args)
     local player = getSpecificPlayer(0)
     if player then
@@ -187,9 +225,28 @@ end
 
 -- The actions on "my list". Sharing and unsharing change the shared list on
 -- the server, which sends it back; the window is refreshed then.
+-- Adds only as many as fit under MAX_PERSONAL.
 local function add(fullTypes)
-    addToFile(fullTypes)
+    local room = MAX_PERSONAL - #myOrder()
+    local fitting = {}
+    for _, fullType in ipairs(fullTypes) do
+        if #fitting >= room then break end
+        if not contains(fullType) then
+            table.insert(fitting, fullType)
+        end
+    end
+    if #fitting == 0 then return end
+    addToFile(fitting)
     refreshWindows()
+end
+
+-- An "add" line for the menu, shown unavailable while my list is full.
+local function addAddOption(menu, text, fullTypes)
+    local option = menu:addOption(text, fullTypes, add)
+    if personalFull() then
+        blockOption(option, "UI_SurvivorComforts_F06_PersonalFull")
+    end
+    return option
 end
 
 -- Removing also takes off this player's share of the item.
@@ -210,6 +267,21 @@ local function share(fullTypes)
         sendCommand("wishlistShare", { fullType = fullType })
     end
     refreshWindows()
+end
+
+-- Adds an item that is not on my list and shares it, in one go.
+local function addAndShare(fullTypes)
+    if personalFull() then return end
+    share({ fullTypes[1] })
+end
+
+-- The "add and share" line, shown unavailable while my list or the shared
+-- limits are full.
+local function addAddAndShareOption(menu, fullType)
+    local option = menu:addOption(getText("UI_SurvivorComforts_F06_AddAndShare"), { fullType }, addAndShare)
+    local blocked = personalFull() and "UI_SurvivorComforts_F06_PersonalFull" or shareBlockedText(fullType)
+    if blocked then blockOption(option, blocked) end
+    return option
 end
 
 local function unshare(fullTypes)
@@ -279,18 +351,24 @@ local function onGameStart()
 end
 
 -- The lines for one item on my list: share or unshare (with the shared list
--- on), then remove. An item not on my list gets the add line.
+-- on), then remove. An item not on my list gets the add line, and with the
+-- shared list on, "add and share".
 local function addItemOptions(menu, fullType)
     local fullTypes = { fullType }
     if not contains(fullType) then
-        menu:addOption(getText("UI_SurvivorComforts_F06_AddToList"), fullTypes, add)
+        addAddOption(menu, getText("UI_SurvivorComforts_F06_AddToList"), fullTypes)
+        if sharedEnabled() then
+            addAddAndShareOption(menu, fullType)
+        end
         return
     end
     if sharedEnabled() then
         if sharedByMe(fullType) then
             menu:addOption(getText("UI_SurvivorComforts_F06_Unshare"), fullTypes, unshare)
         else
-            menu:addOption(getText("UI_SurvivorComforts_F06_Share"), fullTypes, share)
+            local option = menu:addOption(getText("UI_SurvivorComforts_F06_Share"), fullTypes, share)
+            local blocked = shareBlockedText(fullType)
+            if blocked then blockOption(option, blocked) end
         end
     end
     menu:addOption(getText("UI_SurvivorComforts_F06_RemoveFromList"), fullTypes, remove)
@@ -298,10 +376,12 @@ end
 
 ---------------------------------------------------------------------------
 -- Highlight in the inventory / loot windows (details view).
--- Drawn after vanilla, over the rows whose item is on a list. The fill uses
--- the personal colour when the item is on both lists; the mark on the left
--- edge shows each list.
+-- Drawn after vanilla, over the rows whose item is on a list: a light fill
+-- and a mark on the left edge, orange for my list, light blue for the shared
+-- list, and red for an item on both.
 ---------------------------------------------------------------------------
+local BOTH_COLOR = { r = 0.95, g = 0.3, b = 0.3 }
+
 local function drawHighlights(pane)
     if not pane.items then return end
     local useShared = sharedEnabled()
@@ -314,18 +394,9 @@ local function drawHighlights(pane)
             local theirs = useShared and sharedContains(fullType)
             if mine or theirs then
                 local y = (i - 1) * pane.itemHgt + pane.headerHgt
-                local fill = mine and PERSONAL_COLOR or SHARED_COLOR
-                pane:drawRect(1, y, pane:getWidth() - 1, pane.itemHgt, 0.12, fill.r, fill.g, fill.b)
-                local x = 1
-                if mine then
-                    local c = PERSONAL_COLOR
-                    pane:drawRect(x, y, 3, pane.itemHgt, 0.9, c.r, c.g, c.b)
-                    x = x + 4
-                end
-                if theirs then
-                    local c = SHARED_COLOR
-                    pane:drawRect(x, y, 3, pane.itemHgt, 0.9, c.r, c.g, c.b)
-                end
+                local c = (mine and theirs and BOTH_COLOR) or (mine and PERSONAL_COLOR) or SHARED_COLOR
+                pane:drawRect(1, y, pane:getWidth() - 1, pane.itemHgt, 0.12, c.r, c.g, c.b)
+                pane:drawRect(1, y, 3, pane.itemHgt, 0.9, c.r, c.g, c.b)
             end
         end
     end
@@ -396,9 +467,11 @@ function SurvivorComforts_WishlistList:onRightMouseUp(x, y)
         return
     end
     -- The shared tab is for looking: add to my list (without sharing), and
-    -- for admins, take it off for everyone.
+    -- for admins, take it off for everyone. "Add and share" adds my name to
+    -- those sharing it.
     if not contains(fullType) then
-        context:addOption(getText("UI_SurvivorComforts_F06_AddToMine"), { fullType }, add)
+        addAddOption(context, getText("UI_SurvivorComforts_F06_AddToMine"), { fullType })
+        addAddAndShareOption(context, fullType)
     end
     if isAdmin() then
         context:addOption(getText("UI_SurvivorComforts_F06_AdminRemove"), { fullType }, adminRemove)
@@ -611,14 +684,10 @@ SurvivorComforts.addSidebarButton({
 ---------------------------------------------------------------------------
 local MAX_MENU_ITEMS = 20
 
--- With the shared list: an item not on my list gets a plain add line; one on
--- it gets "Wishlist" > share/unshare and remove. Several kinds of item get
--- "Wishlist" > item name > those lines.
+-- With the shared list: "Wishlist" > add / add and share for an item not on
+-- my list, or share/unshare and remove for one on it. Several kinds of item
+-- get "Wishlist" > item name > those lines.
 local function addSharingMenu(context, entries)
-    if #entries == 1 and not contains(entries[1].fullType) then
-        addItemOptions(context, entries[1].fullType)
-        return
-    end
     local option = context:addOption(getText("UI_SurvivorComforts_F06_Menu"), nil)
     local subMenu = context:getNew(context)
     context:addSubMenu(option, subMenu)
@@ -649,7 +718,7 @@ local function addWishlistMenu(context, entries)
         if contains(entries[1].fullType) then
             context:addOption(getText("UI_SurvivorComforts_F06_RemoveFromList"), fullTypes, remove)
         else
-            context:addOption(getText("UI_SurvivorComforts_F06_AddToList"), fullTypes, add)
+            addAddOption(context, getText("UI_SurvivorComforts_F06_AddToList"), fullTypes)
         end
         return
     end
@@ -662,7 +731,7 @@ local function addWishlistMenu(context, entries)
         if contains(entry.fullType) then
             subMenu:addOption(getText("UI_SurvivorComforts_F06_RemoveItem", entry.name), fullTypes, remove)
         else
-            subMenu:addOption(getText("UI_SurvivorComforts_F06_AddItem", entry.name), fullTypes, add)
+            addAddOption(subMenu, getText("UI_SurvivorComforts_F06_AddItem", entry.name), fullTypes)
         end
     end
 end

@@ -13,6 +13,9 @@
 
 if not isServer() then return end
 
+-- Each player can ask a few times a second at most (CommandLimit.lua).
+require "SurvivorComforts/CommandLimit"
+
 local MODULE = "SurvivorComforts"
 local DATA_KEY = "SurvivorComforts_PlayerList"
 local WRITE_INTERVAL = 30          -- seconds between writes
@@ -84,6 +87,7 @@ end
 
 local function onClientCommand(module, command, player, args)
     if module ~= MODULE or command ~= "playersRequest" or not player then return end
+    if not SurvivorComfortsServer.allowCommand(player, "F09") then return end
     local ok, err = pcall(function()
         sendServerCommand(player, MODULE, "players", listArgs())
     end)
