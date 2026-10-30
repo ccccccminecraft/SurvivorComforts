@@ -2,7 +2,9 @@
 --
 -- Features register a button with SurvivorComforts.addSidebarButton(); the
 -- buttons are stacked below the vanilla ones in registration order, and a
--- hidden button leaves no gap.
+-- hidden button leaves no gap. When the next button would come within one
+-- icon of the bottom of the screen, the buttons go on in a new column to the
+-- right, from the top of the icons.
 
 require "SurvivorComforts/Core"
 require "ISUI/ISEquippedItem"
@@ -41,15 +43,30 @@ local function isOurs(sidebar, child)
     return sidebar.survivorComforts and sidebar.survivorComforts.isOurs[child] == true
 end
 
--- Bottom of the vanilla buttons. Some (admin, war manager) appear or move while playing.
-local function vanillaBottom(sidebar)
-    local y = 0
+-- Top and bottom of the vanilla buttons. Some (admin, war manager) appear or move while playing.
+local function vanillaExtent(sidebar)
+    local top, bottom = nil, 0
     for _, child in pairs(sidebar:getChildren()) do
-        if child.Type == "ISButton" and not isOurs(sidebar, child) and child:isVisible() then
-            y = math.max(y, child:getBottom())
+        -- F10 parks the PvP button far above the sidebar; skip anything above it.
+        if child.Type == "ISButton" and not isOurs(sidebar, child) and child:isVisible() and child:getY() >= 0 then
+            top = math.min(top or child:getY(), child:getY())
+            bottom = math.max(bottom, child:getBottom())
         end
     end
-    return y
+    return top or 0, bottom
+end
+
+local function vanillaBottom(sidebar)
+    local _, bottom = vanillaExtent(sidebar)
+    return bottom
+end
+
+-- Lowest a button may reach, in sidebar coordinates: one icon above the
+-- bottom of this player's part of the screen.
+local function bottomLimit(sidebar)
+    local playerNum = sidebar.chr:getPlayerNum()
+    local screenBottom = getPlayerScreenTop(playerNum) + getPlayerScreenHeight(playerNum)
+    return screenBottom - sidebar:getAbsoluteY() - sidebar.invBtn:getHeight()
 end
 
 -- Same as ISEquippedItem:shrinkWrap, but leaves out hidden buttons.
@@ -66,14 +83,76 @@ local function fitSidebar(sidebar)
 end
 
 local function layout(sidebar)
-    local y = vanillaBottom(sidebar)
+    local top, bottom = vanillaExtent(sidebar)
+    local limit = bottomLimit(sidebar)
+    local left = sidebar.invBtn:getX()
+    local x, y = left, bottom
     for _, entry in ipairs(sidebar.survivorComforts.buttons) do
-        if entry.button:isVisible() then
-            entry.button:setY(y + GAP)
-            y = entry.button:getBottom()
+        local btn = entry.button
+        if btn:isVisible() then
+            local nextY = y + GAP
+            -- Start a new column, unless this column is still empty.
+            if nextY + btn:getHeight() > limit and y > top then
+                x = x + btn:getWidth() + left
+                nextY = top
+            end
+            btn:setX(x)
+            btn:setY(nextY)
+            y = btn:getBottom()
         end
     end
+    sidebar.survivorComforts.lastLimit = limit
     fitSidebar(sidebar)
+end
+
+---------------------------------------------------------------------------
+-- Hiding vanilla buttons (F10 PvP, F13 user panel)
+---------------------------------------------------------------------------
+-- A hidden vanilla button is moved off screen (vanilla draws some outlines
+-- and timers at a button's position even while it is hidden), and the vanilla
+-- buttons below it move up by its height. Positions are worked out from where
+-- vanilla first put the buttons, so several features can hide buttons in any
+-- order without leaving gaps.
+local OFFSCREEN_Y = -10000
+
+local function applyVanillaHidden(sidebar)
+    local vanilla = sidebar.survivorComfortsVanilla
+    for btn, y in pairs(vanilla.y) do
+        if vanilla.hidden[btn] then
+            btn:setY(OFFSCREEN_Y)
+            btn:setVisible(false)
+        else
+            local shift = 0
+            for hiddenBtn in pairs(vanilla.hidden) do
+                if vanilla.y[hiddenBtn] < y then
+                    shift = shift + hiddenBtn:getHeight() + GAP
+                end
+            end
+            btn:setY(y - shift)
+        end
+    end
+end
+
+-- Call every frame from the feature's prerender: vanilla may show the button again.
+function SurvivorComforts.setVanillaButtonHidden(sidebar, btn, hidden)
+    local vanilla = sidebar.survivorComfortsVanilla
+    if not vanilla then
+        vanilla = { y = {}, hidden = {} }
+        for _, child in pairs(sidebar:getChildren()) do
+            if child.Type == "ISButton" and not isOurs(sidebar, child) and child:getY() >= 0 then
+                vanilla.y[child] = child:getY()
+            end
+        end
+        sidebar.survivorComfortsVanilla = vanilla
+    end
+    if not vanilla.y[btn] then return end
+    if (vanilla.hidden[btn] == true) == hidden then
+        if hidden then btn:setVisible(false) end
+        return
+    end
+    vanilla.hidden[btn] = hidden or nil
+    if not hidden then btn:setVisible(true) end
+    applyVanillaHidden(sidebar)
 end
 
 local function isShown(def)
@@ -147,8 +226,9 @@ function ISEquippedItem:prerender()
             btn:setImage(ok and active and btn.survivorComfortsIconOn or btn.survivorComfortsIconOff)
         end
     end
+    -- Also lay out again when the screen (or the sidebar's place on it) changes.
     local bottom = vanillaBottom(self)
-    if changed or bottom ~= state.lastBottom then
+    if changed or bottom ~= state.lastBottom or bottomLimit(self) ~= state.lastLimit then
         state.lastBottom = bottom
         layout(self)
     end

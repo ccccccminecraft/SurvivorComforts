@@ -40,13 +40,16 @@ Project Zomboid（Build 42.21 以降）用の、ちょっとした便利機能�
 スープやサラダに食材を加えるメニューで、同じ食材を1行にまとめ、残りが少ないものから使います。
 
 [*][b]スキルウィンドウ[/b]
-スキルの一覧を、大きさを変えられる独立したウィンドウで表示します。画面左のボタンか [b]K[/b] キーで開きます（キーは変更できます）。
+スキルの一覧を、大きさを変えられる独立したウィンドウで表示します。画面左のボタンで開きます。オプションでキーを決めると、キーでも開けます。
 
 [*][b]プレイヤー一覧[/b]
 サーバーにオンラインの人と、7日以内に来ていたオフラインの人を一覧で表示します。オフラインの人には「3時間前」のように最終ログインが出ます。画面左の人のボタンから開けます。マルチプレイのときだけ使えます。
 
 [*][b]PvP の切り替えボタンを隠す[/b]
 画面左のドクロのボタンを隠し、PvP を常にオフにします。G キーでの切り替えも無効になります。
+
+[*][b]ユーザーパネルのボタンを隠す[/b]
+画面左のユーザーパネル（派閥・セーフハウスなど）のボタンを隠し、下のボタンを詰めます。ボタンを隠すだけで、派閥などの機能はそのまま使えます。管理者には常に表示します。
 
 [*][b]アイテムからレシピを見る[/b]
 アイテムを右クリック →「レシピを見る」で、そのアイテムを作れるレシピに絞り込んだ制作の画面を開きます。作れるレシピがないときは赤く表示されます。
@@ -101,13 +104,16 @@ You can also add items from recipes and ingredients in the crafting and building
 In the menu for adding ingredients to soups and salads, the same ingredient is shown on one line, and the item with the least left is used first.
 
 [*][b]Skills window[/b]
-Shows your skills in a separate, resizable window. Open it with the button on the left of the screen or the [b]K[/b] key (the key can be changed).
+Shows your skills in a separate, resizable window. Open it with the button on the left of the screen, or set a key for it in the options.
 
 [*][b]Player list[/b]
 Lists who is online on the server, and who was online in the last 7 days with when they were last online ("3 h ago"). Open it with the people button on the left of the screen. Multiplayer only.
 
 [*][b]Hide the PvP button[/b]
 Hides the skull button on the left of the screen and keeps PvP off. The G key no longer toggles PvP.
+
+[*][b]Hide the user panel button[/b]
+Hides the user panel button (factions, safehouses and more) on the left of the screen and moves the buttons below up. Only the button is hidden; factions and the rest still work. Admins always see it.
 
 [*][b]Show recipes for an item[/b]
 Right-click an item and choose "Show recipes" to open the crafting window filtered to recipes that make it. The option is shown in red when no recipe makes the item.
@@ -152,4 +158,7 @@ Subscribe, then enable Survivor Comforts in Main Menu > Mods.
 ```
 ・材料のレシピをたどるを追加（制作・建築の画面で材料を右クリック →「レシピを見る」、検索欄の左の「戻る」で前の表示に戻る）
 ・ウィッシュリストの共有を変更（自分のリストのアイテムを「共有する」と、みんなのリストに出る。共有を解除できるのは本人と管理者だけ）
+・ユーザーパネルのボタンを隠すを追加（派閥などを使わないサーバー向け。管理者には常に表示）
+・スキルウィンドウを開くキーの初期値を「キーなし」に変更
+・画面左のボタンが画面の下に届くときは、右の列に並ぶように変更
 ```

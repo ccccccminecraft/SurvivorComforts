@@ -49,6 +49,8 @@
     "UI_SurvivorComforts_F06_SharedByMany": "(3 or more)",
     "UI_SurvivorComforts_F10_Name": "Hide the PvP toggle",
     "UI_SurvivorComforts_F10_Tooltip": "Hides the PvP (skull) button on the left and keeps PvP off. The button and the key no longer toggle it.",
+    "UI_SurvivorComforts_F13_Name": "Hide the user panel button",
+    "UI_SurvivorComforts_F13_Tooltip": "Hides the user panel button (factions, safehouses and more) on the left of the screen and moves the buttons below up. Only the button is hidden; factions and the rest still work. Admins always see it.",
     "UI_SurvivorComforts_F12_Name":"Show recipes for items",
     "UI_SurvivorComforts_F12_Tooltip": "Right-click an item in the inventory or loot window and choose Show recipes to open the crafting window filtered to the recipes that make it.",
     "UI_SurvivorComforts_F09_Name": "Player list",

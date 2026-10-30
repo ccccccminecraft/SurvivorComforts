@@ -49,6 +49,8 @@
     "UI_SurvivorComforts_F06_SharedByMany": "（3名以上）",
     "UI_SurvivorComforts_F10_Name": "PvPの切り替えボタンを隠す",
     "UI_SurvivorComforts_F10_Tooltip": "画面左のPvP（ドクロ）のボタンを隠し、PvPを常にオフにします。ボタンとキーでの切り替えもできなくなります。",
+    "UI_SurvivorComforts_F13_Name": "ユーザーパネルのボタンを隠す",
+    "UI_SurvivorComforts_F13_Tooltip": "画面左のユーザーパネル（派閥・セーフハウスなど）のボタンを隠し、下のボタンを上に詰めます。ボタンを隠すだけで、派閥などの機能はそのまま使えます。管理者には常に表示します。",
     "UI_SurvivorComforts_F12_Name":"アイテムからレシピを見る",
     "UI_SurvivorComforts_F12_Tooltip": "インベントリや周りの容器のアイテムを右クリックすると「レシピを見る」が出ます。選ぶと制作の画面を開き、そのアイテムを作れるレシピに絞り込みます。",
     "UI_SurvivorComforts_F09_Name": "プレイヤー一覧",

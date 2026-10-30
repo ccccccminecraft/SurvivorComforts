@@ -33,8 +33,9 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
                 │   ├── F09_PlayerList.lua
                 │   ├── F10_HidePvP.lua
                 │   ├── F12_ItemRecipes.lua
+                │   ├── F13_HideUserPanel.lua
                 │   ├── Recipes.lua        「レシピを見る」の処理と「戻る」の履歴（F03・F06・F12で共通）
-                │   └── Sidebar.lua        画面左のアイコンにボタンを並べる（F06・F08・F09で共通）
+                │   └── Sidebar.lua        画面左のアイコンにボタンを並べる。画面の下に近づいたら次の列へ。本体のボタンを隠して詰める（F06・F08・F09・F10・F13で共通）
                 ├── server\SurvivorComforts\
                 │   ├── F06_SharedWishlist.lua  みんなのウィッシュリストの保存と配信（サーバーで動く）
                 │   └── F09_PlayerList.lua      最終ログインの記録と配信（サーバーで動く。シングルでは動かない）
@@ -46,7 +47,7 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 - 機能ごとに `client\SurvivorComforts\Fxx_機能名.lua` を1ファイル作る。仕様と確認項目は `docs\features\Fxx_名前.md` に書く（[features.md の「新しい機能を足すとき」](features.md#新しい機能を足すとき)）。
 - 各機能は `SurvivorComforts.registerFeature()` で Mod Options に「有効にする」のチェックボックスを登録し、処理の入口で `SurvivorComforts.isEnabled("Fxx")` を確認する。
   - 機能だけの設定は、`registerFeature` の `addOptions` の中で足す。順番は「左のアイコンにボタンを表示する」→ 開く/閉じるキー → その機能だけの設定、にそろえる。
-  - 設定画面での機能の並び順は、`Core.lua` の `OPTIONS_ORDER` で決める（ファイル名の順ではない）。今は「画面左のボタン（F08・F06・F09。ボタンと同じ順）」「レシピ（F12・F03）」「普段の行動（F07・F04）」「マルチプレイ（F10）」の順。新しい機能を足したら、近い機能の隣に入れる。
+  - 設定画面での機能の並び順は、`Core.lua` の `OPTIONS_ORDER` で決める（ファイル名の順ではない）。今は「画面左のボタン（F08・F06・F09。ボタンと同じ順）」「レシピ（F12・F03）」「普段の行動（F07・F04）」「マルチプレイ（F10・F13）」の順。新しい機能を足したら、近い機能の隣に入れる。
 - 処理は `SurvivorComforts.safeCall()` で囲み、エラーがほかの機能に波及しないようにする。
 - 表示する文字列は `UI.json`（EN と JP）に追加し、`getText("UI_SurvivorComforts_...")` で使う。
 

@@ -25,7 +25,7 @@ SurvivorComforts.registerFeature({
     tooltip = "UI_SurvivorComforts_F08_Tooltip",
     addOptions = function(options)
         options:addTickBox(FEATURE_ID .. "_sidebar", getText("UI_SurvivorComforts_F08_Sidebar"), true, getText("UI_SurvivorComforts_F08_Sidebar_Tooltip"))
-        options:addKeyBind(FEATURE_ID .. "_key", getText("UI_SurvivorComforts_F08_Key"), Keyboard.KEY_K)
+        options:addKeyBind(FEATURE_ID .. "_key", getText("UI_SurvivorComforts_F08_Key"), 0)
         options:addTickBox(FEATURE_ID .. "_hideTab", getText("UI_SurvivorComforts_F08_HideTab"), false, getText("UI_SurvivorComforts_F08_HideTab_Tooltip"))
     end,
 })
