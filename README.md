@@ -22,7 +22,7 @@ Project Zomboid（Build 42.21 以降）用の MOD です。身内のマルチプ
 | F10 | PvP の切り替えボタンを隠す | 画面左のドクロのボタンを隠し、PvP を常にオフにします |
 | F12 | アイテムからレシピを見る | アイテムを右クリック →「レシピを見る」で、そのアイテムを作れるレシピに絞り込んだ制作の画面を開きます |
 
-予定している機能や、作らないことにした機能は [docs/features.md](docs/features.md) にまとめています。
+予定している機能や、作らないことにした機能は [docs/features.md](docs/features.md) にまとめています。機能ごとの詳しい仕様は [docs/features/](docs/features/) にあります。
 
 ## 導入
 
@@ -55,7 +55,7 @@ Mods=SurvivorComforts
    ```
 3. ゲームのメインメニュー →「MOD」で **Survivor Comforts** を有効にします
 
-詳しい手順と、機能ごとの確認項目は [docs/dev-guide.md](docs/dev-guide.md) にあります。
+詳しい手順は [docs/dev-guide.md](docs/dev-guide.md)、機能ごとの確認項目は [docs/features/](docs/features/) の各ファイルにあります。
 
 ## フォルダ構成
 
@@ -63,4 +63,4 @@ Mods=SurvivorComforts
 | --- | --- |
 | `mod/SurvivorComforts/` | MOD 本体（ワークショップにアップロードする単位） |
 | `tools/` | 構文チェック、ゲームへのコピー、アイコン画像の生成 |
-| `docs/` | 機能リスト（`features.md`）、開発ガイド（`dev-guide.md`）、ワークショップのページの原稿（`workshop.md`） |
+| `docs/` | 機能一覧（`features.md`）と機能ごとの仕様（`features/`）、開発ガイド（`dev-guide.md`）、ワークショップのページの原稿（`workshop.md`） |
