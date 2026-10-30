@@ -18,9 +18,11 @@ SurvivorComforts.registerFeature({
     id = FEATURE_ID,
     name = "UI_SurvivorComforts_F04_Name",
     tooltip = "UI_SurvivorComforts_F04_Tooltip",
+    addOptions = function(options)
+        options:addTickBox(FEATURE_ID .. "_game", getText("UI_SurvivorComforts_F04_ShowGame"), true)
+        options:addTickBox(FEATURE_ID .. "_real", getText("UI_SurvivorComforts_F04_ShowReal"), true)
+    end,
 })
-SurvivorComforts.options:addTickBox(FEATURE_ID .. "_game", getText("UI_SurvivorComforts_F04_ShowGame"), true)
-SurvivorComforts.options:addTickBox(FEATURE_ID .. "_real", getText("UI_SurvivorComforts_F04_ShowReal"), true)
 
 -- playerNum -> { action, samples = { {delta, gameHours, ms}, ... }, lastSampleMs, gameMinutes, realSeconds }
 -- gameMinutes / realSeconds stay nil until the first estimate.

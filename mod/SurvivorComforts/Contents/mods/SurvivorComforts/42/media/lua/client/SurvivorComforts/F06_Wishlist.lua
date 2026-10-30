@@ -32,10 +32,12 @@ SurvivorComforts.registerFeature({
     id = FEATURE_ID,
     name = "UI_SurvivorComforts_F06_Name",
     tooltip = "UI_SurvivorComforts_F06_Tooltip",
+    addOptions = function(options)
+        options:addTickBox(FEATURE_ID .. "_sidebar", getText("UI_SurvivorComforts_F06_Sidebar"), true, getText("UI_SurvivorComforts_F06_Sidebar_Tooltip"))
+        options:addKeyBind(FEATURE_ID .. "_key", getText("UI_SurvivorComforts_F06_Key"), 0)
+        options:addTickBox(FEATURE_ID .. "_shared", getText("UI_SurvivorComforts_F06_UseShared"), true, getText("UI_SurvivorComforts_F06_UseShared_Tooltip"))
+    end,
 })
-SurvivorComforts.options:addKeyBind(FEATURE_ID .. "_key", getText("UI_SurvivorComforts_F06_Key"), 0)
-SurvivorComforts.options:addTickBox(FEATURE_ID .. "_sidebar", getText("UI_SurvivorComforts_F06_Sidebar"), true, getText("UI_SurvivorComforts_F06_Sidebar_Tooltip"))
-SurvivorComforts.options:addTickBox(FEATURE_ID .. "_shared", getText("UI_SurvivorComforts_F06_UseShared"), true, getText("UI_SurvivorComforts_F06_UseShared_Tooltip"))
 
 local function sharedEnabled()
     return SurvivorComforts.getOptionValue(FEATURE_ID .. "_shared") == true

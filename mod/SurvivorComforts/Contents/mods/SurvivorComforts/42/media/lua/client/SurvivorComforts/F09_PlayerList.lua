@@ -27,9 +27,11 @@ SurvivorComforts.registerFeature({
     id = FEATURE_ID,
     name = "UI_SurvivorComforts_F09_Name",
     tooltip = "UI_SurvivorComforts_F09_Tooltip",
+    addOptions = function(options)
+        options:addTickBox(FEATURE_ID .. "_sidebar", getText("UI_SurvivorComforts_F09_Sidebar"), true, getText("UI_SurvivorComforts_F09_Sidebar_Tooltip"))
+        options:addKeyBind(FEATURE_ID .. "_key", getText("UI_SurvivorComforts_F09_Key"), 0)
+    end,
 })
-SurvivorComforts.options:addKeyBind(FEATURE_ID .. "_key", getText("UI_SurvivorComforts_F09_Key"), 0)
-SurvivorComforts.options:addTickBox(FEATURE_ID .. "_sidebar", getText("UI_SurvivorComforts_F09_Sidebar"), true, getText("UI_SurvivorComforts_F09_Sidebar_Tooltip"))
 
 local function isAvailable()
     return isClient() and SurvivorComforts.isEnabled(FEATURE_ID)

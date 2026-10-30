@@ -23,10 +23,12 @@ SurvivorComforts.registerFeature({
     id = FEATURE_ID,
     name = "UI_SurvivorComforts_F08_Name",
     tooltip = "UI_SurvivorComforts_F08_Tooltip",
+    addOptions = function(options)
+        options:addTickBox(FEATURE_ID .. "_sidebar", getText("UI_SurvivorComforts_F08_Sidebar"), true, getText("UI_SurvivorComforts_F08_Sidebar_Tooltip"))
+        options:addKeyBind(FEATURE_ID .. "_key", getText("UI_SurvivorComforts_F08_Key"), Keyboard.KEY_K)
+        options:addTickBox(FEATURE_ID .. "_hideTab", getText("UI_SurvivorComforts_F08_HideTab"), false, getText("UI_SurvivorComforts_F08_HideTab_Tooltip"))
+    end,
 })
-SurvivorComforts.options:addKeyBind(FEATURE_ID .. "_key", getText("UI_SurvivorComforts_F08_Key"), Keyboard.KEY_K)
-SurvivorComforts.options:addTickBox(FEATURE_ID .. "_sidebar", getText("UI_SurvivorComforts_F08_Sidebar"), true, getText("UI_SurvivorComforts_F08_Sidebar_Tooltip"))
-SurvivorComforts.options:addTickBox(FEATURE_ID .. "_hideTab", getText("UI_SurvivorComforts_F08_HideTab"), false, getText("UI_SurvivorComforts_F08_HideTab_Tooltip"))
 
 local function showSidebarButton()
     return SurvivorComforts.isEnabled(FEATURE_ID) and SurvivorComforts.getOptionValue(FEATURE_ID .. "_sidebar") == true
