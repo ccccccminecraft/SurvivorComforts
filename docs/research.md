@@ -8,7 +8,7 @@
 
 ## 1. 重要な結論：マルチプレイでは「クライアントだけに入れたMOD」は読み込まれない
 
-ゲーム本体（`projectzomboid.jar`）を `javap` で逆アセンブルして確認した。
+ゲーム本体の動きを調べて確認した。
 
 ### 接続の流れ
 1. `ConnectToServerState.CheckMods()`
@@ -158,7 +158,7 @@ MyUIMod/                      ← Workshopの場合は Contents/mods/MyUIMod/
 
 ※B42では `Mods=\ModID` のようにIDの前に `\` を付けるという報告があるが、まだ確かめていない。
 
-### 動作（`GameServer` / `LuaManager` を逆アセンブルして確認）
+### 動作（`GameServer` / `LuaManager` の処理から確認）
 1. 起動時に `WorkshopItems` を `;` で分割し、`GameServerWorkshopItems.Install()` でSteamから**自動でダウンロード**する。
 2. `ZomboidFileSystem.loadMods(Mods)` で、MODをサーバーに読み込む。
 3. Luaの読み込み順は `shared` → `client` → `server`。
