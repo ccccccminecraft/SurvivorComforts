@@ -4,7 +4,7 @@
 
 ```
 SurvivorComforts\           リポジトリのルート（git clone した場所）
-├── docs\                     調査メモ、機能一覧（features.md）、このガイド
+├── docs\                     調査メモ、機能一覧（features.md）、このガイド、全体の点検の結果（review-日付.md）
 │   └── features\             機能ごとの要望・調査結果・仕様・確認項目（Fxx_名前.md）
 ├── tools\
 │   ├── check.ps1             Luaの構文チェック（ゲーム本体のコンパイラを使う）
