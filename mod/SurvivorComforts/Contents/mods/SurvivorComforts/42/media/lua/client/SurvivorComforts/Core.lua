@@ -17,11 +17,11 @@ SurvivorComforts.options = options
 
 -- Grouped by where the feature is used:
 --   left sidebar buttons, in the same order as the buttons (F08, F06, F09)
---   recipes (F12, F03)
+--   recipes (F12, F03, F14)
 --   everyday actions (F07, F04)
 --   multiplayer (F10, F13)
 -- Features not listed come last, in file order.
-local OPTIONS_ORDER = { "F08", "F06", "F09", "F12", "F03", "F07", "F04", "F10", "F13" }
+local OPTIONS_ORDER = { "F08", "F06", "F09", "F12", "F03", "F14", "F07", "F04", "F10", "F13" }
 
 function SurvivorComforts.log(msg)
     print("[SurvivorComforts] " .. tostring(msg))

@@ -1,5 +1,5 @@
 # Finds the Project Zomboid folder (the one with projectzomboid.jar).
-# Dot-sourced by check.ps1 and test_server.ps1.
+# Dot-sourced by check.ps1, test_server.ps1 and make_english_names.ps1.
 #   $GameDir = Resolve-GameDir $GameDir
 
 function Find-GameDir {

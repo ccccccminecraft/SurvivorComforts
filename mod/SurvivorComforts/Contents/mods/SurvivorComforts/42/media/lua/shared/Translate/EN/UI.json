@@ -16,6 +16,8 @@
     "UI_SurvivorComforts_F03_Name": "Follow ingredient recipes",
     "UI_SurvivorComforts_F03_Tooltip": "In the crafting and building windows, right-click an ingredient and choose Show recipes to see the recipes that make it. The Back button left of the search box returns to what was shown before.",
     "UI_SurvivorComforts_F03_Back": "Back",
+    "UI_SurvivorComforts_F14_Name": "Search by English name too",
+    "UI_SurvivorComforts_F14_Tooltip": "This mod's searches (the crafting and building windows) also find things by English name when the game is in another language. Only for searches with Latin letters. Turn it off to search by the game's language only.",
     "UI_SurvivorComforts_F04_Name": "Reading time left",
     "UI_SurvivorComforts_F04_Tooltip": "While reading, shows under the character how long until the book is finished. Game time is shown in orange, real time in green.",
     "UI_SurvivorComforts_F04_ShowGame": "Show game time (HH:MM, orange)",

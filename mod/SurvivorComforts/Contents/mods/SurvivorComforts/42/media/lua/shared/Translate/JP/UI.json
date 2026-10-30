@@ -16,6 +16,8 @@
     "UI_SurvivorComforts_F03_Name": "材料のレシピをたどる",
     "UI_SurvivorComforts_F03_Tooltip": "制作・建築の画面で材料を右クリックすると「レシピを見る」が出ます。選ぶと、その材料を作れるレシピに絞り込みます。検索欄の左の「戻る」で、たどる前の表示に戻れます。",
     "UI_SurvivorComforts_F03_Back": "戻る",
+    "UI_SurvivorComforts_F14_Name": "英語名でも検索する",
+    "UI_SurvivorComforts_F14_Tooltip": "この MOD の検索（制作・建築の画面）で、日本語名に加えて英語名でも見つかるようにします。英字が入っている検索のときだけ働きます。OFF にすると、ゲームの言語の名前だけで検索します。",
     "UI_SurvivorComforts_F04_Name": "読書の残り時間",
     "UI_SurvivorComforts_F04_Tooltip": "読書中、読み終わるまでの時間をキャラクターの足元に表示します。ゲーム内の時間はオレンジ、現実の時間は緑で表示します。",
     "UI_SurvivorComforts_F04_ShowGame": "ゲーム内の時間を表示する（時:分、オレンジ）",

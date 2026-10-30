@@ -58,6 +58,9 @@ Project Zomboid（Build 42.21 以降）用の、ちょっとした便利機能�
 
 [*][b]材料のレシピをたどる[/b]
 制作・建築の画面で材料を右クリック →「レシピを見る」で、その材料を作れるレシピに絞り込みます。検索欄の左の「戻る」で、たどる前の表示に戻れます。
+
+[*][b]英語名でも検索する[/b]
+日本語でプレイしていても、制作・建築の画面の検索で、英語名（plank、saw logs など）でもレシピが見つかります。空白で区切った語は、全部入っているものが出ます。オプションで、英語名を含めるかを選べます。
 [/list]
 
 [h2]導入[/h2]
@@ -124,6 +127,9 @@ Right-click an item and choose "Show recipes" to open the crafting window filter
 
 [*][b]Follow ingredient recipes[/b]
 In the crafting and building windows, right-click an ingredient and choose "Show recipes" to see the recipes that make it. The Back button left of the search box returns to what was shown before.
+
+[*][b]Search by English name too[/b]
+When the game is in another language, the search in the crafting and building windows also finds recipes by English name (plank, saw logs and so on). Recipes with every word you type are shown. You can turn English names off in the options.
 [/list]
 
 [h2]Installation[/h2]
@@ -164,6 +170,7 @@ Subscribe, then enable Survivor Comforts in Main Menu > Mods.
 ・プレイヤー一覧を追加（オンラインの人と、7日以内に来ていた人を最終ログイン付きで表示。マルチプレイのみ）
 ・材料のレシピをたどるを追加（制作・建築の画面で材料を右クリック →「レシピを見る」、検索欄の左の「戻る」で前の表示に戻る）
 ・ユーザーパネルのボタンを隠すを追加（派閥などを使わないサーバー向け。管理者には常に表示）
+・英語名でも検索するを追加（日本語でプレイしていても、制作・建築の画面の検索で英語名でもレシピが見つかる）
 ・ウィッシュリストの共有を変更（自分のリストのアイテムを「共有する」と、みんなのリストに出る。共有を外せるのは本人と管理者だけ。「追加して共有する」で一度に登録できる。両方に入っているアイテムは赤で表示）
 ・ウィッシュリストに上限を追加（自分のリストは100件、共有は1人30種類、みんなのリストは300種類まで。いっぱいのときはメニューが赤くなり、理由が出る）
 ・設定画面の並び順を、使う場所ごとにまとめた順に変更

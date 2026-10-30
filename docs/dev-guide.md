@@ -12,6 +12,7 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 │   ├── test_server.ps1       テスト用のサーバーとゲーム2つを Steam なしで起動する（1台で複数人を試す）
 │   ├── GameDir.ps1           ゲームのフォルダを探す共通処理
 │   ├── make_icons.ps1        左のアイコン用の画像（media\ui\SurvivorComforts）を作り直す
+│   ├── make_english_names.ps1 英語名の表（EnglishNames.lua）を作り直す。ゲームを更新したら実行する
 │   ├── make_preview.ps1      Workshopの画像（preview.png）とMOD一覧の画像（poster.png、icon.png）を作り直す
 │   └── LuaSyntaxCheck.java   check.ps1 が使うチェッカー
 └── mod\SurvivorComforts\           Workshopにアップロードする単位
@@ -25,6 +26,7 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
             └── media\lua\
                 ├── client\SurvivorComforts\
                 │   ├── Core.lua           共通処理とMod Options
+                │   ├── EnglishNames.lua   英語名の表（F14。tools\make_english_names.ps1 で作る。手で直さない）
                 │   ├── CraftMenu.lua      制作・建築の画面の右クリックメニュー（F03・F06で共通）
                 │   ├── F03_RecipeTrail.lua
                 │   ├── F04_ReadingTime.lua
@@ -35,7 +37,9 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
                 │   ├── F10_HidePvP.lua
                 │   ├── F12_ItemRecipes.lua
                 │   ├── F13_HideUserPanel.lua
+                │   ├── F14_EnglishSearch.lua
                 │   ├── Recipes.lua        「レシピを見る」の処理と「戻る」の履歴（F03・F06・F12で共通）
+                │   ├── Search.lua         検索の決まり（語の区切り方、英語名・日本語名で比べる）。F14 と、今後の F02 で共通
                 │   └── Sidebar.lua        画面左のアイコンにボタンを並べる。画面の下に近づいたら次の列へ。本体のボタンを隠して詰める（F06・F08・F09・F10・F13で共通）
                 ├── server\SurvivorComforts\
                 │   ├── CommandLimit.lua        1人が送れるコマンドの回数の制限（F06・F09で共通）
@@ -49,7 +53,7 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 - 機能ごとに `client\SurvivorComforts\Fxx_機能名.lua` を1ファイル作る。仕様と確認項目は `docs\features\Fxx_名前.md` に書く（[features.md の「新しい機能を足すとき」](features.md#新しい機能を足すとき)）。
 - 各機能は `SurvivorComforts.registerFeature()` で Mod Options に「有効にする」のチェックボックスを登録し、処理の入口で `SurvivorComforts.isEnabled("Fxx")` を確認する。
   - 機能だけの設定は、`registerFeature` の `addOptions` の中で足す。順番は「左のアイコンにボタンを表示する」→ 開く/閉じるキー → その機能だけの設定、にそろえる。
-  - 設定画面での機能の並び順は、`Core.lua` の `OPTIONS_ORDER` で決める（ファイル名の順ではない）。今は「画面左のボタン（F08・F06・F09。ボタンと同じ順）」「レシピ（F12・F03）」「普段の行動（F07・F04）」「マルチプレイ（F10・F13）」の順。新しい機能を足したら、近い機能の隣に入れる。
+  - 設定画面での機能の並び順は、`Core.lua` の `OPTIONS_ORDER` で決める（ファイル名の順ではない）。今は「画面左のボタン（F08・F06・F09。ボタンと同じ順）」「レシピ（F12・F03・F14）」「普段の行動（F07・F04）」「マルチプレイ（F10・F13）」の順。新しい機能を足したら、近い機能の隣に入れる。
 - 処理は `SurvivorComforts.safeCall()` で囲み、エラーがほかの機能に波及しないようにする。
 - 表示する文字列は `UI.json`（EN と JP）に追加し、`getText("UI_SurvivorComforts_...")` で使う。
 
@@ -88,6 +92,20 @@ powershell -File tools\test_server.ps1
 - サーバーのログは `%USERPROFILE%\PZTest\server\server-console.txt`、設定は `server\Server\sctest.ini`（管理者のパスワードは `admin`）
 - サーバー・ゲームとも最大3GBずつメモリを使う。合わせて10GB前後空けておく
 - 2人目に入ってもらえるなら、ゲーム内の「ホスト」で立てたサーバーでもよい
+
+## ゲームを更新したとき
+
+Project Zomboid のアップデートが来たら、次を行う。
+
+1. 英語名の表を作り直す（F14 の英語名での検索に使う）
+   ```
+   powershell -File tools\make_english_names.ps1
+   ```
+   - ゲームの英語の翻訳ファイル（`media\lua\shared\Translate\EN\Recipes.json`、`ItemName.json`）から、`client\SurvivorComforts\EnglishNames.lua` を作り直す
+   - 前の表と比べて、増えた・消えた・変わった名前の数と例を表示する。全部 0 なら、更新は要らない（ファイルも変わらない）
+   - 増えていたら、`git diff` で中身を見て、おかしな名前がないことを確かめてからコミットする。作り直すまでの間も、新しいレシピやアイテムは内部名の単語で検索に当たる
+2. 構文チェック（`tools\check.ps1`）をして、ゲームを起動し、エラーが出ないか確かめる。B42 はまだ不安定版なので、本体の関数の名前や作りが変わって、MODが動かなくなることがある
+3. 何か直したら、Workshop を更新する（下の「更新するとき」）
 
 ## Workshopへのアップロード（限定公開）
 
