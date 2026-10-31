@@ -52,7 +52,16 @@ end
 ---------------------------------------------------------------------------
 local wishlist = nil  -- { set = { [fullType] = true }, order = { fullType, ... } }
 
+-- fullType -> highlight colour, rebuilt only after a list changes (see
+-- drawHighlights below).
+local colorMap = nil
+
+local function invalidateColors()
+    colorMap = nil
+end
+
 local function load()
+    invalidateColors()
     wishlist = { set = {}, order = {} }
     local reader = getFileReader(FILE_NAME, true)
     if not reader then return end
@@ -95,7 +104,10 @@ local function addToFile(fullTypes)
             changed = true
         end
     end
-    if changed then save() end
+    if changed then
+        invalidateColors()
+        save()
+    end
 end
 
 local function removeFromFile(fullTypes)
@@ -110,6 +122,7 @@ local function removeFromFile(fullTypes)
         end
     end
     list.order = order
+    invalidateColors()
     save()
 end
 
@@ -333,6 +346,7 @@ local function onServerCommand(module, command, args)
                 table.insert(shared.order, entry.fullType)
             end
         end
+        invalidateColors()
         refreshWindows()
     end)
 end
@@ -373,19 +387,41 @@ end
 ---------------------------------------------------------------------------
 local BOTH_COLOR = { r = 0.95, g = 0.3, b = 0.3 }
 
+-- Built from the lists once, instead of checking both lists (and who shares
+-- each item) for every row in every frame. Also rebuilt when the shared list
+-- option or the player's name changes.
+local colorMapShared, colorMapName
+
+local function getColorMap()
+    local useShared = sharedEnabled()
+    local name = myName()
+    if colorMap and colorMapShared == useShared and colorMapName == name then
+        return colorMap
+    end
+    local map = {}
+    -- myOrder() is "my list": the file, plus what I share with the shared list on.
+    for _, fullType in ipairs(myOrder()) do
+        map[fullType] = PERSONAL_COLOR
+    end
+    if useShared then
+        for _, fullType in ipairs(shared.order) do
+            map[fullType] = map[fullType] and BOTH_COLOR or SHARED_COLOR
+        end
+    end
+    colorMap, colorMapShared, colorMapName = map, useShared, name
+    return map
+end
+
 local function drawHighlights(pane)
     if not pane.items then return end
-    local useShared = sharedEnabled()
+    local colors = getColorMap()
     for i, entry in ipairs(pane.items) do
         -- A stack header is a table with .items; a row inside an open stack is the item itself.
         local item = entry.items and entry.items[1] or entry
         if item and item.getFullType then
-            local fullType = item:getFullType()
-            local mine = contains(fullType)
-            local theirs = useShared and sharedContains(fullType)
-            if mine or theirs then
+            local c = colors[item:getFullType()]
+            if c then
                 local y = (i - 1) * pane.itemHgt + pane.headerHgt
-                local c = (mine and theirs and BOTH_COLOR) or (mine and PERSONAL_COLOR) or SHARED_COLOR
                 pane:drawRect(1, y, pane:getWidth() - 1, pane.itemHgt, 0.12, c.r, c.g, c.b)
                 pane:drawRect(1, y, 3, pane.itemHgt, 0.9, c.r, c.g, c.b)
             end
