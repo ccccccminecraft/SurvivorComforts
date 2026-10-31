@@ -10,6 +10,8 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 │   ├── check.ps1             Luaの構文チェック（ゲーム本体のコンパイラを使う）
 │   ├── deploy.ps1            ゲームから読める場所へMODをコピーする
 │   ├── test_server.ps1       テスト用のサーバーとゲーム2つを Steam なしで起動する（1台で複数人を試す）
+│   ├── test_debug.ps1        ゲームをデバッグモードで Steam なしで起動する（アイテムを出して試す）
+│   ├── TestLaunch.ps1        test_server.ps1 と test_debug.ps1 の共通処理
 │   ├── GameDir.ps1           ゲームのフォルダを探す共通処理
 │   ├── make_icons.ps1        左のアイコン用の画像（media\ui\SurvivorComforts）を作り直す
 │   ├── make_english_names.ps1 英語名の表（EnglishNames.lua）を作り直す。ゲームを更新したら実行する
@@ -81,6 +83,18 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
    - エラーは `%USERPROFILE%\Zomboid\console.txt` に出る。`[SurvivorComforts]` で検索する。
    - デバッグモード（起動オプション `-debug`）なら、ゲーム内でLuaを再読み込みできる。
 5. 機能ごとの確認項目は、[features/](features/) のその機能のファイルの「確認項目」にある。
+
+## デバッグモードで試す
+
+確かめるのに食材や道具などのアイテムが要るときは、次のコマンドでゲームをデバッグモード（`-debug`）で起動し、デバッグのメニューからアイテムを出す。
+```
+powershell -File tools\test_debug.ps1
+```
+- MOD をコピーし、MOD を有効にした状態で起動する。メインメニューから「ソロ」で新しく始める
+  - セーブは、始めたときの MOD の一覧を覚えている。MOD なしで始めたセーブを続けても、MOD は読み込まれない
+- Steam なしで動かすので、データ（セーブ、オプション、ログの `console.txt`）は `%USERPROFILE%\PZTest\debug` に分けて置かれ、普段のセーブやオプションには触れない
+- MOD を直したら、ゲームを閉じてもう一度実行する（ゲーム内で Lua を読み直すこともできる）
+- マルチプレイでデバッグモードを使うときは、`tools\test_server.ps1 -Debug`（ゲームだけデバッグモードで起動する）
 
 ## 1台で複数人を試す
 

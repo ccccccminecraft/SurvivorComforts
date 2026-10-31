@@ -12,17 +12,20 @@
 #
 #   powershell -File tools\test_server.ps1               copy the mod, start the server and 2 clients
 #   powershell -File tools\test_server.ps1 -Clients 1    only 1 client
+#   powershell -File tools\test_server.ps1 -Debug        start the clients in debug mode
 #   powershell -File tools\test_server.ps1 -SetupOnly    only copy the mod and write the launch files
 #
 # Then join from each client: Join > IP 127.0.0.1, port 16261, a different
 # user name in each (a new name makes a new account). The server's admin
 # password is "admin". Stop the server by typing "quit" in its window.
 # The launch files are also written to <Root>\*.cmd, to start one again by hand.
+# For single player in debug mode, use test_debug.ps1.
 
 param(
     [string]$Root = $(if ($env:PZ_TEST_DIR) { $env:PZ_TEST_DIR } else { Join-Path $env:USERPROFILE "PZTest" }),
     [string]$GameDir = $env:PZ_GAME_DIR,
     [int]$Clients = 2,
+    [switch]$Debug,
     [switch]$SetupOnly
 )
 
@@ -34,48 +37,7 @@ $ModId = "SurvivorComforts"
 $ServerName = "sctest"
 $AdminPassword = "admin"
 $modSource = Join-Path $PSScriptRoot "..\mod\SurvivorComforts\Contents\mods\SurvivorComforts"
-
-# The java command line from the game's own .bat, so it follows game updates.
-function Get-JavaLine($bat) {
-    $lines = Get-Content (Join-Path $GameDir $bat)
-    $classpath = ($lines | Where-Object { $_ -match '^\s*SET PZ_CLASSPATH=(.*)$' } | Select-Object -First 1) -replace '^\s*SET PZ_CLASSPATH=', ''
-    $java = $lines | Where-Object { $_ -match '^\s*"\.\\jre64\\bin\\java\.exe"' } | Select-Object -First 1
-    if (-not $java -or -not $classpath) { throw "Could not read the java command line from $bat." }
-    return ($java.Trim() -replace '%PZ_CLASSPATH%', $classpath -replace '\s*%\d', '')
-}
-
-function Copy-Mod($dataDir) {
-    $dest = Join-Path $dataDir "mods\$ModId"
-    robocopy $modSource $dest /MIR /NFL /NDL /NJH /NJS /NP | Out-Null
-    if ($LASTEXITCODE -ge 8) { throw "Copying the mod to $dest failed (robocopy $LASTEXITCODE)." }
-}
-
-# Sets key=value in an ini file, adding the line if it is missing.
-function Set-IniValue($file, $key, $value) {
-    $lines = @()
-    if (Test-Path $file) { $lines = @(Get-Content $file) }
-    $found = $false
-    $lines = @($lines | ForEach-Object {
-        if ($_ -match "^$([regex]::Escape($key))=") { $found = $true; "$key=$value" } else { $_ }
-    })
-    if (-not $found) { $lines += "$key=$value" }
-    New-Item -ItemType Directory -Force (Split-Path $file) | Out-Null
-    # No BOM: the game would read it as part of the first key.
-    [IO.File]::WriteAllLines($file, [string[]]$lines, (New-Object Text.UTF8Encoding $false))
-}
-
-function Write-Launcher($name, $title, $javaLine, $arguments) {
-    $file = Join-Path $Root "$name.cmd"
-    Set-Content -Path $file -Encoding Default -Value @(
-        "@echo off",
-        "title $title",
-        "cd /d `"$GameDir`"",
-        "set _JAVA_OPTIONS=",
-        "$javaLine $arguments",
-        "pause"
-    )
-    return $file
-}
+. (Join-Path $PSScriptRoot "TestLaunch.ps1")
 
 New-Item -ItemType Directory -Force $Root | Out-Null
 
@@ -90,22 +52,16 @@ Set-IniValue $ini "Public" "false"
 $serverCmd = Write-Launcher "server" "$ModId test server" (Get-JavaLine "ProjectZomboidServer.bat") `
     "-nosteam -cachedir=`"$serverDir`" -servername $ServerName -adminpassword $AdminPassword"
 
-# Clients: the same mod files (the server checks they match), and your options
-# in a 1280x720 window the first time.
+# Clients: the same mod files (the server checks they match).
 $clientJava = Get-JavaLine "ProjectZomboid64.bat"
+$clientArgs = "-nosteam"
+if ($Debug) { $clientArgs += " -debug" }
 $clientCmds = @()
 for ($i = 1; $i -le $Clients; $i++) {
     $clientDir = Join-Path $Root "client$i"
     Copy-Mod $clientDir
-    $options = Join-Path $clientDir "options.ini"
-    if (-not (Test-Path $options)) {
-        $mine = Join-Path $env:USERPROFILE "Zomboid\options.ini"
-        if (Test-Path $mine) { Copy-Item $mine $options }
-        Set-IniValue $options "fullScreen" "false"
-        Set-IniValue $options "width" "1280"
-        Set-IniValue $options "height" "720"
-    }
-    $clientCmds += Write-Launcher "client$i" "$ModId test client $i" $clientJava "-nosteam -cachedir=`"$clientDir`""
+    Initialize-ClientOptions $clientDir
+    $clientCmds += Write-Launcher "client$i" "$ModId test client $i" $clientJava "$clientArgs -cachedir=`"$clientDir`""
 }
 
 Write-Host "Test folder: $Root"
