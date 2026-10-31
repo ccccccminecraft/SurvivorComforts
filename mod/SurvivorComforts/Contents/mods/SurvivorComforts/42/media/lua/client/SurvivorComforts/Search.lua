@@ -63,13 +63,16 @@ end
 local englishParts = { recipes = {}, items = {} }
 local localParts = { recipes = {}, items = {} }
 
-local function nameText(kind, key, localName)
+-- english = search.useEnglish(). One search compares thousands of names, so
+-- callers check it once per search and pass it; nil checks it here.
+local function nameText(kind, key, localName, english)
     local loc = localParts[kind][key]
     if not loc then
         loc = string.lower(localName or "")
         localParts[kind][key] = loc
     end
-    if not search.useEnglish() then return loc end
+    if english == nil then english = search.useEnglish() end
+    if not english then return loc end
     local eng = englishParts[kind][key]
     if not eng then
         eng = string.lower(englishTable(kind)[key] or "") .. " " .. splitId(key)
@@ -80,11 +83,11 @@ end
 
 -- fullType = "Base.Nails"; localName = the name in the current language
 -- (Item:getDisplayName() or InventoryItem:getName()).
-function search.itemText(fullType, localName)
-    return nameText("items", fullType, localName)
+function search.itemText(fullType, localName, english)
+    return nameText("items", fullType, localName, english)
 end
 
 -- recipe = a CraftRecipe script.
-function search.recipeText(recipe)
-    return nameText("recipes", recipe:getName(), recipe:getTranslationName())
+function search.recipeText(recipe, english)
+    return nameText("recipes", recipe:getName(), recipe:getTranslationName(), english)
 end

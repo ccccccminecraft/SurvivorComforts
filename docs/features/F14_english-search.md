@@ -56,7 +56,7 @@
   - `SurvivorComforts.search.useEnglish()`：英語名での検索を含めるか（上のオプションがONで、ゲームの言語が英語でない）
   - `SurvivorComforts.search.parse(文字)`：検索の文字を、小文字にして空白で区切った語の一覧にする
   - `SurvivorComforts.search.hasLatin(文字)`：英字が入っているか
-  - `SurvivorComforts.search.itemText(アイテムの種類, 今の言語の名前)` / `recipeText(レシピ)`：比べる名前（英語名・内部名の単語・今の言語の名前をつなげたもの。英語名での検索を含めないときは今の言語の名前だけ）。一度作った名前は覚えておく
+  - `SurvivorComforts.search.itemText(アイテムの種類, 今の言語の名前)` / `recipeText(レシピ)`：比べる名前（英語名・内部名の単語・今の言語の名前をつなげたもの。英語名での検索を含めないときは今の言語の名前だけ）。一度作った名前は覚えておく。最後の引数に `useEnglish()` の結果を渡せる。検索1回で何千ものレシピやアイテムを比べるので、呼ぶ側は検索の初めに1回だけ判定して、それを渡す（2026-10-31、点検の R2-2）。渡さないときは毎回判定する
   - `SurvivorComforts.search.matches(名前, 語の一覧)`：すべての語が入っているか
   - 制作・建築の画面への組み込み（本体の絞り込みの後で減らす、並べ替えの後にやり直す）は F14 だけのもので、`F14_EnglishSearch.lua` に置く
 - 対象は、制作の画面（`ISHandCraftPanel`）と建築の画面（`ISBuildPanel`）の検索欄。作業台など別の制作の画面は対象外

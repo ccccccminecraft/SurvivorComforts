@@ -54,13 +54,13 @@ local function anyItem(recipe, mode, fn)
     return false
 end
 
-local function matches(recipe, words, mode)
+local function matches(recipe, words, mode, english)
     if mode == "InputName" or mode == "OutputName" then
         return anyItem(recipe, mode, function(item)
-            return search.matches(search.itemText(item:getFullName(), item:getDisplayName()), words)
+            return search.matches(search.itemText(item:getFullName(), item:getDisplayName(), english), words)
         end)
     end
-    return search.matches(search.recipeText(recipe), words)
+    return search.matches(search.recipeText(recipe, english), words)
 end
 
 ---------------------------------------------------------------------------
@@ -91,9 +91,10 @@ local function narrow(panel, words)
     if not list then return end
     local all = list:getAllRecipes()
     local keep = ArrayList.new()
+    local english = search.useEnglish()
     for i = 0, all:size() - 1 do
         local recipe = all:get(i)
-        if matches(recipe, words, panel._filterMode) then
+        if matches(recipe, words, panel._filterMode, english) then
             keep:add(recipe)
         end
     end
