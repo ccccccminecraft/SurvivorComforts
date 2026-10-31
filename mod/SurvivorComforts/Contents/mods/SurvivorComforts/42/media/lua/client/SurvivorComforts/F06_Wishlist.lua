@@ -15,6 +15,7 @@
 
 require "SurvivorComforts/Core"
 require "SurvivorComforts/Admin"
+require "SurvivorComforts/PlayerName"
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISButton"
@@ -138,15 +139,11 @@ local shared = { order = {}, sharers = {} }
 local PERSONAL_COLOR = { r = 1, g = 0.65, b = 0.2 }
 local SHARED_COLOR = { r = 0.35, g = 0.8, b = 1 }
 
--- The same name the server records (see playerName in the server file).
+-- The same name the server records (PlayerName.lua).
 local function myName()
     local player = getSpecificPlayer(0)
     if not player then return nil end
-    local name = player:getUsername()
-    if not name or name == "" then
-        name = player:getDisplayName()
-    end
-    return name
+    return SurvivorComforts.playerName(player)
 end
 
 local function sharedContains(fullType)

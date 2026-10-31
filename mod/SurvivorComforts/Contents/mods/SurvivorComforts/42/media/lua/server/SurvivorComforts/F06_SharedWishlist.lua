@@ -20,6 +20,7 @@ if isClient() then return end
 
 require "SurvivorComforts/CommandLimit"
 require "SurvivorComforts/Admin"
+require "SurvivorComforts/PlayerName"
 
 local MODULE = "SurvivorComforts"
 local DATA_KEY = "SurvivorComforts_SharedWishlist"
@@ -124,11 +125,7 @@ local function isValidType(fullType)
 end
 
 local function playerName(player)
-    local name = player:getUsername()
-    if not name or name == "" then
-        name = player:getDisplayName()
-    end
-    return name or "?"
+    return SurvivorComforts.playerName(player) or "?"
 end
 
 local handlers = {}

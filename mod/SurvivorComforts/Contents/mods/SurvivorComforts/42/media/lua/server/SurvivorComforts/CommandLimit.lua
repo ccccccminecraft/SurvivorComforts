@@ -8,6 +8,8 @@
 
 if isClient() then return end
 
+require "SurvivorComforts/PlayerName"
+
 SurvivorComfortsServer = SurvivorComfortsServer or {}
 
 local MAX_PER_WINDOW = 5
@@ -17,11 +19,7 @@ local WINDOW_MS = 1000
 local windows = {}
 
 local function playerKey(player)
-    local name = player:getUsername()
-    if not name or name == "" then
-        name = player:getDisplayName()
-    end
-    return name or "?"
+    return SurvivorComforts.playerName(player) or "?"
 end
 
 function SurvivorComfortsServer.allowCommand(player, group)

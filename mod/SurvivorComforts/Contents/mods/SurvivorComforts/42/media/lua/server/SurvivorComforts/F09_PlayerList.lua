@@ -15,6 +15,7 @@ if not isServer() then return end
 
 -- Each player can ask a few times a second at most (CommandLimit.lua).
 require "SurvivorComforts/CommandLimit"
+require "SurvivorComforts/PlayerName"
 
 local MODULE = "SurvivorComforts"
 local DATA_KEY = "SurvivorComforts_PlayerList"
@@ -30,20 +31,12 @@ local function getData()
     return data
 end
 
-local function playerName(player)
-    local name = player:getUsername()
-    if not name or name == "" then
-        name = player:getDisplayName()
-    end
-    return name
-end
-
 local function onlineNames()
     local names = {}
     local players = getOnlinePlayers()
     if players then
         for i = 0, players:size() - 1 do
-            local name = playerName(players:get(i))
+            local name = SurvivorComforts.playerName(players:get(i))
             if name then names[name] = true end
         end
     end

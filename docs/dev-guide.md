@@ -49,7 +49,8 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
                 │   └── F09_PlayerList.lua      最終ログインの記録と配信（サーバーで動く。シングルでは動かない）
                 └── shared\
                     ├── SurvivorComforts\
-                    │   └── Admin.lua           管理者の判定（キックできる人）。画面側とサーバー側の両方で使う（F06・F13で共通）
+                    │   ├── Admin.lua           管理者の判定（キックできる人）。画面側とサーバー側の両方で使う（F06・F13で共通）
+                    │   └── PlayerName.lua      プレイヤー名の取り方（ユーザー名。なければ表示名）。画面側とサーバー側の両方で使う（F06・F09・回数の制限で共通）
                     └── Translate\
                         ├── EN\UI.json
                         └── JP\UI.json
