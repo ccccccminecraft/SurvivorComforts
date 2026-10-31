@@ -47,9 +47,12 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
                 │   ├── CommandLimit.lua        1人が送れるコマンドの回数の制限（F06・F09で共通）
                 │   ├── F06_SharedWishlist.lua  みんなのウィッシュリストの保存と配信（サーバーで動く）
                 │   └── F09_PlayerList.lua      最終ログインの記録と配信（サーバーで動く。シングルでは動かない）
-                └── shared\Translate\
-                    ├── EN\UI.json
-                    └── JP\UI.json
+                └── shared\
+                    ├── SurvivorComforts\
+                    │   └── Admin.lua           管理者の判定（キックできる人）。画面側とサーバー側の両方で使う（F06・F13で共通）
+                    └── Translate\
+                        ├── EN\UI.json
+                        └── JP\UI.json
 ```
 
 - 機能ごとに `client\SurvivorComforts\Fxx_機能名.lua` を1ファイル作る。仕様と確認項目は `docs\features\Fxx_名前.md` に書く（[features.md の「新しい機能を足すとき」](features.md#新しい機能を足すとき)）。

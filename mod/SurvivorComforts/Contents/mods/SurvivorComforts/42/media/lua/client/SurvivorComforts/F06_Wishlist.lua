@@ -14,6 +14,7 @@
 -- it is only for looking, and each player can unshare only their own share.
 
 require "SurvivorComforts/Core"
+require "SurvivorComforts/Admin"
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISButton"
@@ -133,16 +134,6 @@ local function myName()
         name = player:getDisplayName()
     end
     return name
-end
-
--- Admins (anyone who can kick players) may take shared items off for everyone;
--- the server checks again. In single player the only player owns the game.
-local function isAdmin()
-    if not isClient() then return true end
-    local ok, result = pcall(function()
-        return getSpecificPlayer(0):getRole():hasCapability(Capability.KickUser)
-    end)
-    return ok and result == true
 end
 
 local function sharedContains(fullType)
@@ -473,7 +464,8 @@ function SurvivorComforts_WishlistList:onRightMouseUp(x, y)
         addAddOption(context, getText("UI_SurvivorComforts_F06_AddToMine"), { fullType })
         addAddAndShareOption(context, fullType)
     end
-    if isAdmin() then
+    -- The server checks again.
+    if SurvivorComforts.isAdmin(getSpecificPlayer(0)) then
         context:addOption(getText("UI_SurvivorComforts_F06_AdminRemove"), { fullType }, adminRemove)
     end
 end

@@ -19,6 +19,7 @@
 if isClient() then return end
 
 require "SurvivorComforts/CommandLimit"
+require "SurvivorComforts/Admin"
 
 local MODULE = "SurvivorComforts"
 local DATA_KEY = "SurvivorComforts_SharedWishlist"
@@ -130,16 +131,6 @@ local function playerName(player)
     return name or "?"
 end
 
--- Admins (anyone who can kick players) may take items off for everyone.
--- In single player the only player owns the game.
-local function isAdmin(player)
-    if not isServer() then return true end
-    local ok, result = pcall(function()
-        return player:getRole():hasCapability(Capability.KickUser)
-    end)
-    return ok and result == true
-end
-
 local handlers = {}
 
 function handlers.wishlistRequest(player, args)
@@ -182,7 +173,7 @@ end
 -- Takes the item off for everyone (admins only).
 function handlers.wishlistAdminRemove(player, args)
     local fullType = args and args.fullType
-    if type(fullType) ~= "string" or not isAdmin(player) then return end
+    if type(fullType) ~= "string" or not SurvivorComforts.isAdmin(player) then return end
     local data = getData()
     if not data.items[fullType] then return end
     data.items[fullType] = nil
