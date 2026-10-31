@@ -4,9 +4,10 @@
 --
 -- Vanilla (ISInventoryPaneContextMenu.doEvorecipeMenu) only merges items of
 -- the same type whose use amount is also the same, and never merges spices,
--- so a stocked kitchen gives a long list. This replaces only how the list is
--- built; adding the ingredient still goes through the vanilla
--- onAddItemInEvoRecipe / ISAddItemInRecipe.
+-- so a stocked kitchen gives a long list. The vanilla menu is still built by
+-- the vanilla function (and whatever other mods added to it); while it runs,
+-- ISInventoryPaneContextMenu.addItemInEvoRecipe, which adds one line per
+-- item, is wrapped so that only the first item of each kind gets a line.
 
 require "SurvivorComforts/Core"
 require "ISUI/ISInventoryPaneContextMenu"
@@ -41,29 +42,35 @@ local function groupKey(item, evorecipe)
     return key .. "|" .. tostring(evorecipe:needToBeCooked(item))
 end
 
--- Returns the groups in the order their first item appears, so the menu keeps the vanilla order.
+-- key -> { item = the one with the least left, count = how many }.
+-- Counted from every usable item, since vanilla already drops some of them
+-- before adding the lines.
 local function groupItems(items, evorecipe, baseItem)
-    local groups, order = {}, {}
+    local groups = {}
     for i = 0, items:size() - 1 do
         local item = items:get(i)
         if item ~= baseItem then
             local key = groupKey(item, evorecipe)
             local group = groups[key]
             if not group then
-                group = { item = item, count = 0 }
-                groups[key] = group
-                table.insert(order, group)
-            elseif remainingAmount(item) < remainingAmount(group.item) then
-                group.item = item
+                groups[key] = { item = item, count = 1 }
+            else
+                if remainingAmount(item) < remainingAmount(group.item) then
+                    group.item = item
+                end
+                group.count = group.count + 1
             end
-            group.count = group.count + 1
         end
     end
-    return order
+    return groups
 end
 
 -- Same as the vanilla text after the item name: use amount, or "spice".
-local function extraInfoFor(item, evorecipe, cookingLvl)
+-- Only needed when the item vanilla passed is swapped for another one.
+local function extraInfoFor(item, evorecipe, cookingLvl, baseItem)
+    if baseItem:getFullType() == "Base.Chum" then
+        return ""
+    end
     if instanceof(item, "Food") then
         if item:isSpice() then
             return getText("ContextMenu_EvolvedRecipe_Spice")
@@ -80,55 +87,33 @@ local function extraInfoFor(item, evorecipe, cookingLvl)
     return ""
 end
 
--- Follows the vanilla doEvorecipeMenu; only the item list part differs.
-local function doEvorecipeMenu(context, items, player, evorecipe, baseItem, containerList)
-    local playerObj = getSpecificPlayer(player)
-    local cookingLvl = playerObj:getPerkLevel(Perks.Cooking)
-    for i = 0, evorecipe:size() - 1 do
-        local evorecipe2 = evorecipe:get(i)
-        local usable = evorecipe2:getItemsCanBeUse(playerObj, baseItem, containerList)
-        -- Vanilla stops at the first recipe with nothing to add; kept the same.
-        if usable:size() == 0 then
-            break
-        end
-        local catList = ISInventoryPaneContextMenu.getEvoItemCategories(usable, evorecipe2)
-        local isResult = evorecipe2:isResultItem(baseItem)
-        local fromName = getText("ContextMenu_EvolvedRecipe_" .. evorecipe2:getUntranslatedName())
-        local subOption
-        if isResult then
-            subOption = context:addOption(fromName, nil)
-        else
-            subOption = context:addOption(getText("ContextMenu_Create_From_Ingredient", fromName), nil)
-        end
-        local subMenuRecipe = context:getNew(context)
-        context:addSubMenu(subOption, subMenuRecipe)
-
-        for foodType, list in pairs(catList) do
-            if getText("ContextMenu_FoodType_" .. foodType) ~= "ContextMenu_FoodType_" .. foodType then
-                local txt = getText("ContextMenu_FromRandom", getText("ContextMenu_FoodType_" .. foodType))
-                if isResult then
-                    txt = getText("ContextMenu_AddRandom", getText("ContextMenu_FoodType_" .. foodType))
-                end
-                subMenuRecipe:addOption(txt, evorecipe2, ISInventoryPaneContextMenu.onAddItemInEvoRecipe, baseItem, list[ZombRand(1, #list + 1)], player)
-            end
-        end
-
-        for _, group in ipairs(groupItems(usable, evorecipe2, baseItem)) do
-            local evoItem = group.item
-            -- Vanilla flags (read elsewhere) for servers that disable poisoning.
-            if SandboxVars.EnablePoisoning == 2 then disablePoison = true end
-            if SandboxVars.EnablePoisoning == 3 and evoItem:getType() == "Bleach" then disablePoison = true end
-
-            local extraInfo = extraInfoFor(evoItem, evorecipe2, cookingLvl)
-            if baseItem:getFullType() == "Base.Chum" then
-                extraInfo = ""
-            end
-            if group.count > 1 then
-                extraInfo = extraInfo .. " " .. getText("UI_SurvivorComforts_F07_Count", group.count)
-            end
-            ISInventoryPaneContextMenu.addItemInEvoRecipe(subMenuRecipe, baseItem, evoItem, extraInfo, evorecipe2, player)
-        end
+-- Decides what one vanilla line becomes: nil to skip it (its kind already has
+-- a line), or the item and text to add instead.
+local function pickLine(state, baseItem, evoItem, extraInfo, evorecipe2)
+    -- Vanilla goes through the recipes one at a time.
+    if state.recipe ~= evorecipe2 then
+        state.recipe = evorecipe2
+        local usable = evorecipe2:getItemsCanBeUse(state.playerObj, baseItem, state.containerList)
+        state.groups = groupItems(usable, evorecipe2, baseItem)
+        state.shown = {}
     end
+    local key = groupKey(evoItem, evorecipe2)
+    if state.shown[key] then
+        return nil
+    end
+    state.shown[key] = true
+    local group = state.groups[key]
+    if not group then
+        return evoItem, extraInfo
+    end
+    if group.item ~= evoItem then
+        evoItem = group.item
+        extraInfo = extraInfoFor(evoItem, evorecipe2, state.playerObj:getPerkLevel(Perks.Cooking), baseItem)
+    end
+    if group.count > 1 then
+        extraInfo = extraInfo .. " " .. getText("UI_SurvivorComforts_F07_Count", group.count)
+    end
+    return evoItem, extraInfo
 end
 
 local original_doEvorecipeMenu = ISInventoryPaneContextMenu.doEvorecipeMenu
@@ -136,9 +121,25 @@ function ISInventoryPaneContextMenu.doEvorecipeMenu(context, items, player, evor
     if not SurvivorComforts.isEnabled(FEATURE_ID) then
         return original_doEvorecipeMenu(context, items, player, evorecipe, baseItem, containerList)
     end
-    -- If this ever breaks after a game update, fall back to the vanilla menu.
-    local ok = SurvivorComforts.safeCall(FEATURE_ID, doEvorecipeMenu, context, items, player, evorecipe, baseItem, containerList)
+
+    local state = { playerObj = getSpecificPlayer(player), containerList = containerList }
+    local previous_add = ISInventoryPaneContextMenu.addItemInEvoRecipe
+    ISInventoryPaneContextMenu.addItemInEvoRecipe = function(subMenuRecipe, base, evoItem, extraInfo, evorecipe2, plr)
+        -- If this ever breaks after a game update, add the vanilla line as it is.
+        local ok, item, info = pcall(pickLine, state, base, evoItem, extraInfo, evorecipe2)
+        if not ok then
+            SurvivorComforts.log(FEATURE_ID .. " failed: " .. tostring(item))
+            item, info = evoItem, extraInfo
+        end
+        if item then
+            return previous_add(subMenuRecipe, base, item, info, evorecipe2, plr)
+        end
+    end
+
+    -- Put the vanilla function back even if the menu fails to build.
+    local ok, err = pcall(original_doEvorecipeMenu, context, items, player, evorecipe, baseItem, containerList)
+    ISInventoryPaneContextMenu.addItemInEvoRecipe = previous_add
     if not ok then
-        return original_doEvorecipeMenu(context, items, player, evorecipe, baseItem, containerList)
+        error(err)
     end
 end
