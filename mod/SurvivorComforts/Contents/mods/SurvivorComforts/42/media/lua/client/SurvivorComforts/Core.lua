@@ -49,9 +49,7 @@ local function addFeatureOptions(def)
     end
 end
 
-function SurvivorComforts.buildOptions()
-    if built then return end
-    built = true
+local function buildAll()
     local rank = {}
     for i, id in ipairs(OPTIONS_ORDER) do rank[id] = i end
     for i, def in ipairs(pending) do def.fileOrder = i end
@@ -61,8 +59,17 @@ function SurvivorComforts.buildOptions()
         return a.fileOrder < b.fileOrder
     end)
     for _, def in ipairs(pending) do
-        addFeatureOptions(def)
+        SurvivorComforts.safeCall(def.id, addFeatureOptions, def)
     end
+end
+
+-- Never raises: it runs inside the game's ModOptions:load, and an error there
+-- would stop every other mod's options from loading. A feature whose options
+-- failed to build has no tick box, so isEnabled() treats it as off.
+function SurvivorComforts.buildOptions()
+    if built then return end
+    built = true
+    SurvivorComforts.safeCall("Options", buildAll)
     pending = {}
 end
 
@@ -73,17 +80,18 @@ end
 function SurvivorComforts.registerFeature(def)
     SurvivorComforts.features[def.id] = def
     if built then
-        addFeatureOptions(def)
+        SurvivorComforts.safeCall(def.id, addFeatureOptions, def)
     else
         table.insert(pending, def)
     end
 end
 
 -- The game reads the saved values when it builds the options screen; the
--- page has to be complete by then.
+-- page has to be complete by then. Only our part is guarded; errors from the
+-- original load still reach the game as before.
 local original_load = PZAPI.ModOptions.load
 function PZAPI.ModOptions:load(...)
-    SurvivorComforts.buildOptions()
+    pcall(SurvivorComforts.buildOptions)
     return original_load(self, ...)
 end
 
