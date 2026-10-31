@@ -18,6 +18,7 @@ local FEATURE_ID = "F09"
 local LAYOUT_NAME = "survivorcomforts.players"
 local MODULE = "SurvivorComforts" -- client/server command module, see the server file
 local REQUEST_INTERVAL = 60 * 1000 -- ms between requests while the window is open
+local REQUEST_GAP = 5 * 1000       -- ms at least between asking for both lists
 local HIDE_AFTER = 7 * 24 * 3600   -- players not seen for this long are not shown
 
 local ONLINE_COLOR = { r = 0.45, g = 0.9, b = 0.45 }
@@ -62,7 +63,22 @@ local function requestLastSeen()
     end
 end
 
+-- Opening and closing the window quickly, or players joining one after
+-- another, would ask the server every time; the vanilla user list
+-- (scoreboardUpdate) has no limit on the server side. Ask at most once every
+-- REQUEST_GAP; a request in between is sent when the gap has passed, while a
+-- window is open (see prerender).
+local lastAllRequest = nil
+local allPending = false
+
 local function requestAll()
+    local now = getTimestampMs()
+    if lastAllRequest and now - lastAllRequest < REQUEST_GAP then
+        allPending = true
+        return
+    end
+    lastAllRequest = now
+    allPending = false
     scoreboardUpdate()
     requestLastSeen()
 end
@@ -181,6 +197,9 @@ function SurvivorComforts_PlayerListWindow:prerender()
         local h = math.max(0, self.height - th - rh)
         if self.list:getWidth() ~= self.width then self.list:setWidth(self.width) end
         if self.list:getHeight() ~= h then self.list:setHeight(h) end
+    end
+    if allPending then
+        requestAll()
     end
     if getTimestampMs() - (self.lastRequest or 0) >= REQUEST_INTERVAL then
         self.lastRequest = getTimestampMs()
