@@ -76,5 +76,10 @@
     "UI_SurvivorComforts_F09_MinutesAgo": "%1分前",
     "UI_SurvivorComforts_F09_HoursAgo": "%1時間前",
     "UI_SurvivorComforts_F09_DaysAgo": "%1日前",
-    "UI_SurvivorComforts_F09_Loading": "読み込み中…"
+    "UI_SurvivorComforts_F09_Loading": "読み込み中…",
+    "UI_SurvivorComforts_F15_Name": "ほかの人のスキルを見る",
+    "UI_SurvivorComforts_F15_Tooltip": "プレイヤー一覧でオンラインの人をクリックすると、その人のスキルのレベルをウィンドウで表示します。マルチプレイのみ。元の MOD：Skill Viewer（itsu07）",
+    "UI_SurvivorComforts_F15_Title": "%1 のスキル",
+    "UI_SurvivorComforts_F15_Loading": "取得中…",
+    "UI_SurvivorComforts_F15_NoData": "データがありません（オンラインでない可能性があります）"
 }

@@ -47,6 +47,9 @@ Project Zomboid（Build 42.21 以降）用の、ちょっとした便利機能�
 [*][b]プレイヤー一覧[/b]
 サーバーにオンラインの人と、7日以内に来ていたオフラインの人を一覧で表示します。オフラインの人には「3時間前」のように最終ログインが出ます。画面左の人のボタンから開けます。マルチプレイのときだけ使えます。
 
+[*][b]ほかの人のスキルを見る[/b]
+プレイヤー一覧でオンラインの人をクリックすると、その人のスキルのレベルをウィンドウで表示します。スキルはサーバーで読むので、ごまかせません。マルチプレイのときだけ使えます。itsu07 さんの Skill Viewer を元にしています。
+
 [*][b]PvP の切り替えボタンを隠す[/b]
 画面左のドクロのボタンを隠し、PvP を常にオフにします。G キーでの切り替えも無効になります。
 
@@ -118,6 +121,9 @@ Shows your skills in a separate, resizable window. Open it with the button on th
 
 [*][b]Player list[/b]
 Lists who is online on the server, and who was online in the last 7 days with when they were last online ("3 h ago"). Open it with the people button on the left of the screen. Multiplayer only.
+
+[*][b]Members' skills[/b]
+Click an online player in the player list to see their skill levels in a window. The skills are read on the server, so they cannot be faked. Multiplayer only. Based on Skill Viewer by itsu07.
 
 [*][b]Hide the PvP button[/b]
 Hides the skull button on the left of the screen and keeps PvP off. The G key no longer toggles PvP.

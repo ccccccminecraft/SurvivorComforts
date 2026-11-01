@@ -16,12 +16,13 @@ local options = PZAPI.ModOptions:create(SurvivorComforts.MOD_ID, getText("UI_Sur
 SurvivorComforts.options = options
 
 -- Grouped by where the feature is used:
---   left sidebar buttons, in the same order as the buttons (F08, F06, F09)
+--   left sidebar buttons, in the same order as the buttons (F08, F06, F09),
+--   and F15, opened from F09
 --   recipes and searches (F12, F03, F14, F02; F14's option also covers F02)
 --   everyday actions (F07, F04)
 --   multiplayer (F10, F13)
 -- Features not listed come last, in file order.
-local OPTIONS_ORDER = { "F08", "F06", "F09", "F12", "F03", "F14", "F02", "F07", "F04", "F10", "F13" }
+local OPTIONS_ORDER = { "F08", "F06", "F09", "F15", "F12", "F03", "F14", "F02", "F07", "F04", "F10", "F13" }
 
 function SurvivorComforts.log(msg)
     print("[SurvivorComforts] " .. tostring(msg))

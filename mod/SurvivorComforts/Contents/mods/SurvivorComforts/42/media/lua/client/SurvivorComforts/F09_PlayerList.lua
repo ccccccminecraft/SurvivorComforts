@@ -166,9 +166,17 @@ function SurvivorComforts_PlayerListWindow:createChildren()
     list.fontHgt = getTextManager():getFontHeight(UIFont.Small)
     list.itemheight = list.fontHgt + 8
     list.drawBorder = true
+    list:setOnMouseDownFunction(self, SurvivorComforts_PlayerListWindow.onClickRow)
     self:addChild(list)
     self.list = list
     self:refresh()
+end
+
+-- An online player opens their skills (F15, when it is on).
+function SurvivorComforts_PlayerListWindow:onClickRow(row)
+    if row and row.online and row.name and SurvivorComforts.showMemberSkills then
+        SurvivorComforts.showMemberSkills(self.playerNum, row.name)
+    end
 end
 
 -- Keep the list filling the window, and ask for the last-seen times again
@@ -211,7 +219,7 @@ function SurvivorComforts_PlayerListWindow:refresh()
     end
     list:addItem(getText("UI_SurvivorComforts_F09_Online", tostring(#online)), { header = true })
     for _, name in ipairs(online) do
-        list:addItem(name, { online = true })
+        list:addItem(name, { online = true, name = name })
     end
     list:addItem(getText("UI_SurvivorComforts_F09_Offline", tostring(#shown)), { header = true })
     for _, entry in ipairs(shown) do

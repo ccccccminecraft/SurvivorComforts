@@ -22,8 +22,10 @@
 --       canOpen = function(playerNum) ... end, -- optional; false keeps it from opening
 --       onOpen = function(window) ... end, -- optional, just before it is shown
 --   })
---   windows.toggle(playerNum)  windows.isOpen(playerNum)  windows.anyOpen()
---   windows.forEach(fn)  windows.create(playerNum)  windows.destroy(playerNum)
+--   windows.toggle(playerNum)  windows.open(playerNum)  windows.isOpen(playerNum)
+--   windows.anyOpen()  windows.forEach(fn)  windows.create(playerNum)  windows.destroy(playerNum)
+--
+-- sidebar is optional; without it there is no button (F15 is opened from F09).
 --
 -- The sidebar button and the key that open the window come from the
 -- feature's options "<id>_sidebar" and "<id>_key", added in its addOptions
@@ -107,6 +109,13 @@ function SurvivorComforts.addWindow(def)
         end
     end
 
+    local function show(window)
+        if def.onOpen then def.onOpen(window) end
+        window:addToUIManager()
+        window:setVisible(true)
+        window:bringToTop()
+    end
+
     -- Opens or closes the window; used by the keys and the sidebar buttons.
     function windows.toggle(playerNum)
         if not isAvailable() then return end
@@ -117,11 +126,25 @@ function SurvivorComforts.addWindow(def)
                 window:close()
                 return
             end
-            if def.onOpen then def.onOpen(window) end
-            window:addToUIManager()
-            window:setVisible(true)
-            window:bringToTop()
+            show(window)
         end)
+    end
+
+    -- Opens the window, or brings it to the front when it is open; returns
+    -- it, or nil when it cannot be opened (used by F15, opened from F09).
+    function windows.open(playerNum)
+        if not isAvailable() then return nil end
+        if def.canOpen and not def.canOpen(playerNum) then return nil end
+        local ok, window = SurvivorComforts.safeCall(def.id, function()
+            local window = instances[playerNum] or windows.create(playerNum)
+            if window:getIsVisible() then
+                window:bringToTop()
+            else
+                show(window)
+            end
+            return window
+        end)
+        return ok and window or nil
     end
 
     if def.sidebar then

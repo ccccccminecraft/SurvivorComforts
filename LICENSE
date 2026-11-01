@@ -22,8 +22,11 @@ SOFTWARE.
 
 F02 (client/SurvivorComforts/F02_InventorySearch.lua, and the hiragana and
 katakana handling in client/SurvivorComforts/Search.lua) is based on
-Inventory Search (https://github.com/itsu07/pz-inventory-search), under this
-license:
+Inventory Search (https://github.com/itsu07/pz-inventory-search), and F15
+(client/SurvivorComforts/F15_MemberSkills.lua,
+server/SurvivorComforts/F15_MemberSkills.lua and
+shared/SurvivorComforts/Skills.lua) on Skill Viewer
+(https://github.com/itsu07/SkillViewer), both under this license:
 
     MIT License
 

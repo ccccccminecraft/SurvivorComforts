@@ -76,5 +76,10 @@
     "UI_SurvivorComforts_F09_MinutesAgo": "%1 min ago",
     "UI_SurvivorComforts_F09_HoursAgo": "%1 h ago",
     "UI_SurvivorComforts_F09_DaysAgo": "%1 days ago",
-    "UI_SurvivorComforts_F09_Loading": "Loading..."
+    "UI_SurvivorComforts_F09_Loading": "Loading...",
+    "UI_SurvivorComforts_F15_Name": "Members' skills",
+    "UI_SurvivorComforts_F15_Tooltip": "Click an online player in the player list to see their skill levels in a window. Multiplayer only. Based on Skill Viewer by itsu07.",
+    "UI_SurvivorComforts_F15_Title": "%1's skills",
+    "UI_SurvivorComforts_F15_Loading": "Loading...",
+    "UI_SurvivorComforts_F15_NoData": "No data (the player may not be online)"
 }
