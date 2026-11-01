@@ -139,6 +139,34 @@ powershell -File tools\test_server.ps1
 - サーバー・ゲームとも最大3GBずつメモリを使う。合わせて10GB前後空けておく
 - 2人目に入ってもらえるなら、ゲーム内の「ホスト」で立てたサーバーでもよい
 
+## ブランチとリリース
+
+0.4.0 の公開（2026-11-01）から、ブランチを次のように分けている。
+
+| ブランチ | 中身 | プッシュ |
+| --- | --- | --- |
+| `main` | ワークショップに上げた状態だけ。GitHub で保護していて、直接はプッシュしない | リリースのときに、`dev` からの Pull Request をマージする |
+| `dev` | ふだんの開発。テストの途中など、半端な状態でもよい | 直接コミットしてプッシュする |
+
+- 公開した版には、`main` にタグ（`v0.4.0` など）を付ける。`v0.4.0` は、ワークショップに上げたファイルと同じ状態のコミット（`4631f18`）に付けている。その後の、テストのための変更（動きは変わらない）は、`main` にあってもまだワークショップには上げていない
+- ほかの人からコードを受け取るときも、`dev` への Pull Request にしてもらう
+
+### リリースの手順
+
+1. `dev` で、版を上げる（`mod.info` の `modversion`）。`docs\workshop.md` に、その版の更新内容を書く（説明を変えたなら、説明も直す。8000 バイトまで）
+2. `tools\check.ps1` を通し、テスト用の MOD のテスト（[testing.md](testing.md)）と、変えた機能の確認項目をゲームで確かめる
+3. GitHub で、`dev` から `main` への Pull Request を作ってマージする
+4. `main` に切り替えて、ワークショップにアップロードする（[更新するとき](#更新するとき)）。終わったら、`main` にタグを付けて、`dev` に戻る
+5. `docs\workshop.md` の更新内容の見出しに、公開日を書く（`dev` でコミット）
+
+### main を保護する設定（GitHub）
+
+リポジトリの Settings → Branches（または Rules → Rulesets）で、`main` に次を設定する。
+
+- Require a pull request before merging（Pull Request を通さないとマージできない）。1人で開発しているので、承認の数（Required approvals）は 0 にする。1以上にすると、自分の Pull Request をマージできない
+- Block force pushes（強制プッシュを禁止）
+- ブランチの削除を禁止（Restrict deletions）
+
 ## ゲームを更新したとき
 
 Project Zomboid のアップデートが来たら、次を行う。
@@ -186,11 +214,20 @@ Project Zomboid のアップデートが来たら、次を行う。
 8. 「作成したアイテムをSteamオーバーレイで開く」でページを開き、公開範囲が「未掲載」になっていること、URL（`https://steamcommunity.com/sharedfiles/filedetails/?id=<Workshop ID>`）を確かめる。
 
 ### 更新するとき
-1. `tools\check.ps1` → `tools\deploy.ps1` を実行する。
+アップロードは、`main` に切り替えてから行う（[ブランチとリリース](#ブランチとリリース)）。
+
+1. `git switch main` で `main` にし、`git pull` で最新にする。`tools\check.ps1` → `tools\deploy.ps1` を実行する。
+   - `deploy.ps1` は手元のファイルをそのままコピーするので、`dev` のままだと、公開していない途中の変更まで上がってしまう
 2. メインメニュー →「WORKSHOP」→「アイテムの作成と更新」→ SurvivorComforts を選ぶ。`workshop.txt` があるので、既存のアイテムの更新になる。
-3. 「変更履歴の編集」に変更内容を書いてアップロードする。
+3. 「変更履歴の編集」に変更内容（`docs\workshop.md` の、その版のコードブロック）を貼ってアップロードする。
 4. サーバーは再起動すると新しい版をダウンロードする。プレイヤーも、接続時に新しい版が自動で入る。
    - `mod.info` の `modversion` を上げておくと、どの版か分かりやすい。
+5. アップロードできたら、`main` に版のタグを付けてプッシュし、`dev` に戻る。
+   ```
+   git tag -a v0.5.0 -m "Survivor Comforts 0.5.0 (Workshop, 公開日)"
+   git push origin v0.5.0
+   git switch dev
+   ```
 
 ### サーバーに入れる
 - サーバーの設定（`servertest.ini` などの `<サーバー名>.ini`）に次の2つを書く。
