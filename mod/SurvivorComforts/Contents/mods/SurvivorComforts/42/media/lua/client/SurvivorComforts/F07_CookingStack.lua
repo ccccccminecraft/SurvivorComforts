@@ -143,3 +143,8 @@ function ISInventoryPaneContextMenu.doEvorecipeMenu(context, items, player, evor
         error(err)
     end
 end
+
+-- For the tests (Core.lua).
+SurvivorComforts.internals.F07 = {
+    groupItems = groupItems,
+}

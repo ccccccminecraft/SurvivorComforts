@@ -62,6 +62,9 @@ end
 function SurvivorComforts.addWindow(def)
     local windows = { instances = {} }
     local instances = windows.instances
+    -- For the tests (Core.lua): the windows of each feature.
+    SurvivorComforts.internals.windows = SurvivorComforts.internals.windows or {}
+    SurvivorComforts.internals.windows[def.id] = windows
 
     local function isAvailable()
         return SurvivorComforts.isEnabled(def.id) and (not def.isAvailable or def.isAvailable())

@@ -176,3 +176,12 @@ end
 -- real time) covers a server that does not run OnTick.
 Events.OnTick.Add(flushBroadcast)
 Events.EveryOneMinute.Add(flushBroadcast)
+
+-- For the tests (client Core.lua); in single player they share this Lua.
+SurvivorComforts.internals = SurvivorComforts.internals or {}
+SurvivorComforts.internals.F06Server = {
+    getData = getData,
+    handlers = handlers,
+    MAX_ITEMS = MAX_ITEMS,
+    MAX_PER_PLAYER = MAX_PER_PLAYER,
+}

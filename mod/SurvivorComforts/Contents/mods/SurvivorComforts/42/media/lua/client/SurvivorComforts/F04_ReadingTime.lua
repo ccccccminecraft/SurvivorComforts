@@ -217,3 +217,12 @@ end
 
 Events.OnCreatePlayer.Add(onCreatePlayer)
 Events.OnPlayerUpdate.Add(onPlayerUpdate)
+
+-- For the tests (Core.lua).
+SurvivorComforts.internals.F04 = {
+    formatGameMinutes = formatGameMinutes,
+    formatRealSeconds = formatRealSeconds,
+    labelParts = labelParts,
+    GAME_COLOR = GAME_COLOR,
+    REAL_COLOR = REAL_COLOR,
+}

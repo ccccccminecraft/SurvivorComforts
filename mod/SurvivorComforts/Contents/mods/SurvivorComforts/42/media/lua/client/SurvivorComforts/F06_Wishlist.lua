@@ -750,3 +750,22 @@ SurvivorComforts.addCraftMenuProvider({
 
 Events.OnFillInventoryObjectContextMenu.Add(onFillContextMenu)
 Events.OnGameStart.Add(onGameStart)
+
+-- For the tests (Core.lua).
+SurvivorComforts.internals.F06 = {
+    getList = getList,
+    addToFile = addToFile,
+    removeFromFile = removeFromFile,
+    add = add,
+    remove = remove,
+    contains = contains,
+    myName = myName,
+    myOrder = myOrder,
+    personalFull = personalFull,
+    sharedContains = sharedContains,
+    sharedByMe = sharedByMe,
+    sharedByMeCount = sharedByMeCount,
+    getColorMap = getColorMap,
+    colors = { personal = PERSONAL_COLOR, shared = SHARED_COLOR, both = BOTH_COLOR },
+    MAX_PERSONAL = MAX_PERSONAL,
+}

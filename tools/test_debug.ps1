@@ -8,6 +8,7 @@
 # this again after changing the mod, with the game closed.
 #
 #   powershell -File tools\test_debug.ps1              copy the mod and start the game
+#   powershell -File tools\test_debug.ps1 -Test        also copy and turn on the test mod (docs\testing.md)
 #   powershell -File tools\test_debug.ps1 -SetupOnly   only copy the mod and write the launch file
 #
 # Start a new game (Solo) from the main menu; the mod is already on. A save
@@ -18,6 +19,7 @@
 param(
     [string]$Root = $(if ($env:PZ_TEST_DIR) { $env:PZ_TEST_DIR } else { Join-Path $env:USERPROFILE "PZTest" }),
     [string]$GameDir = $env:PZ_GAME_DIR,
+    [switch]$Test,
     [switch]$SetupOnly
 )
 
@@ -33,6 +35,7 @@ New-Item -ItemType Directory -Force $Root | Out-Null
 
 $dataDir = Join-Path $Root "debug"
 Copy-Mod $dataDir
+Sync-TestMod $dataDir $Test
 Initialize-ClientOptions $dataDir
 
 # Turn the mod on in the main menu's mod list (new games start with it).
@@ -43,9 +46,9 @@ if (-not (Test-Path $resetMarker)) {
     [IO.File]::WriteAllText($resetMarker, "If this file does not exist, default.txt will be reset to empty (no mods active).", $utf8)
 }
 $modList = Join-Path $dataDir "mods\default.txt"
-[IO.File]::WriteAllLines($modList, [string[]]@(
-    "VERSION = 1,", "", "mods", "{", "    mod = $ModId,", "}", "", "maps", "{", "}"
-), $utf8)
+$modLines = @("    mod = $ModId,")
+if ($Test) { $modLines += "    mod = $TestModId," }
+[IO.File]::WriteAllLines($modList, [string[]](@("VERSION = 1,", "", "mods", "{") + $modLines + @("}", "", "maps", "{", "}")), $utf8)
 
 $cmd = Write-Launcher "debug" "$ModId debug" (Get-JavaLine "ProjectZomboid64.bat") "-nosteam -debug -cachedir=`"$dataDir`""
 
@@ -57,3 +60,6 @@ if ($SetupOnly) {
 
 Start-Process -FilePath $cmd -WorkingDirectory $GameDir
 Write-Host "Started the game in debug mode. Start a new Solo game; the mod is already on."
+if ($Test) {
+    Write-Host "The test mod is on. Start a game, then run the tests from Debug menu > Dev > Unit tests > Survivor Comforts. Results also go to $dataDir\console.txt ([SurvivorComfortsTests])."
+}

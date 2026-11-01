@@ -96,7 +96,8 @@ local function onMiniScoreboardUpdate()
     end
 end
 
-SurvivorComforts.onServerCommand(FEATURE_ID, "players", function(args)
+-- The players in the server's answer, newest first; broken entries are left out.
+local function readPlayers(args)
     local players = {}
     for _, entry in pairs(args.players or {}) do
         if type(entry) == "table" and type(entry.name) == "string" and tonumber(entry.lastSeen) then
@@ -104,7 +105,11 @@ SurvivorComforts.onServerCommand(FEATURE_ID, "players", function(args)
         end
     end
     table.sort(players, function(a, b) return a.lastSeen > b.lastSeen end)
-    lastSeen = { now = tonumber(args.now) or 0, receivedAt = getTimestampMs(), players = players }
+    return players
+end
+
+SurvivorComforts.onServerCommand(FEATURE_ID, "players", function(args)
+    lastSeen = { now = tonumber(args.now) or 0, receivedAt = getTimestampMs(), players = readPlayers(args) }
     refreshWindows()
 end)
 
@@ -116,6 +121,23 @@ local function agoText(seconds)
         return getText("UI_SurvivorComforts_F09_HoursAgo", tostring(math.floor(seconds / 3600)))
     end
     return getText("UI_SurvivorComforts_F09_DaysAgo", tostring(math.floor(seconds / (24 * 3600))))
+end
+
+-- The offline rows: players (newest first) who are not online and were seen
+-- in the last HIDE_AFTER, with their "... ago" text.
+local function offlineRows(onlineNames, players, now)
+    local isOnline = {}
+    for _, name in ipairs(onlineNames) do
+        isOnline[name] = true
+    end
+    local shown = {}
+    for _, entry in ipairs(players) do
+        local age = math.max(0, now - entry.lastSeen)
+        if not isOnline[entry.name] and age < HIDE_AFTER then
+            table.insert(shown, { name = entry.name, ago = agoText(age) })
+        end
+    end
+    return shown
 end
 
 ---------------------------------------------------------------------------
@@ -205,18 +227,7 @@ function SurvivorComforts_PlayerListWindow:refresh()
     local scroll = list:getYScroll()
     list:clear()
     if not online or not lastSeen then return end
-    local isOnline = {}
-    for _, name in ipairs(online) do
-        isOnline[name] = true
-    end
-    local now = serverNow()
-    local shown = {}
-    for _, entry in ipairs(lastSeen.players) do
-        local age = math.max(0, now - entry.lastSeen)
-        if not isOnline[entry.name] and age < HIDE_AFTER then
-            table.insert(shown, { name = entry.name, ago = agoText(age) })
-        end
-    end
+    local shown = offlineRows(online, lastSeen.players, serverNow())
     list:addItem(getText("UI_SurvivorComforts_F09_Online", tostring(#online)), { header = true })
     for _, name in ipairs(online) do
         list:addItem(name, { online = true, name = name })
@@ -254,3 +265,14 @@ windows = SurvivorComforts.addWindow({
 
 Events.OnScoreboardUpdate.Add(onScoreboardUpdate)
 Events.OnMiniScoreboardUpdate.Add(onMiniScoreboardUpdate)
+
+-- For the tests (Core.lua).
+SurvivorComforts.internals.F09 = {
+    agoText = agoText,
+    readPlayers = readPlayers,
+    offlineRows = offlineRows,
+    requestAll = requestAll,
+    isRequestPending = function() return allPending end,
+    HIDE_AFTER = HIDE_AFTER,
+    REQUEST_GAP = REQUEST_GAP,
+}

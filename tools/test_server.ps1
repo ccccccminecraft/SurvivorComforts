@@ -13,6 +13,7 @@
 #   powershell -File tools\test_server.ps1               copy the mod, start the server and 2 clients
 #   powershell -File tools\test_server.ps1 -Clients 1    only 1 client
 #   powershell -File tools\test_server.ps1 -Debug        start the clients in debug mode (see below)
+#   powershell -File tools\test_server.ps1 -Test         also copy and turn on the test mod (docs\testing.md)
 #   powershell -File tools\test_server.ps1 -SetupOnly    only copy the mod and write the launch files
 #
 # Then join from each client: Join > IP 127.0.0.1, port 16261, a different
@@ -34,6 +35,7 @@ param(
     [string]$GameDir = $env:PZ_GAME_DIR,
     [int]$Clients = 2,
     [switch]$Debug,
+    [switch]$Test,
     [switch]$SetupOnly
 )
 
@@ -52,8 +54,10 @@ New-Item -ItemType Directory -Force $Root | Out-Null
 # Server: the mod from its mods folder, no Workshop items.
 $serverDir = Join-Path $Root "server"
 Copy-Mod $serverDir
+Sync-TestMod $serverDir $Test
 $ini = Join-Path $serverDir "Server\$ServerName.ini"
-Set-IniValue $ini "Mods" $ModId
+# In multiplayer only the server's mods load, so the test mod is listed too.
+Set-IniValue $ini "Mods" $(if ($Test) { "$ModId;$TestModId" } else { $ModId })
 Set-IniValue $ini "WorkshopItems" ""
 Set-IniValue $ini "Open" "true"
 Set-IniValue $ini "Public" "false"
@@ -68,6 +72,7 @@ $clientCmds = @()
 for ($i = 1; $i -le $Clients; $i++) {
     $clientDir = Join-Path $Root "client$i"
     Copy-Mod $clientDir
+    Sync-TestMod $clientDir $Test
     Initialize-ClientOptions $clientDir
     $clientCmds += Write-Launcher "client$i" "$ModId test client $i" $clientJava "$clientArgs -cachedir=`"$clientDir`""
 }

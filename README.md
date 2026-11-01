@@ -32,6 +32,7 @@ Project Zomboid（Build 42.21 以降）用の MOD です。
 | [導入（一人で遊ぶ）](docs/install.md) | ワークショップでサブスクライブして有効にする |
 | [導入（サーバー）](docs/install-server.md) | サーバーの設定に追加する2行 |
 | [開発手順](docs/development.md) | 手元で構文チェックをして、ゲームで試すまで |
+| [テスト](docs/testing.md) | ゲームの中で動かす自動のテスト（テスト用の MOD） |
 | [フォルダ構成](docs/folders.md) | リポジトリのフォルダとドキュメントの一覧 |
 
 ## ライセンス

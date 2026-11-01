@@ -6,7 +6,7 @@
 SurvivorComforts\           リポジトリのルート（git clone した場所）
 ├── LICENSE                   MIT ライセンス
 ├── README.md                 MOD の紹介と、各ドキュメントへのリンク
-├── docs\                     遊ぶ人向けのページ（feature-list.md、install.md、install-server.md）、開発手順（development.md）、フォルダ構成（folders.md）、調査メモ、機能一覧（features.md）、このガイド、点検の結果（review-日付.md）
+├── docs\                     遊ぶ人向けのページ（feature-list.md、install.md、install-server.md）、開発手順（development.md）、テスト（testing.md）、フォルダ構成（folders.md）、調査メモ、機能一覧（features.md）、このガイド、点検の結果（review-日付.md）
 │   └── features\             機能ごとの要望・調査結果・仕様・確認項目（Fxx_名前.md）
 ├── tools\
 │   ├── check.ps1             Luaの構文チェック（ゲーム本体のコンパイラを使う）と、翻訳キー・ゲームのLuaにない関数の点検
@@ -20,6 +20,7 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 │   ├── make_preview.ps1      Workshopの画像（preview.png）とMOD一覧の画像（poster.png、icon.png）を作り直す
 │   ├── LuaSyntaxCheck.java   check.ps1 が使う構文チェッカー
 │   └── ModRules.java         check.ps1 が使う点検（翻訳キー、ゲームのLuaにない関数）
+├── mod-tests\SurvivorComfortsTests\  テスト用の MOD（Workshop には上げない。docs\testing.md）
 └── mod\SurvivorComforts\           Workshopにアップロードする単位
     ├── preview.png                Workshopに表示する画像（256x256ちょうど、1000KB以下）
     └── Contents\mods\SurvivorComforts\

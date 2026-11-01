@@ -11,6 +11,9 @@
 SurvivorComforts = SurvivorComforts or {}
 SurvivorComforts.MOD_ID = "SurvivorComforts"
 SurvivorComforts.features = SurvivorComforts.features or {}
+-- Functions the features keep to themselves, handed out for the tests in the
+-- test mod (mod-tests, docs/testing.md). Not for other mods: they may change.
+SurvivorComforts.internals = SurvivorComforts.internals or {}
 
 local options = PZAPI.ModOptions:create(SurvivorComforts.MOD_ID, getText("UI_SurvivorComforts_Title"))
 SurvivorComforts.options = options

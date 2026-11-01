@@ -1,0 +1,7 @@
+name=Survivor Comforts Tests
+id=SurvivorComfortsTests
+description=Automated tests for Survivor Comforts, run from the debug menu (Dev > Unit tests). For development only; not uploaded to the Workshop.
+require=\SurvivorComforts
+versionMin=42.21
+modversion=0.1.0
+category=interface

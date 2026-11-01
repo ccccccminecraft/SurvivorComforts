@@ -1,6 +1,7 @@
-# Syntax-checks every .lua file in the mod with the game's own Lua compiler,
-# then checks the translation keys and looks for standard Lua functions the
-# game's Lua does not have (ModRules.java).
+# Syntax-checks every .lua file in the mod and in the test mod (mod-tests)
+# with the game's own Lua compiler, then checks the mod's translation keys
+# and looks for standard Lua functions the game's Lua does not have
+# (ModRules.java).
 # Needs a JDK (javac, 13 or newer) to build the checkers, and the game's
 # bundled Java to run them.
 #
@@ -41,13 +42,15 @@ if (-not $Javac -or -not (Test-Path $Javac)) {
 
 $build = Join-Path $PSScriptRoot "build"
 $luaRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\mod\SurvivorComforts\Contents\mods\SurvivorComforts")).Path
+# The test mod (docs\testing.md) gets the syntax check only: it has no translations.
+$testRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\mod-tests\SurvivorComfortsTests")).Path
 
 New-Item -ItemType Directory -Force $build | Out-Null
 & $Javac --release 13 -d $build (Join-Path $PSScriptRoot "LuaSyntaxCheck.java") (Join-Path $PSScriptRoot "ModRules.java")
 if ($LASTEXITCODE -ne 0) { throw "javac failed" }
 
 $classPath = "$GameDir\projectzomboid.jar;$build"
-& "$GameDir\jre64\bin\java.exe" -cp $classPath LuaSyntaxCheck $luaRoot
+& "$GameDir\jre64\bin\java.exe" -cp $classPath LuaSyntaxCheck $luaRoot $testRoot
 $syntaxExit = $LASTEXITCODE
 
 # Kahlua reads its stdlib.lua from the working folder.

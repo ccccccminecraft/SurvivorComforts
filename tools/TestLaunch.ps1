@@ -11,10 +11,24 @@ function Get-JavaLine($bat) {
     return ($java.Trim() -replace '%PZ_CLASSPATH%', $classpath -replace '\s*%\d', '')
 }
 
-function Copy-Mod($dataDir) {
-    $dest = Join-Path $dataDir "mods\$ModId"
-    robocopy $modSource $dest /MIR /NFL /NDL /NJH /NJS /NP | Out-Null
+function Copy-Mod($dataDir, $id = $ModId, $source = $modSource) {
+    $dest = Join-Path $dataDir "mods\$id"
+    robocopy $source $dest /MIR /NFL /NDL /NJH /NJS /NP | Out-Null
     if ($LASTEXITCODE -ge 8) { throw "Copying the mod to $dest failed (robocopy $LASTEXITCODE)." }
+}
+
+# The test mod (docs\testing.md): copied with -Test, removed without it so an
+# old copy does not stay on.
+$TestModId = "SurvivorComfortsTests"
+$testModSource = Join-Path $PSScriptRoot "..\mod-tests\SurvivorComfortsTests"
+
+function Sync-TestMod($dataDir, $wanted) {
+    if ($wanted) {
+        Copy-Mod $dataDir $TestModId $testModSource
+    } else {
+        $dest = Join-Path $dataDir "mods\$TestModId"
+        if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
+    }
 }
 
 # Sets key=value in an ini file, adding the line if it is missing.

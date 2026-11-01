@@ -8,8 +8,8 @@ MOD の開発に使うスクリプトです。MOD 本体には含まれません
 | `LuaSyntaxCheck.java` | `check.ps1` が使う構文チェッカーです。直接実行する必要はありません |
 | `ModRules.java` | `check.ps1` が使う点検（翻訳キー、ゲームの Lua にない関数）です。直接実行する必要はありません |
 | `deploy.ps1` | MOD を `%USERPROFILE%\Zomboid\Workshop\SurvivorComforts` にコピーし、ゲームから読み込んだりアップロードしたりできるようにします |
-| `test_server.ps1` | このPCでテスト用のサーバーとゲーム（初期値2つ）を Steam なしで起動し、1台で複数人のマルチプレイを試せるようにします。データは `%USERPROFILE%\PZTest` に分けて置き、普段のセーブには触れません。`-Debug` を付けると、ゲームをデバッグモードで起動します（管理者のアカウントでしか入れません。ユーザー名 `admin`、パスワード `admin`。詳しくは [dev-guide.md](../docs/dev-guide.md)） |
-| `test_debug.ps1` | ゲームをデバッグモード（`-debug`）で、Steam なしで1つ起動します。シングルプレイで、デバッグのメニューからアイテムを出して試すときに使います。MOD は有効にした状態で起動し、データは `%USERPROFILE%\PZTest\debug` に分けて置きます |
+| `test_server.ps1` | このPCでテスト用のサーバーとゲーム（初期値2つ）を Steam なしで起動し、1台で複数人のマルチプレイを試せるようにします。データは `%USERPROFILE%\PZTest` に分けて置き、普段のセーブには触れません。`-Debug` を付けると、ゲームをデバッグモードで起動します（管理者のアカウントでしか入れません。ユーザー名 `admin`、パスワード `admin`。詳しくは [dev-guide.md](../docs/dev-guide.md)）。`-Test` を付けると、テスト用の MOD（[docs/testing.md](../docs/testing.md)）もサーバーとゲームに入れます |
+| `test_debug.ps1` | ゲームをデバッグモード（`-debug`）で、Steam なしで1つ起動します。シングルプレイで、デバッグのメニューからアイテムを出して試すときに使います。MOD は有効にした状態で起動し、データは `%USERPROFILE%\PZTest\debug` に分けて置きます。`-Test` を付けると、テスト用の MOD も入れて有効にし。テストはデバッグメニューの「ユニットテスト」から始めます（[docs/testing.md](../docs/testing.md)） |
 | `TestLaunch.ps1` | `test_server.ps1` と `test_debug.ps1` の共通処理です（起動のコマンドの組み立て、MOD のコピーなど） |
 | `GameDir.ps1` | ゲームのフォルダを Steam のライブラリから探す共通処理です。`check.ps1`・`test_server.ps1`・`test_debug.ps1`・`make_english_names.ps1` が使います |
 | `make_icons.ps1` | 画面左のボタンのアイコン（スキル、ウィッシュリスト、プレイヤー一覧）を描きます。デザインを変えるときだけ実行します |
