@@ -18,7 +18,6 @@ Survivor Comforts
 ```
 [h1]Survivor Comforts[/h1]
 Project Zomboid（Build 42.21 以降）用の、ちょっとした便利機能をまとめた MOD です。
-身内のマルチプレイサーバー向けに作っていますが、一人で遊ぶときにも使えます。
 
 [list]
 [*]機能ごとに「オプション」→「MOD」→「Survivor Comforts」で ON/OFF できます
@@ -28,8 +27,14 @@ Project Zomboid（Build 42.21 以降）用の、ちょっとした便利機能�
 
 [h2]機能[/h2]
 [list]
-[*][b]読書の残り時間[/b]
-本を読んでいる間、読み終わるまでの時間をキャラクターの足元に表示します。ゲーム内の時間はオレンジ、現実の時間は緑で表示します。
+[*][b]インベントリ検索[/b]
+インベントリと周りの容器の一覧の検索欄で、名前で一覧を絞り込みます。合うアイテムが上にまとまり、ほかは暗く表示されます（オプションで隠すこともできます）。ひらがなとカタカナは区別せず、英語名（hammer など）でも見つかります。検索中の「すべて取る」「すべて移す」は、合うアイテムだけを移します。itsu07 さんの Inventory Search を元にしています。
+
+[*][b]アイテムからレシピを見る[/b]
+アイテムを右クリック →「レシピを見る」で、そのアイテムを作れるレシピに絞り込んだ制作の画面を開きます。作れるレシピがないときは赤く表示されます。
+
+[*][b]材料のレシピをたどる[/b]
+制作・建築の画面で材料を右クリック →「レシピを見る」で、その材料を作れるレシピに絞り込みます。検索欄の左の「戻る」で、たどる前の表示に戻れます。
 
 [*][b]ウィッシュリスト[/b]
 欲しいアイテムを右クリックで登録すると、インベントリや周りの容器で色付きで表示されます（自分のリストはオレンジ）。
@@ -41,14 +46,17 @@ Project Zomboid（Build 42.21 以降）用の、ちょっとした便利機能�
 [*][b]料理の食材をまとめる[/b]
 スープやサラダに食材を加えるメニューで、同じ食材を1行にまとめ、残りが少ないものから使います。
 
-[*][b]スキルウィンドウ[/b]
-スキルの一覧を、大きさを変えられる独立したウィンドウで表示します。画面左のボタンで開きます。オプションでキーを決めると、キーでも開けます。
-
 [*][b]プレイヤー一覧[/b]
 サーバーにオンラインの人と、7日以内に来ていたオフラインの人を一覧で表示します。オフラインの人には「3時間前」のように最終ログインが出ます。画面左の人のボタンから開けます。マルチプレイのときだけ使えます。
 
+[*][b]読書の残り時間[/b]
+本を読んでいる間、読み終わるまでの時間をキャラクターの足元に表示します。ゲーム内の時間はオレンジ、現実の時間は緑で表示します。
+
 [*][b]ほかの人のスキルを見る[/b]
 プレイヤー一覧でオンラインの人をクリックすると、その人のスキルのレベルをウィンドウで表示します。スキルはサーバーで読むので、ごまかせません。マルチプレイのときだけ使えます。itsu07 さんの Skill Viewer を元にしています。
+
+[*][b]スキルウィンドウ[/b]
+スキルの一覧を、大きさを変えられる独立したウィンドウで表示します。画面左のボタンで開きます。オプションでキーを決めると、キーでも開けます。
 
 [*][b]PvP の切り替えボタンを隠す[/b]
 画面左のドクロのボタンを隠し、PvP を常にオフにします。G キーでの切り替えも無効になります。
@@ -56,17 +64,8 @@ Project Zomboid（Build 42.21 以降）用の、ちょっとした便利機能�
 [*][b]ユーザーパネルのボタンを隠す[/b]
 画面左のユーザーパネル（派閥・セーフハウスなど）のボタンを隠し、下のボタンを詰めます。管理者には常に表示します。隠している間は、パネルの中の画面（派閥、チケットなど）も開けません。使うときはオプションで OFF にしてください。
 
-[*][b]アイテムからレシピを見る[/b]
-アイテムを右クリック →「レシピを見る」で、そのアイテムを作れるレシピに絞り込んだ制作の画面を開きます。作れるレシピがないときは赤く表示されます。
-
-[*][b]材料のレシピをたどる[/b]
-制作・建築の画面で材料を右クリック →「レシピを見る」で、その材料を作れるレシピに絞り込みます。検索欄の左の「戻る」で、たどる前の表示に戻れます。
-
 [*][b]英語名でも検索する[/b]
 日本語でプレイしていても、制作・建築の画面の検索で、英語名（plank、saw logs など）でもレシピが見つかります。空白で区切った語は、全部入っているものが出ます。オプションで、英語名を含めるかを選べます。
-
-[*][b]インベントリ検索[/b]
-インベントリと周りの容器の一覧の検索欄で、名前で一覧を絞り込みます。合うアイテムが上にまとまり、ほかは暗く表示されます（オプションで隠すこともできます）。ひらがなとカタカナは区別せず、英語名（hammer など）でも見つかります。検索中の「すべて取る」「すべて移す」は、合うアイテムだけを移します。itsu07 さんの Inventory Search を元にしています。
 [/list]
 
 [h2]導入[/h2]
@@ -103,8 +102,14 @@ Made for a private multiplayer server, but it also works in single player.
 
 [h2]Features[/h2]
 [list]
-[*][b]Reading time left[/b]
-While reading, shows the time left under your character: in-game time in orange, real time in green.
+[*][b]Inventory search[/b]
+A search box on the inventory and nearby container lists narrows the list by name. Matching items move to the top and the others are dimmed (or hidden, in the options). Hiragana and katakana are treated as the same, and English names (hammer and so on) work too. While searching, "Loot all" and "Transfer all" move only the matching items. Based on Inventory Search by itsu07.
+
+[*][b]Show recipes for an item[/b]
+Right-click an item and choose "Show recipes" to open the crafting window filtered to recipes that make it. The option is shown in red when no recipe makes the item.
+
+[*][b]Follow ingredient recipes[/b]
+In the crafting and building windows, right-click an ingredient and choose "Show recipes" to see the recipes that make it. The Back button left of the search box returns to what was shown before.
 
 [*][b]Wishlist[/b]
 Right-click an item to add it to your wishlist. Wanted items are highlighted in your inventory and in nearby containers (your list in orange).
@@ -116,14 +121,17 @@ Your list holds up to 100 items; each player can share up to 30 kinds, and the s
 [*][b]Group cooking ingredients[/b]
 In the menu for adding ingredients to soups and salads, the same ingredient is shown on one line, and the item with the least left is used first.
 
-[*][b]Skills window[/b]
-Shows your skills in a separate, resizable window. Open it with the button on the left of the screen, or set a key for it in the options.
-
 [*][b]Player list[/b]
 Lists who is online on the server, and who was online in the last 7 days with when they were last online ("3 h ago"). Open it with the people button on the left of the screen. Multiplayer only.
 
+[*][b]Reading time left[/b]
+While reading, shows the time left under your character: in-game time in orange, real time in green.
+
 [*][b]Members' skills[/b]
 Click an online player in the player list to see their skill levels in a window. The skills are read on the server, so they cannot be faked. Multiplayer only. Based on Skill Viewer by itsu07.
+
+[*][b]Skills window[/b]
+Shows your skills in a separate, resizable window. Open it with the button on the left of the screen, or set a key for it in the options.
 
 [*][b]Hide the PvP button[/b]
 Hides the skull button on the left of the screen and keeps PvP off. The G key no longer toggles PvP.
@@ -131,17 +139,8 @@ Hides the skull button on the left of the screen and keeps PvP off. The G key no
 [*][b]Hide the user panel button[/b]
 Hides the user panel button (factions, safehouses and more) on the left of the screen and moves the buttons below up. Admins always see it. While it is hidden, the windows in the user panel (factions, tickets and more) cannot be opened; turn it off in the options when you need them.
 
-[*][b]Show recipes for an item[/b]
-Right-click an item and choose "Show recipes" to open the crafting window filtered to recipes that make it. The option is shown in red when no recipe makes the item.
-
-[*][b]Follow ingredient recipes[/b]
-In the crafting and building windows, right-click an ingredient and choose "Show recipes" to see the recipes that make it. The Back button left of the search box returns to what was shown before.
-
 [*][b]Search by English name too[/b]
 When the game is in another language, the search in the crafting and building windows also finds recipes by English name (plank, saw logs and so on). Recipes with every word you type are shown. You can turn English names off in the options.
-
-[*][b]Inventory search[/b]
-A search box on the inventory and nearby container lists narrows the list by name. Matching items move to the top and the others are dimmed (or hidden, in the options). Hiragana and katakana are treated as the same, and English names (hammer and so on) work too. While searching, "Loot all" and "Transfer all" move only the matching items. Based on Inventory Search by itsu07.
 [/list]
 
 [h2]Installation[/h2]
