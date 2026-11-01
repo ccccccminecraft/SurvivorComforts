@@ -24,8 +24,10 @@ SurvivorComforts.registerFeature({
     end,
 })
 
--- playerNum -> { action, samples = { {delta, gameHours, ms}, ... }, lastSampleMs, gameMinutes, realSeconds }
--- gameMinutes / realSeconds stay nil until the first estimate.
+-- playerNum -> { action, samples = { {delta, gameHours, ms}, ... }, lastSampleMs, gameMinutes, realSeconds,
+--   labelKey, labelParts, labelWidth }
+-- gameMinutes / realSeconds stay nil until the first estimate. The label
+-- fields keep the last text drawn (see labelParts).
 local trackers = {}
 
 local function currentReadAction(player)
@@ -90,12 +92,9 @@ local function buildParts(key, values)
     return parts
 end
 
--- Returns nil when both times are turned off.
-local function labelParts(tracker)
-    local showGame = SurvivorComforts.getOptionValue(FEATURE_ID .. "_game") == true
-    local showReal = SurvivorComforts.getOptionValue(FEATURE_ID .. "_real") == true
-    local game = { text = formatGameMinutes(tracker.gameMinutes), color = GAME_COLOR }
-    local real = { text = formatRealSeconds(tracker.realSeconds), color = REAL_COLOR }
+local function buildLabel(showGame, showReal, gameText, realText)
+    local game = { text = gameText, color = GAME_COLOR }
+    local real = { text = realText, color = REAL_COLOR }
     if showGame and showReal then
         return buildParts("UI_SurvivorComforts_F04_GameAndReal", { game, real })
     elseif showGame then
@@ -104,6 +103,30 @@ local function labelParts(tracker)
         return buildParts("UI_SurvivorComforts_F04_One", { real })
     end
     return nil
+end
+
+-- The parts to draw (each with its width) and the total width, or nil when
+-- both times are turned off. The translation and the widths are worked out
+-- again only when the text changes, not every frame.
+local function labelParts(tracker)
+    local showGame = SurvivorComforts.getOptionValue(FEATURE_ID .. "_game") == true
+    local showReal = SurvivorComforts.getOptionValue(FEATURE_ID .. "_real") == true
+    local gameText = formatGameMinutes(tracker.gameMinutes)
+    local realText = formatRealSeconds(tracker.realSeconds)
+    local key = tostring(showGame) .. tostring(showReal) .. gameText .. "|" .. realText
+    if tracker.labelKey ~= key then
+        local parts = buildLabel(showGame, showReal, gameText, realText)
+        local width = 0
+        if parts then
+            local textManager = getTextManager()
+            for _, part in ipairs(parts) do
+                part.width = textManager:MeasureStringX(UIFont.Small, part.text)
+                width = width + part.width
+            end
+        end
+        tracker.labelKey, tracker.labelParts, tracker.labelWidth = key, parts, width
+    end
+    return tracker.labelParts, tracker.labelWidth
 end
 
 local function updateTracker(player)
@@ -162,15 +185,9 @@ function SurvivorComforts_ReadingTimeLabel:render()
     local tracker = trackers[self.playerNum]
     local player = getSpecificPlayer(self.playerNum)
     if not tracker or not player then return end
-    local parts = labelParts(tracker)
+    local parts, width = labelParts(tracker)
     if not parts then return end
     local font = UIFont.Small
-    local textManager = getTextManager()
-    local width = 0
-    for _, part in ipairs(parts) do
-        part.width = textManager:MeasureStringX(font, part.text)
-        width = width + part.width
-    end
     local sx = isoToScreenX(self.playerNum, player:getX(), player:getY(), player:getZ())
     local sy = isoToScreenY(self.playerNum, player:getX(), player:getY(), player:getZ())
     local x = sx - self:getAbsoluteX() - width / 2
