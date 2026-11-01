@@ -1,6 +1,8 @@
-# Syntax-checks every .lua file in the mod with the game's own Lua compiler.
-# Needs a JDK (javac, 13 or newer) to build the checker, and the game's bundled
-# Java to run it.
+# Syntax-checks every .lua file in the mod with the game's own Lua compiler,
+# then checks the translation keys and looks for standard Lua functions the
+# game's Lua does not have (ModRules.java).
+# Needs a JDK (javac, 13 or newer) to build the checkers, and the game's
+# bundled Java to run them.
 #
 # The game and javac are found automatically:
 #   game : Steam's library folders (from the registry), steamapps\common\ProjectZomboid
@@ -38,11 +40,24 @@ if (-not $Javac -or -not (Test-Path $Javac)) {
 }
 
 $build = Join-Path $PSScriptRoot "build"
-$luaRoot = Join-Path $PSScriptRoot "..\mod\SurvivorComforts\Contents\mods\SurvivorComforts"
+$luaRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\mod\SurvivorComforts\Contents\mods\SurvivorComforts")).Path
 
 New-Item -ItemType Directory -Force $build | Out-Null
-& $Javac --release 13 -d $build (Join-Path $PSScriptRoot "LuaSyntaxCheck.java")
+& $Javac --release 13 -d $build (Join-Path $PSScriptRoot "LuaSyntaxCheck.java") (Join-Path $PSScriptRoot "ModRules.java")
 if ($LASTEXITCODE -ne 0) { throw "javac failed" }
 
-& "$GameDir\jre64\bin\java.exe" -cp "$GameDir\projectzomboid.jar;$build" LuaSyntaxCheck $luaRoot
-exit $LASTEXITCODE
+$classPath = "$GameDir\projectzomboid.jar;$build"
+& "$GameDir\jre64\bin\java.exe" -cp $classPath LuaSyntaxCheck $luaRoot
+$syntaxExit = $LASTEXITCODE
+
+# Kahlua reads its stdlib.lua from the working folder.
+Push-Location $GameDir
+try {
+    & "$GameDir\jre64\bin\java.exe" -cp $classPath ModRules $luaRoot
+    $rulesExit = $LASTEXITCODE
+} finally {
+    Pop-Location
+}
+
+if ($syntaxExit -ne 0 -or $rulesExit -ne 0) { exit 1 }
+exit 0

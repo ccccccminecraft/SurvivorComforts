@@ -7,7 +7,7 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 ├── docs\                     調査メモ、機能一覧（features.md）、このガイド、全体の点検の結果（review-日付.md）
 │   └── features\             機能ごとの要望・調査結果・仕様・確認項目（Fxx_名前.md）
 ├── tools\
-│   ├── check.ps1             Luaの構文チェック（ゲーム本体のコンパイラを使う）
+│   ├── check.ps1             Luaの構文チェック（ゲーム本体のコンパイラを使う）と、翻訳キー・ゲームのLuaにない関数の点検
 │   ├── deploy.ps1            ゲームから読める場所へMODをコピーする
 │   ├── test_server.ps1       テスト用のサーバーとゲーム2つを Steam なしで起動する（1台で複数人を試す）
 │   ├── test_debug.ps1        ゲームをデバッグモードで Steam なしで起動する（アイテムを出して試す）
@@ -16,7 +16,8 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 │   ├── make_icons.ps1        左のアイコン用の画像（media\ui\SurvivorComforts）を作り直す
 │   ├── make_english_names.ps1 英語名の表（EnglishNames.lua）を作り直す。ゲームを更新したら実行する
 │   ├── make_preview.ps1      Workshopの画像（preview.png）とMOD一覧の画像（poster.png、icon.png）を作り直す
-│   └── LuaSyntaxCheck.java   check.ps1 が使うチェッカー
+│   ├── LuaSyntaxCheck.java   check.ps1 が使う構文チェッカー
+│   └── ModRules.java         check.ps1 が使う点検（翻訳キー、ゲームのLuaにない関数）
 └── mod\SurvivorComforts\           Workshopにアップロードする単位
     ├── preview.png                Workshopに表示する画像（256x256ちょうど、1000KB以下）
     └── Contents\mods\SurvivorComforts\
@@ -68,10 +69,14 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 
 ## 変更してから試すまで
 
-1. 構文チェック
+1. 構文チェックと点検
    ```
    powershell -File tools\check.ps1
    ```
+   - 構文のほかに、次を自動で点検する。どれかに引っかかると、最後に `ERROR` の行が出て失敗する
+     - 翻訳キー：日本語（JP）と英語（EN）の `UI.json` に、同じキーがそろっているか。コードで使っているキー（`"UI_SurvivorComforts_..."`）が、両方にあるか。同じキーが2回書かれていないか
+     - 使っていない翻訳キー：コードのどこにも出てこないキー。`"UI_SurvivorComforts_" .. 機能のID .. "_Key"` のように組み立てて使うキーは、最後の部分（`"_Key"`）がコードにあれば使っているとみなす。これは `WARN` で、失敗にはしない
+     - ゲームの Lua（Kahlua）にない関数：標準の Lua 5.1 にはあるが、ゲームの Lua にはない関数（`next`、`xpcall`、`math.random`、`io` など）を使っていないか。ゲームの Lua にあるものは、ゲーム本体から毎回読み取るので、ゲームの更新で増えたり減ったりしても追いかける。`require` はゲームが別に用意しているので対象外。コメントと文字列の中は見ない
    - JDK（13以降）が必要。チェッカーをコンパイルするのに使う（実行にはゲーム本体のJavaを使う）
    - ゲームと javac の場所は自動で探す
      - ゲーム：Steamのライブラリフォルダ（レジストリと `libraryfolders.vdf`）の `steamapps\common\ProjectZomboid`
