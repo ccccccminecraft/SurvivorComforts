@@ -118,6 +118,14 @@ powershell -File tools\test_debug.ps1
 - Steam なしで動かすので、データ（セーブ、オプション、ログの `console.txt`）は `%USERPROFILE%\PZTest\debug` に分けて置かれ、普段のセーブやオプションには触れない
 - MOD を直したら、ゲームを閉じてもう一度実行する（ゲーム内で Lua を読み直すこともできる）
 - マルチプレイでデバッグモードを使うときは、`tools\test_server.ps1 -Debug`（ゲームだけデバッグモードで起動する）
+  - サーバーは、デバッグモードのゲームを管理者しか入れない（ゲームの文：「Debug connection is not allowed for non admin.」）。新しいユーザー名で入ろうとすると、接続の途中で止まる
+  - 1人目は、サーバーの管理者のアカウント（ユーザー名 `admin`、パスワード `admin`）で入る
+  - 2人目からは、入る前にサーバーの画面で管理者のアカウントを作り、そのユーザー名とパスワードで入る
+    ```
+    adduser "test2" "test"
+    setaccesslevel "test2" admin
+    ```
+  - スキルを上げるだけなら、デバッグモードを使わなくても、サーバーの画面で `addxp "ユーザー名" Woodwork=1000` のようにして上げられる
 
 ## 1台で複数人を試す
 

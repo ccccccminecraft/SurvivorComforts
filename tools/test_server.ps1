@@ -12,12 +12,20 @@
 #
 #   powershell -File tools\test_server.ps1               copy the mod, start the server and 2 clients
 #   powershell -File tools\test_server.ps1 -Clients 1    only 1 client
-#   powershell -File tools\test_server.ps1 -Debug        start the clients in debug mode
+#   powershell -File tools\test_server.ps1 -Debug        start the clients in debug mode (see below)
 #   powershell -File tools\test_server.ps1 -SetupOnly    only copy the mod and write the launch files
 #
 # Then join from each client: Join > IP 127.0.0.1, port 16261, a different
 # user name in each (a new name makes a new account). The server's admin
 # password is "admin". Stop the server by typing "quit" in its window.
+#
+# The server lets a client in debug mode join only as an admin ("Debug
+# connection is not allowed for non admin"). With -Debug, join with the
+# server's admin account (user "admin", password "admin"). For more admins,
+# type in the server window, before they join:
+#   adduser "test2" "test"
+#   setaccesslevel "test2" admin
+# and join with that user name and password.
 # The launch files are also written to <Root>\*.cmd, to start one again by hand.
 # For single player in debug mode, use test_debug.ps1.
 
@@ -75,3 +83,7 @@ foreach ($cmd in $clientCmds) {
     Start-Process -FilePath $cmd -WorkingDirectory $GameDir
 }
 Write-Host "Started the server and $Clients client(s). Join 127.0.0.1 port 16261 with a different user name in each."
+if ($Debug) {
+    Write-Host "Debug mode: only admins can join. Use user `"admin`" / password `"$AdminPassword`"; for another admin, type in the server window:"
+    Write-Host "  adduser `"test2`" `"test`"   then   setaccesslevel `"test2`" admin"
+}
