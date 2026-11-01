@@ -19,6 +19,7 @@
 --   "recipe"         a recipe in the recipe list (entries are its results)
 
 require "SurvivorComforts/Core"
+require "SurvivorComforts/Recipes"
 require "ISUI/ISContextMenu"
 require "Entity/ISUI/CraftRecipe/ISWidgetInput"
 require "Entity/ISUI/CraftRecipe/ISWidgetOutput"
@@ -64,14 +65,13 @@ local function addScriptEntry(entries, seen, script)
     end
 end
 
-local function showMenuForScripts(player, scriptLists, kind)
+-- The item results of a recipe (build recipes have none).
+local function showMenuForRecipe(player, recipe)
     local entries, seen = {}, {}
-    for _, list in ipairs(scriptLists) do
-        for i = 0, list:size() - 1 do
-            addScriptEntry(entries, seen, list:get(i))
-        end
-    end
-    showMenu(player, entries, kind)
+    SurvivorComforts.forEachRecipeItem(recipe, "outputs", function(script)
+        addScriptEntry(entries, seen, script)
+    end)
+    showMenu(player, entries, "recipe")
 end
 
 -- The item an ingredient or result icon is showing right now. An ingredient
@@ -83,19 +83,6 @@ local function shownItemEntry(values)
     if not fullType then return nil end
     local script = ScriptManager.instance:getItem(fullType)
     return { fullType = fullType, name = values.iconText or (script and script:getDisplayName()) or fullType }
-end
-
--- Item results of a recipe (fluids and energy are skipped; build recipes have none).
-local function recipeResultLists(recipe)
-    local lists = {}
-    local outputs = recipe:getOutputs()
-    for i = 0, outputs:size() - 1 do
-        local output = outputs:get(i)
-        if output:getResourceType() == ResourceType.Item then
-            table.insert(lists, output:getPossibleResultItems())
-        end
-    end
-    return lists
 end
 
 -- Clicks on a child (the icon, the label) reach the widget through either
@@ -172,7 +159,7 @@ hookRightClick(ISRecipeScrollingListBox, function(self, x, y)
     local row = self.items[self:rowAt(x, y)]
     local recipe = row and not row.groupNode and row.item
     if recipe then
-        showMenuForScripts(self.player, recipeResultLists(recipe), "recipe")
+        showMenuForRecipe(self.player, recipe)
     end
 end)
 
@@ -183,6 +170,6 @@ hookRightClick(ISTiledIconListBox, function(self, x, y)
         local player = getSpecificPlayer(0)
         local panel = self.parent
         if panel and panel.player then player = panel.player end
-        showMenuForScripts(player, recipeResultLists(recipe), "recipe")
+        showMenuForRecipe(player, recipe)
     end
 end)

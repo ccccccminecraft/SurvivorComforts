@@ -10,6 +10,7 @@
 
 require "SurvivorComforts/Core"
 require "SurvivorComforts/Search"
+require "SurvivorComforts/Recipes"
 require "Entity/ISUI/CraftRecipe/ISHandCraftPanel"
 require "Entity/ISUI/BuildRecipe/ISBuildPanel"
 
@@ -25,38 +26,13 @@ SurvivorComforts.registerFeature({
 ---------------------------------------------------------------------------
 -- Matching a recipe
 ---------------------------------------------------------------------------
--- Calls fn with each item script of a recipe's inputs ("InputName") or
--- results ("OutputName"); true as soon as fn is.
-local function anyItem(recipe, mode, fn)
-    if mode == "InputName" then
-        local inputs = recipe:getInputs()
-        for i = 0, inputs:size() - 1 do
-            local input = inputs:get(i)
-            if input:getResourceType() == ResourceType.Item then
-                local items = input:getPossibleInputItems()
-                for j = 0, items:size() - 1 do
-                    if fn(items:get(j)) then return true end
-                end
-            end
-        end
-    else
-        local outputs = recipe:getOutputs()
-        for i = 0, outputs:size() - 1 do
-            local output = outputs:get(i)
-            if output:getResourceType() == ResourceType.Item then
-                local items = output:getPossibleResultItems()
-                for j = 0, items:size() - 1 do
-                    if fn(items:get(j)) then return true end
-                end
-            end
-        end
-    end
-    return false
-end
+-- Vanilla's search modes for ingredients and results.
+local ITEM_MODES = { InputName = "inputs", OutputName = "outputs" }
 
 local function matches(recipe, words, mode, english)
-    if mode == "InputName" or mode == "OutputName" then
-        return anyItem(recipe, mode, function(item)
+    local kind = ITEM_MODES[mode]
+    if kind then
+        return SurvivorComforts.forEachRecipeItem(recipe, kind, function(item)
             return search.matches(search.itemText(item:getFullName(), item:getDisplayName(), english), words)
         end)
     end

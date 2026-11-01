@@ -13,6 +13,24 @@ require "Entity/ISUI/CraftRecipe/ISHandCraftPanel"
 
 local MAX_HISTORY = 10
 
+-- Calls fn with each item script (scripts.Item) a CraftRecipe takes ("inputs")
+-- or makes ("outputs"); fluids and energy are skipped. Stops and returns true
+-- as soon as fn returns true.
+function SurvivorComforts.forEachRecipeItem(recipe, kind, fn)
+    local isInputs = kind == "inputs"
+    local parts = isInputs and recipe:getInputs() or recipe:getOutputs()
+    for i = 0, parts:size() - 1 do
+        local part = parts:get(i)
+        if part:getResourceType() == ResourceType.Item then
+            local items = isInputs and part:getPossibleInputItems() or part:getPossibleResultItems()
+            for j = 0, items:size() - 1 do
+                if fn(items:get(j)) then return true end
+            end
+        end
+    end
+    return false
+end
+
 -- fullType -> true for every item some crafting recipe makes. Recipes do not
 -- change while playing, so this is built once, on first use.
 local craftable = nil
@@ -21,16 +39,9 @@ local function buildIndex()
     craftable = {}
     local recipes = ScriptManager.instance:getAllCraftRecipes()
     for i = 0, recipes:size() - 1 do
-        local outputs = recipes:get(i):getOutputs()
-        for j = 0, outputs:size() - 1 do
-            local output = outputs:get(j)
-            if output:getResourceType() == ResourceType.Item then
-                local items = output:getPossibleResultItems()
-                for k = 0, items:size() - 1 do
-                    craftable[items:get(k):getFullName()] = true
-                end
-            end
-        end
+        SurvivorComforts.forEachRecipeItem(recipes:get(i), "outputs", function(item)
+            craftable[item:getFullName()] = true
+        end)
     end
 end
 
