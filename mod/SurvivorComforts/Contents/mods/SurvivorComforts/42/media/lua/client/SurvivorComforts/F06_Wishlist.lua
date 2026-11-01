@@ -51,16 +51,17 @@ end
 ---------------------------------------------------------------------------
 local wishlist = nil  -- { set = { [fullType] = true }, order = { fullType, ... } }
 
--- fullType -> highlight colour, rebuilt only after a list changes (see
--- drawHighlights below).
-local colorMap = nil
+-- What is worked out from the lists: my list's order, how many items I share
+-- and the highlight colours (see getDerived below). Thrown away when a list
+-- changes, and worked out again when next needed.
+local derived = nil
 
-local function invalidateColors()
-    colorMap = nil
+local function invalidateDerived()
+    derived = nil
 end
 
 local function load()
-    invalidateColors()
+    invalidateDerived()
     wishlist = { set = {}, order = {} }
     local reader = getFileReader(FILE_NAME, true)
     if not reader then return end
@@ -104,7 +105,7 @@ local function addToFile(fullTypes)
         end
     end
     if changed then
-        invalidateColors()
+        invalidateDerived()
         save()
     end
 end
@@ -121,7 +122,7 @@ local function removeFromFile(fullTypes)
         end
     end
     list.order = order
-    invalidateColors()
+    invalidateDerived()
     save()
 end
 
@@ -163,18 +164,33 @@ local function contains(fullType)
     return inFile(fullType) or (sharedEnabled() and sharedByMe(fullType))
 end
 
+-- The cache of what is worked out from the lists (see derived above). Also
+-- started again when the shared list option or the player's name changes.
+local function getDerived()
+    local useShared = sharedEnabled()
+    local name = myName()
+    if not derived or derived.useShared ~= useShared or derived.name ~= name then
+        derived = { useShared = useShared, name = name }
+    end
+    return derived
+end
+
+-- Not to be changed by the caller: it is kept until a list changes.
 local function myOrder()
+    local cache = getDerived()
+    if cache.order then return cache.order end
     local order = {}
     for _, fullType in ipairs(getList().order) do
         table.insert(order, fullType)
     end
-    if sharedEnabled() then
+    if cache.useShared then
         for _, fullType in ipairs(shared.order) do
             if not inFile(fullType) and sharedByMe(fullType) then
                 table.insert(order, fullType)
             end
         end
     end
+    cache.order = order
     return order
 end
 
@@ -189,10 +205,13 @@ local function personalFull()
 end
 
 local function sharedByMeCount()
+    local cache = getDerived()
+    if cache.sharedCount then return cache.sharedCount end
     local n = 0
     for _, fullType in ipairs(shared.order) do
         if sharedByMe(fullType) then n = n + 1 end
     end
+    cache.sharedCount = n
     return n
 end
 
@@ -334,7 +353,7 @@ SurvivorComforts.onServerCommand(FEATURE_ID, "wishlist", function(args)
             table.insert(shared.order, entry.fullType)
         end
     end
-    invalidateColors()
+    invalidateDerived()
     refreshWindows()
 end)
 
@@ -374,28 +393,23 @@ end
 ---------------------------------------------------------------------------
 local BOTH_COLOR = { r = 0.95, g = 0.3, b = 0.3 }
 
--- Built from the lists once, instead of checking both lists (and who shares
--- each item) for every row in every frame. Also rebuilt when the shared list
--- option or the player's name changes.
-local colorMapShared, colorMapName
-
+-- fullType -> colour, built from the lists once (kept with getDerived),
+-- instead of checking both lists (and who shares each item) for every row in
+-- every frame.
 local function getColorMap()
-    local useShared = sharedEnabled()
-    local name = myName()
-    if colorMap and colorMapShared == useShared and colorMapName == name then
-        return colorMap
-    end
+    local cache = getDerived()
+    if cache.colors then return cache.colors end
     local map = {}
     -- myOrder() is "my list": the file, plus what I share with the shared list on.
     for _, fullType in ipairs(myOrder()) do
         map[fullType] = PERSONAL_COLOR
     end
-    if useShared then
+    if cache.useShared then
         for _, fullType in ipairs(shared.order) do
             map[fullType] = map[fullType] and BOTH_COLOR or SHARED_COLOR
         end
     end
-    colorMap, colorMapShared, colorMapName = map, useShared, name
+    cache.colors = map
     return map
 end
 
