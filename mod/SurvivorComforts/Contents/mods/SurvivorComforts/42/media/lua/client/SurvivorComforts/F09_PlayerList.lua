@@ -10,7 +10,7 @@
 -- there is no button.
 
 require "SurvivorComforts/Core"
-require "ISUI/ISCollapsableWindow"
+require "SurvivorComforts/Window"
 require "ISUI/ISScrollingListBox"
 require "SurvivorComforts/Sidebar"
 
@@ -47,13 +47,10 @@ local online = nil
 -- { now = server seconds, receivedAt = local ms, players = { { name, lastSeen }, ... } }
 -- newest first, or nil until the first answer.
 local lastSeen = nil
-local refreshWindows
+local windows -- made with the window below
 
-local function anyWindowOpen()
-    for _, window in pairs(SurvivorComforts_PlayerListWindow.instances) do
-        if window:getIsVisible() then return true end
-    end
-    return false
+local function refreshWindows()
+    windows.forEach(function(window) window:refresh() end)
 end
 
 local function requestLastSeen()
@@ -103,7 +100,7 @@ end
 
 -- Someone joined or left: ask again, so they move between the two lists.
 local function onMiniScoreboardUpdate()
-    if anyWindowOpen() then
+    if windows.anyOpen() then
         requestAll()
     end
 end
@@ -169,8 +166,7 @@ function SurvivorComforts_PlayerListBox:render()
     end
 end
 
-SurvivorComforts_PlayerListWindow = ISCollapsableWindow:derive("SurvivorComforts_PlayerListWindow")
-SurvivorComforts_PlayerListWindow.instances = {}
+SurvivorComforts_PlayerListWindow = SurvivorComforts_Window:derive("SurvivorComforts_PlayerListWindow")
 
 function SurvivorComforts_PlayerListWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
@@ -236,63 +232,27 @@ function SurvivorComforts_PlayerListWindow:refresh()
     list:setYScroll(scroll)
 end
 
-function SurvivorComforts_PlayerListWindow:close()
-    self:setVisible(false)
-    self:removeFromUIManager()
-end
-
 function SurvivorComforts_PlayerListWindow:new(x, y, width, height, playerNum)
-    local o = ISCollapsableWindow.new(self, x, y, width, height)
-    o.playerNum = playerNum
-    o.title = getText("UI_SurvivorComforts_F09_Title")
+    local o = SurvivorComforts_Window.new(self, x, y, width, height, playerNum, "UI_SurvivorComforts_F09_Title")
     o.minimumWidth = 200
     o.minimumHeight = 150
-    o.visibleOnStartup = false
     return o
 end
 
-refreshWindows = function()
-    for _, window in pairs(SurvivorComforts_PlayerListWindow.instances) do
+windows = SurvivorComforts.addWindow({
+    id = FEATURE_ID,
+    class = SurvivorComforts_PlayerListWindow,
+    layout = LAYOUT_NAME,
+    x = 200, y = 150, width = 260, height = 320,
+    isAvailable = function() return isClient() end,
+    onOpen = function(window)
         window:refresh()
-    end
-end
-
-local function createWindow(playerNum)
-    local x = getPlayerScreenLeft(playerNum) + 200
-    local y = getPlayerScreenTop(playerNum) + 150
-    local window = SurvivorComforts_PlayerListWindow:new(x, y, 260, 320, playerNum)
-    window:initialise()
-    window:setVisible(false)
-    SurvivorComforts_PlayerListWindow.instances[playerNum] = window
-    -- Only the first local player has a saved layout, like vanilla windows.
-    if playerNum == 0 then
-        ISLayoutManager.RegisterWindow(LAYOUT_NAME, ISCollapsableWindow, window)
-    end
-    return window
-end
-
-local function isWindowOpen(playerNum)
-    local window = SurvivorComforts_PlayerListWindow.instances[playerNum]
-    return window ~= nil and window:getIsVisible()
-end
-
-local function toggleWindow(playerNum)
-    if not isAvailable() then return end
-    SurvivorComforts.safeCall(FEATURE_ID, function()
-        local window = SurvivorComforts_PlayerListWindow.instances[playerNum] or createWindow(playerNum)
-        if window:getIsVisible() then
-            window:close()
-            return
-        end
-        window:refresh()
-        window:addToUIManager()
-        window:setVisible(true)
-        window:bringToTop()
         -- Ask right away; the "x minutes ago" texts are also brought up to date.
         window.lastRequest = getTimestampMs()
         requestAll()
-    end)
-end
+    end,
+})
+local toggleWindow = windows.toggle
 
 SurvivorComforts.addSidebarButton({
     id = FEATURE_ID,
@@ -302,7 +262,7 @@ SurvivorComforts.addSidebarButton({
     isShown = function()
         return isAvailable() and SurvivorComforts.getOptionValue(FEATURE_ID .. "_sidebar") == true
     end,
-    isActive = isWindowOpen,
+    isActive = windows.isOpen,
     onClick = toggleWindow,
 })
 

@@ -12,7 +12,7 @@
 require "SurvivorComforts/Core"
 require "XpSystem/ISUI/ISCharacterInfo"
 require "XpSystem/ISUI/ISCharacterInfoWindow"
-require "ISUI/ISCollapsableWindow"
+require "SurvivorComforts/Window"
 require "SurvivorComforts/Sidebar"
 
 local FEATURE_ID = "F08"
@@ -86,8 +86,7 @@ end
 ---------------------------------------------------------------------------
 -- Window
 ---------------------------------------------------------------------------
-SurvivorComforts_SkillsWindow = ISCollapsableWindow:derive("SurvivorComforts_SkillsWindow")
-SurvivorComforts_SkillsWindow.instances = {}
+SurvivorComforts_SkillsWindow = SurvivorComforts_Window:derive("SurvivorComforts_SkillsWindow")
 
 function SurvivorComforts_SkillsWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
@@ -111,77 +110,32 @@ function SurvivorComforts_SkillsWindow:prerender()
     end
 end
 
-function SurvivorComforts_SkillsWindow:close()
-    self:setVisible(false)
-    self:removeFromUIManager()
-end
-
-function SurvivorComforts_SkillsWindow:toggle()
-    if self:getIsVisible() then
-        self:close()
-    else
-        self:addToUIManager()
-        self:setVisible(true)
-        self:bringToTop()
-    end
-end
-
 function SurvivorComforts_SkillsWindow:new(x, y, width, height, playerNum)
-    local o = ISCollapsableWindow.new(self, x, y, width, height)
-    o.playerNum = playerNum
-    o.title = getText("UI_SurvivorComforts_F08_Title")
+    local o = SurvivorComforts_Window.new(self, x, y, width, height, playerNum, "UI_SurvivorComforts_F08_Title")
     o.minimumHeight = MIN_HEIGHT
-    o.visibleOnStartup = false
     return o
 end
+
+-- Opened by the key, the sidebar button and the vanilla skills key.
+local windows = SurvivorComforts.addWindow({
+    id = FEATURE_ID,
+    class = SurvivorComforts_SkillsWindow,
+    layout = LAYOUT_NAME,
+    x = 100, y = 100, width = 300, height = 400,
+    isAvailable = function(playerNum)
+        local player = getSpecificPlayer(playerNum)
+        return player ~= nil and not player:isDead()
+    end,
+})
+local toggleWindow = windows.toggle
 
 ---------------------------------------------------------------------------
 -- Lifecycle
 ---------------------------------------------------------------------------
-local function destroyWindow(playerNum)
-    local window = SurvivorComforts_SkillsWindow.instances[playerNum]
-    if window then
-        window:setVisible(false)
-        window:removeFromUIManager()
-        SurvivorComforts_SkillsWindow.instances[playerNum] = nil
-    end
-end
-
 -- A new IsoPlayer is created on respawn, so the window is rebuilt for it.
-local function createWindow(playerNum)
-    destroyWindow(playerNum)
-    local x = getPlayerScreenLeft(playerNum) + 100
-    local y = getPlayerScreenTop(playerNum) + 100
-    local window = SurvivorComforts_SkillsWindow:new(x, y, 300, 400, playerNum)
-    window:initialise()
-    window:setVisible(false)
-    SurvivorComforts_SkillsWindow.instances[playerNum] = window
-    -- Only the first local player has a saved layout, like vanilla windows.
-    if playerNum == 0 then
-        ISLayoutManager.RegisterWindow(LAYOUT_NAME, ISCollapsableWindow, window)
-    end
-    return window
-end
-
-local function isWindowOpen(playerNum)
-    local window = SurvivorComforts_SkillsWindow.instances[playerNum]
-    return window ~= nil and window:getIsVisible()
-end
-
--- Opens or closes the window; used by the key, the sidebar button and the vanilla skills key.
-local function toggleWindow(playerNum)
-    if not SurvivorComforts.isEnabled(FEATURE_ID) then return end
-    local player = getSpecificPlayer(playerNum)
-    if not player or player:isDead() then return end
-    SurvivorComforts.safeCall(FEATURE_ID, function()
-        local window = SurvivorComforts_SkillsWindow.instances[playerNum] or createWindow(playerNum)
-        window:toggle()
-    end)
-end
-
 local function onCreatePlayer(playerNum, player)
     if not SurvivorComforts.isEnabled(FEATURE_ID) then return end
-    SurvivorComforts.safeCall(FEATURE_ID, createWindow, playerNum)
+    SurvivorComforts.safeCall(FEATURE_ID, windows.create, playerNum)
 end
 
 local function onKeyPressed(key)
@@ -194,7 +148,7 @@ end
 
 local function onPlayerDeath(player)
     if player and player:isLocalPlayer() then
-        destroyWindow(player:getPlayerNum())
+        windows.destroy(player:getPlayerNum())
     end
 end
 
@@ -207,7 +161,7 @@ SurvivorComforts.addSidebarButton({
     icon = "Skills",
     tooltip = "UI_SurvivorComforts_F08_Title",
     isShown = showSidebarButton,
-    isActive = isWindowOpen,
+    isActive = windows.isOpen,
     onClick = toggleWindow,
 })
 

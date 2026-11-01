@@ -16,7 +16,7 @@
 require "SurvivorComforts/Core"
 require "SurvivorComforts/Admin"
 require "SurvivorComforts/PlayerName"
-require "ISUI/ISCollapsableWindow"
+require "SurvivorComforts/Window"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISButton"
 require "ISUI/ISTabPanel"
@@ -515,8 +515,7 @@ function SurvivorComforts_WishlistList:render()
     end
 end
 
-SurvivorComforts_WishlistWindow = ISCollapsableWindow:derive("SurvivorComforts_WishlistWindow")
-SurvivorComforts_WishlistWindow.instances = {}
+SurvivorComforts_WishlistWindow = SurvivorComforts_Window:derive("SurvivorComforts_WishlistWindow")
 
 local TAB_TEXT = {
     personal = "UI_SurvivorComforts_F06_TabPersonal",
@@ -637,54 +636,23 @@ function SurvivorComforts_WishlistWindow:onRemove()
     end
 end
 
-function SurvivorComforts_WishlistWindow:close()
-    self:setVisible(false)
-    self:removeFromUIManager()
-end
-
 function SurvivorComforts_WishlistWindow:new(x, y, width, height, playerNum)
-    local o = ISCollapsableWindow.new(self, x, y, width, height)
-    o.playerNum = playerNum
-    o.title = getText("UI_SurvivorComforts_F06_Title")
+    local o = SurvivorComforts_Window.new(self, x, y, width, height, playerNum, "UI_SurvivorComforts_F06_Title")
     o.minimumWidth = 200
     o.minimumHeight = 150
-    o.visibleOnStartup = false
     return o
 end
 
+local windows = SurvivorComforts.addWindow({
+    id = FEATURE_ID,
+    class = SurvivorComforts_WishlistWindow,
+    layout = LAYOUT_NAME,
+    x = 150, y = 150, width = 260, height = 320,
+    onOpen = function(window) window:refresh() end,
+})
+
 refreshWindows = function()
-    for _, window in pairs(SurvivorComforts_WishlistWindow.instances) do
-        window:refresh()
-    end
-end
-
-local function createWindow(playerNum)
-    local x = getPlayerScreenLeft(playerNum) + 150
-    local y = getPlayerScreenTop(playerNum) + 150
-    local window = SurvivorComforts_WishlistWindow:new(x, y, 260, 320, playerNum)
-    window:initialise()
-    window:setVisible(false)
-    SurvivorComforts_WishlistWindow.instances[playerNum] = window
-    -- Only the first local player has a saved layout, like vanilla windows.
-    if playerNum == 0 then
-        ISLayoutManager.RegisterWindow(LAYOUT_NAME, ISCollapsableWindow, window)
-    end
-    return window
-end
-
-local function showWindow(playerNum, toggle)
-    if not SurvivorComforts.isEnabled(FEATURE_ID) then return end
-    SurvivorComforts.safeCall(FEATURE_ID, function()
-        local window = SurvivorComforts_WishlistWindow.instances[playerNum] or createWindow(playerNum)
-        if toggle and window:getIsVisible() then
-            window:close()
-            return
-        end
-        window:refresh()
-        window:addToUIManager()
-        window:setVisible(true)
-        window:bringToTop()
-    end)
+    windows.forEach(function(window) window:refresh() end)
 end
 
 SurvivorComforts.addSidebarButton({
@@ -695,13 +663,8 @@ SurvivorComforts.addSidebarButton({
     isShown = function()
         return SurvivorComforts.isEnabled(FEATURE_ID) and SurvivorComforts.getOptionValue(FEATURE_ID .. "_sidebar") == true
     end,
-    isActive = function(playerNum)
-        local window = SurvivorComforts_WishlistWindow.instances[playerNum]
-        return window ~= nil and window:getIsVisible()
-    end,
-    onClick = function(playerNum)
-        showWindow(playerNum, true)
-    end,
+    isActive = windows.isOpen,
+    onClick = windows.toggle,
 })
 
 ---------------------------------------------------------------------------
@@ -795,7 +758,7 @@ local function onKeyPressed(key)
     if key ~= SurvivorComforts.getOptionValue(FEATURE_ID .. "_key") then return end
     local player = getPlayer()
     if not player then return end
-    showWindow(player:getPlayerNum(), true)
+    windows.toggle(player:getPlayerNum())
 end
 
 Events.OnFillInventoryObjectContextMenu.Add(onFillContextMenu)
