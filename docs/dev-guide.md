@@ -4,6 +4,7 @@
 
 ```
 SurvivorComforts\           リポジトリのルート（git clone した場所）
+├── LICENSE                   MIT ライセンス
 ├── docs\                     調査メモ、機能一覧（features.md）、このガイド、全体の点検の結果（review-日付.md）
 │   └── features\             機能ごとの要望・調査結果・仕様・確認項目（Fxx_名前.md）
 ├── tools\
