@@ -18,7 +18,7 @@
 | ID | 機能 | 状況 | 備考 |
 | --- | --- | --- | --- |
 | F01 | [日本語対応](features/F01_japanese-input.md) | ⏸️ 見送り | Lua だけでは作れず ZombieBuddy が必要。[実装しない機能](#実装しない機能)を参照 |
-| F02 | [インベントリ検索](features/F02_inventory-search.md) | 🔧 対応中 | 作者のコード（MIT）を受け取り、この MOD の決まりと共通の検索（`Search.lua`）に合わせて同梱する |
+| F02 | [インベントリ検索](features/F02_inventory-search.md) | ✅ 実装済 | 作者のコード（MIT）を元に、この MOD の決まりと共通の検索（`Search.lua`）に合わせて同梱 |
 | F03 | [レシピの材料のレシピを辿る](features/F03_recipe-trail.md) | ✅ 実装済 | 「材料のレシピをたどる」として実装。絞り込みは F12 と共通 |
 | F04 | [本を読み終えるまでの残り時間](features/F04_reading-time.md) | ✅ 実装済 | |
 | F05 | [ショートカットキーでマップに印をつける](features/F05_map-mark.md) | ⏸️ 見送り | 一旦見送り。[実装しない機能](#実装しない機能)を参照 |

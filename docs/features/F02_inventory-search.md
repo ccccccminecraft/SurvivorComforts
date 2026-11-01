@@ -1,6 +1,6 @@
 # F02 インベントリ検索
 
-- 状況：🔧 対応中（作者のコードを受け取り、同梱している）
+- 状況：✅ 実装済（2026-11-01、デバッグモードで確認）
 - コード：`client/SurvivorComforts/F02_InventorySearch.lua`、共通の検索 `client/SurvivorComforts/Search.lua`
 - 元のコード：[itsu07/pz-inventory-search](https://github.com/itsu07/pz-inventory-search)（MIT ライセンス、作者 itsu07）
 - 一覧に戻る：[features.md](../features.md)
