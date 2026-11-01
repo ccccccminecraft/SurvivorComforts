@@ -5,7 +5,8 @@
 ```
 SurvivorComforts\           リポジトリのルート（git clone した場所）
 ├── LICENSE                   MIT ライセンス
-├── docs\                     調査メモ、機能一覧（features.md）、このガイド、全体の点検の結果（review-日付.md）
+├── README.md                 MOD の紹介と、各ドキュメントへのリンク
+├── docs\                     遊ぶ人向けのページ（feature-list.md、install.md、install-server.md）、開発手順（development.md）、フォルダ構成（folders.md）、調査メモ、機能一覧（features.md）、このガイド、点検の結果（review-日付.md）
 │   └── features\             機能ごとの要望・調査結果・仕様・確認項目（Fxx_名前.md）
 ├── tools\
 │   ├── check.ps1             Luaの構文チェック（ゲーム本体のコンパイラを使う）と、翻訳キー・ゲームのLuaにない関数の点検
@@ -159,7 +160,7 @@ Project Zomboid のアップデートが来たら、次を行う。
 3. 「アイテムのディレクトリを選択」で **SurvivorComforts** を選ぶ（`%USERPROFILE%\Zomboid\Workshop\` の中のフォルダが並ぶ）。
 4. 「アイテム詳細を編集」で次を入力する。
    - タイトル：`Survivor Comforts`
-   - 説明：README の「機能」の内容を元に書く（後からSteamのページでも直せる）
+   - 説明：機能の一覧（`docs/feature-list.md`）の内容を元に書く（後からSteamのページでも直せる）
    - タグ：Build 42、Interface など
    - 公開設定：**未掲載**
    - 画像プレビューに `preview.png` が表示されていることを確かめる
