@@ -10,9 +10,8 @@
 --
 -- Vanilla functions are not replaced: the original runs first, and the list
 -- it made is then reordered (matching rows first, the others dimmed below) or
--- cut down to the matching rows (the "dim" option off). The search box is
--- open from the start, and the search text stays when the window switches to
--- another container. Only the rows shown are searched, not the inside of
+-- cut down to the matching rows (the "dim" option off). The search text
+-- stays when the window switches to another container. Only the rows shown are searched, not the inside of
 -- bags. While there is a search text, "loot all" and "transfer all" move only
 -- the matching items.
 
@@ -249,14 +248,9 @@ local function addSearchBox(page)
     box:setPlaceholderText(getText("UI_SurvivorComforts_F02_Placeholder"))
     box.onTextChangeFunction = onSearchTextChange
     box.target = page
+    box:setVisible(false)
     page:addChild(box)
     page.survivorComfortsSearchBox = box
-    -- Open from the start, but not focused: a focused box would take the
-    -- keys meant for the game (walking and so on).
-    local button = page.inventoryPane and page.inventoryPane.survivorComfortsSearchButton
-    local open = isEnabled() and button ~= nil
-    box:setVisible(open)
-    if open then button:setImage(ICON_ON) end
 end
 
 local original_pageCreateChildren = ISInventoryPage.createChildren
