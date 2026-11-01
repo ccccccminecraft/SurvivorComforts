@@ -1,6 +1,9 @@
 {
     "UI_SurvivorComforts_Title": "Survivor Comforts",
     "UI_SurvivorComforts_Enable": "Enable",
+    "UI_SurvivorComforts_Group_Search": "Search",
+    "UI_SurvivorComforts_Group_Recipes": "Recipes and cooking",
+    "UI_SurvivorComforts_Group_HideButtons": "Hide buttons on the left",
     "UI_SurvivorComforts_ShowRecipes": "Show recipes",
     "UI_SurvivorComforts_F08_Name": "Skills window",
     "UI_SurvivorComforts_F08_Tooltip": "Shows the skill list in its own resizable window.",

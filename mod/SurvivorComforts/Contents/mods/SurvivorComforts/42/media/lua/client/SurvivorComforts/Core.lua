@@ -4,8 +4,8 @@
 -- switched off without touching the others.
 --
 -- The options page is built once every file is loaded (just before the game
--- reads the saved values), in OPTIONS_ORDER rather than file order, so related
--- features sit together. Option ids stay "<feature>_<name>", so saved
+-- reads the saved values), in OPTION_GROUPS rather than file order, so related
+-- features sit together under one heading. Option ids stay "<feature>_<name>", so saved
 -- settings do not depend on the order.
 
 SurvivorComforts = SurvivorComforts or {}
@@ -15,14 +15,21 @@ SurvivorComforts.features = SurvivorComforts.features or {}
 local options = PZAPI.ModOptions:create(SurvivorComforts.MOD_ID, getText("UI_SurvivorComforts_Title"))
 SurvivorComforts.options = options
 
--- Grouped by where the feature is used:
---   left sidebar buttons, in the same order as the buttons (F08, F06, F09),
---   and F15, opened from F09
---   recipes and searches (F12, F03, F14, F02; F14's option also covers F02)
---   everyday actions (F07, F04)
---   multiplayer (F10, F13)
--- Features not listed come last, in file order.
-local OPTIONS_ORDER = { "F08", "F06", "F09", "F15", "F12", "F03", "F14", "F02", "F07", "F04", "F10", "F13" }
+-- The options page, one heading per group, with a line between groups.
+-- Without a title, the group's heading is its first feature's name, and that
+-- feature's tick box is "Enable". Every other feature in a group is one tick
+-- box with the feature's name (its own options follow it), so a feature that
+-- is only a switch needs no heading of its own. Features not listed come
+-- last, each under its own heading, in file order.
+local OPTION_GROUPS = {
+    { features = { "F08" } },                -- skills window
+    { features = { "F06" } },                -- wishlist
+    { features = { "F09", "F15" } },         -- player list, and members' skills opened from it
+    { title = "UI_SurvivorComforts_Group_Search", features = { "F02", "F14" } }, -- F14's option also covers F02
+    { features = { "F04" } },                -- reading time
+    { title = "UI_SurvivorComforts_Group_Recipes", features = { "F12", "F03", "F07" } },
+    { title = "UI_SurvivorComforts_Group_HideButtons", features = { "F10", "F13" } },
+}
 
 function SurvivorComforts.log(msg)
     print("[SurvivorComforts] " .. tostring(msg))
@@ -40,27 +47,51 @@ end
 local pending = {}
 local built = false
 
--- A separator, the feature's title, its "enable" tick box, then its own options.
-local function addFeatureOptions(def)
-    options:addSeparator()
-    options:addTitle(getText(def.name))
-    options:addTickBox(def.id .. "_enabled", getText("UI_SurvivorComforts_Enable"), def.default ~= false, getText(def.tooltip))
+-- The feature's "enable" tick box (labelled "Enable" or with the feature's
+-- name), then its own options.
+local function addFeatureOptions(def, label)
+    options:addTickBox(def.id .. "_enabled", getText(label), def.default ~= false, getText(def.tooltip))
     if def.addOptions then
         SurvivorComforts.safeCall(def.id, def.addOptions, options)
     end
 end
 
+-- One heading and its features (defs of registered features, in order).
+local function addGroup(title, defs, first)
+    if not first then options:addSeparator() end
+    if title then
+        options:addTitle(getText(title))
+    else
+        options:addTitle(getText(defs[1].name))
+    end
+    for i, def in ipairs(defs) do
+        local label = (not title and i == 1) and "UI_SurvivorComforts_Enable" or def.name
+        SurvivorComforts.safeCall(def.id, addFeatureOptions, def, label)
+    end
+end
+
 local function buildAll()
-    local rank = {}
-    for i, id in ipairs(OPTIONS_ORDER) do rank[id] = i end
-    for i, def in ipairs(pending) do def.fileOrder = i end
-    table.sort(pending, function(a, b)
-        local ra, rb = rank[a.id] or 1000, rank[b.id] or 1000
-        if ra ~= rb then return ra < rb end
-        return a.fileOrder < b.fileOrder
-    end)
+    local byId = {}
+    for _, def in ipairs(pending) do byId[def.id] = def end
+    local first = true
+    for _, group in ipairs(OPTION_GROUPS) do
+        local defs = {}
+        for _, id in ipairs(group.features) do
+            if byId[id] then
+                table.insert(defs, byId[id])
+                byId[id] = nil
+            end
+        end
+        if #defs > 0 then
+            SurvivorComforts.safeCall("Options", addGroup, group.title, defs, first)
+            first = false
+        end
+    end
     for _, def in ipairs(pending) do
-        SurvivorComforts.safeCall(def.id, addFeatureOptions, def)
+        if byId[def.id] then
+            SurvivorComforts.safeCall("Options", addGroup, nil, { def }, first)
+            first = false
+        end
     end
 end
 
@@ -81,7 +112,8 @@ end
 function SurvivorComforts.registerFeature(def)
     SurvivorComforts.features[def.id] = def
     if built then
-        SurvivorComforts.safeCall(def.id, addFeatureOptions, def)
+        -- Too late for its group: it gets a heading of its own at the end.
+        SurvivorComforts.safeCall(def.id, addGroup, nil, { def }, false)
     else
         table.insert(pending, def)
     end

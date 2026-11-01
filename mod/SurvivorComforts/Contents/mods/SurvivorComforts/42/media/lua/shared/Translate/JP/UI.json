@@ -1,6 +1,9 @@
 {
     "UI_SurvivorComforts_Title": "Survivor Comforts",
     "UI_SurvivorComforts_Enable": "有効にする",
+    "UI_SurvivorComforts_Group_Search": "検索",
+    "UI_SurvivorComforts_Group_Recipes": "レシピと料理",
+    "UI_SurvivorComforts_Group_HideButtons": "画面左のボタンを隠す",
     "UI_SurvivorComforts_ShowRecipes": "レシピを見る",
     "UI_SurvivorComforts_F08_Name": "スキルウィンドウ",
     "UI_SurvivorComforts_F08_Tooltip": "スキルの一覧を、大きさを変えられる独立したウィンドウで表示します。",
