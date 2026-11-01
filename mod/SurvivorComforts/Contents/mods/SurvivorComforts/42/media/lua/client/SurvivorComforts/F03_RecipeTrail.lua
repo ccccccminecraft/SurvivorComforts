@@ -83,8 +83,10 @@ local function applyBackButton(filterPanel)
     local box = filterPanel.searchEntryBox
     if not box then return end
     local playerNum = panelPlayerNum(filterPanel)
-    local isHandcraft = playerNum ~= nil and SurvivorComforts.getHandcraftFilterPanel(playerNum) == filterPanel
-    local show = isHandcraft and isEnabled() and SurvivorComforts.canGoBack(playerNum)
+    -- Runs every frame: look for the crafting window only when there is
+    -- something to go back to (the history is gone once the window closes).
+    local show = playerNum ~= nil and isEnabled() and SurvivorComforts.canGoBack(playerNum)
+        and SurvivorComforts.getHandcraftFilterPanel(playerNum) == filterPanel
 
     local base = filterPanel.survivorComfortsSearchBase
     if not base then
