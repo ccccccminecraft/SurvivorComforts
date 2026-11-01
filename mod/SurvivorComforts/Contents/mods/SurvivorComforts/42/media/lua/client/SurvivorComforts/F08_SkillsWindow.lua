@@ -13,7 +13,6 @@ require "SurvivorComforts/Core"
 require "XpSystem/ISUI/ISCharacterInfo"
 require "XpSystem/ISUI/ISCharacterInfoWindow"
 require "SurvivorComforts/Window"
-require "SurvivorComforts/Sidebar"
 
 local FEATURE_ID = "F08"
 local LAYOUT_NAME = "survivorcomforts.skills"
@@ -24,15 +23,10 @@ SurvivorComforts.registerFeature({
     name = "UI_SurvivorComforts_F08_Name",
     tooltip = "UI_SurvivorComforts_F08_Tooltip",
     addOptions = function(options)
-        options:addTickBox(FEATURE_ID .. "_sidebar", getText("UI_SurvivorComforts_F08_Sidebar"), true, getText("UI_SurvivorComforts_F08_Sidebar_Tooltip"))
-        options:addKeyBind(FEATURE_ID .. "_key", getText("UI_SurvivorComforts_F08_Key"), 0)
+        SurvivorComforts.addWindowOptions(options, FEATURE_ID)
         options:addTickBox(FEATURE_ID .. "_hideTab", getText("UI_SurvivorComforts_F08_HideTab"), false, getText("UI_SurvivorComforts_F08_HideTab_Tooltip"))
     end,
 })
-
-local function showSidebarButton()
-    return SurvivorComforts.isEnabled(FEATURE_ID) and SurvivorComforts.getOptionValue(FEATURE_ID .. "_sidebar") == true
-end
 
 local function hideVanillaTab()
     return SurvivorComforts.isEnabled(FEATURE_ID) and SurvivorComforts.getOptionValue(FEATURE_ID .. "_hideTab") == true
@@ -120,9 +114,11 @@ end
 local windows = SurvivorComforts.addWindow({
     id = FEATURE_ID,
     class = SurvivorComforts_SkillsWindow,
+    title = "UI_SurvivorComforts_F08_Title",
     layout = LAYOUT_NAME,
     x = 100, y = 100, width = 300, height = 400,
-    isAvailable = function(playerNum)
+    sidebar = { order = 1, icon = "Skills" },
+    canOpen = function(playerNum)
         local player = getSpecificPlayer(playerNum)
         return player ~= nil and not player:isDead()
     end,
@@ -138,32 +134,11 @@ local function onCreatePlayer(playerNum, player)
     SurvivorComforts.safeCall(FEATURE_ID, windows.create, playerNum)
 end
 
-local function onKeyPressed(key)
-    if key == nil or key == 0 then return end
-    if key ~= SurvivorComforts.getOptionValue(FEATURE_ID .. "_key") then return end
-    local player = getPlayer()
-    if not player then return end
-    toggleWindow(player:getPlayerNum())
-end
-
 local function onPlayerDeath(player)
     if player and player:isLocalPlayer() then
         windows.destroy(player:getPlayerNum())
     end
 end
-
----------------------------------------------------------------------------
--- Sidebar button (see Sidebar.lua)
----------------------------------------------------------------------------
-SurvivorComforts.addSidebarButton({
-    id = FEATURE_ID,
-    order = 1,
-    icon = "Skills",
-    tooltip = "UI_SurvivorComforts_F08_Title",
-    isShown = showSidebarButton,
-    isActive = windows.isOpen,
-    onClick = toggleWindow,
-})
 
 ---------------------------------------------------------------------------
 -- Hiding the skills tab of the vanilla character info window
@@ -229,5 +204,4 @@ function ISCharacterInfoWindow:toggleView(viewName)
 end
 
 Events.OnCreatePlayer.Add(onCreatePlayer)
-Events.OnKeyPressed.Add(onKeyPressed)
 Events.OnPlayerDeath.Add(onPlayerDeath)

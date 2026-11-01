@@ -13,16 +13,24 @@
 --   local windows = SurvivorComforts.addWindow({
 --       id = "F09",                       -- the feature; nothing opens while it is off
 --       class = SurvivorComforts_PlayerListWindow,
+--       title = "UI_SurvivorComforts_F09_Title", -- also the sidebar button's tooltip
 --       layout = "survivorcomforts.players", -- the name the position is saved under
 --       x = 200, y = 150,                 -- first position, from the player's screen corner
 --       width = 260, height = 320,        -- first size
---       isAvailable = function(playerNum) ... end, -- optional, besides the feature being on
+--       sidebar = { order = 3, icon = "Players" }, -- the sidebar button (Sidebar.lua)
+--       isAvailable = function() ... end, -- optional; false hides the button and nothing opens
+--       canOpen = function(playerNum) ... end, -- optional; false keeps it from opening
 --       onOpen = function(window) ... end, -- optional, just before it is shown
 --   })
 --   windows.toggle(playerNum)  windows.isOpen(playerNum)  windows.anyOpen()
 --   windows.forEach(fn)  windows.create(playerNum)  windows.destroy(playerNum)
+--
+-- The sidebar button and the key that open the window come from the
+-- feature's options "<id>_sidebar" and "<id>_key", added in its addOptions
+-- with SurvivorComforts.addWindowOptions(options, id).
 
 require "SurvivorComforts/Core"
+require "SurvivorComforts/Sidebar"
 require "ISUI/ISCollapsableWindow"
 
 SurvivorComforts_Window = ISCollapsableWindow:derive("SurvivorComforts_Window")
@@ -41,9 +49,21 @@ function SurvivorComforts_Window:new(x, y, width, height, playerNum, title)
     return o
 end
 
+-- "Show a button on the left icons" (on at first) and the key (none at first).
+-- The texts are UI_SurvivorComforts_<id>_Sidebar, _Sidebar_Tooltip and _Key.
+function SurvivorComforts.addWindowOptions(options, id)
+    local prefix = "UI_SurvivorComforts_" .. id
+    options:addTickBox(id .. "_sidebar", getText(prefix .. "_Sidebar"), true, getText(prefix .. "_Sidebar_Tooltip"))
+    options:addKeyBind(id .. "_key", getText(prefix .. "_Key"), 0)
+end
+
 function SurvivorComforts.addWindow(def)
     local windows = { instances = {} }
     local instances = windows.instances
+
+    local function isAvailable()
+        return SurvivorComforts.isEnabled(def.id) and (not def.isAvailable or def.isAvailable())
+    end
 
     function windows.destroy(playerNum)
         local window = instances[playerNum]
@@ -89,8 +109,8 @@ function SurvivorComforts.addWindow(def)
 
     -- Opens or closes the window; used by the keys and the sidebar buttons.
     function windows.toggle(playerNum)
-        if not SurvivorComforts.isEnabled(def.id) then return end
-        if def.isAvailable and not def.isAvailable(playerNum) then return end
+        if not isAvailable() then return end
+        if def.canOpen and not def.canOpen(playerNum) then return end
         SurvivorComforts.safeCall(def.id, function()
             local window = instances[playerNum] or windows.create(playerNum)
             if window:getIsVisible() then
@@ -103,6 +123,28 @@ function SurvivorComforts.addWindow(def)
             window:bringToTop()
         end)
     end
+
+    if def.sidebar then
+        SurvivorComforts.addSidebarButton({
+            id = def.id,
+            order = def.sidebar.order,
+            icon = def.sidebar.icon,
+            tooltip = def.title,
+            isShown = function()
+                return isAvailable() and SurvivorComforts.getOptionValue(def.id .. "_sidebar") == true
+            end,
+            isActive = windows.isOpen,
+            onClick = windows.toggle,
+        })
+    end
+
+    Events.OnKeyPressed.Add(function(key)
+        if key == nil or key == 0 then return end
+        if key ~= SurvivorComforts.getOptionValue(def.id .. "_key") then return end
+        local player = getPlayer()
+        if not player then return end
+        windows.toggle(player:getPlayerNum())
+    end)
 
     return windows
 end

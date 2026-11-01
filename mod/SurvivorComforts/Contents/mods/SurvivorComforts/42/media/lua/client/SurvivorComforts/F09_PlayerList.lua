@@ -12,7 +12,6 @@
 require "SurvivorComforts/Core"
 require "SurvivorComforts/Window"
 require "ISUI/ISScrollingListBox"
-require "SurvivorComforts/Sidebar"
 
 local FEATURE_ID = "F09"
 local LAYOUT_NAME = "survivorcomforts.players"
@@ -29,14 +28,9 @@ SurvivorComforts.registerFeature({
     name = "UI_SurvivorComforts_F09_Name",
     tooltip = "UI_SurvivorComforts_F09_Tooltip",
     addOptions = function(options)
-        options:addTickBox(FEATURE_ID .. "_sidebar", getText("UI_SurvivorComforts_F09_Sidebar"), true, getText("UI_SurvivorComforts_F09_Sidebar_Tooltip"))
-        options:addKeyBind(FEATURE_ID .. "_key", getText("UI_SurvivorComforts_F09_Key"), 0)
+        SurvivorComforts.addWindowOptions(options, FEATURE_ID)
     end,
 })
-
-local function isAvailable()
-    return isClient() and SurvivorComforts.isEnabled(FEATURE_ID)
-end
 
 ---------------------------------------------------------------------------
 -- Who is online (the vanilla user list) and when the others were last seen
@@ -236,8 +230,11 @@ function SurvivorComforts_PlayerListWindow:new(x, y, width, height, playerNum)
     local o = SurvivorComforts_Window.new(self, x, y, width, height, playerNum, "UI_SurvivorComforts_F09_Title")
     o.minimumWidth = 200
     o.minimumHeight = 150
+    title = "UI_SurvivorComforts_F09_Title",
     return o
 end
+    sidebar = { order = 3, icon = "Players" },
+    -- Multiplayer only: no button in single player.
 
 windows = SurvivorComforts.addWindow({
     id = FEATURE_ID,
@@ -252,29 +249,7 @@ windows = SurvivorComforts.addWindow({
         requestAll()
     end,
 })
-local toggleWindow = windows.toggle
 
-SurvivorComforts.addSidebarButton({
-    id = FEATURE_ID,
-    order = 3,
-    icon = "Players",
-    tooltip = "UI_SurvivorComforts_F09_Title",
-    isShown = function()
-        return isAvailable() and SurvivorComforts.getOptionValue(FEATURE_ID .. "_sidebar") == true
-    end,
-    isActive = windows.isOpen,
-    onClick = toggleWindow,
-})
-
-local function onKeyPressed(key)
-    if key == nil or key == 0 then return end
-    if key ~= SurvivorComforts.getOptionValue(FEATURE_ID .. "_key") then return end
-    local player = getPlayer()
-    if not player then return end
-    toggleWindow(player:getPlayerNum())
-end
-
-Events.OnKeyPressed.Add(onKeyPressed)
 Events.OnServerCommand.Add(onServerCommand)
 Events.OnScoreboardUpdate.Add(onScoreboardUpdate)
 Events.OnMiniScoreboardUpdate.Add(onMiniScoreboardUpdate)

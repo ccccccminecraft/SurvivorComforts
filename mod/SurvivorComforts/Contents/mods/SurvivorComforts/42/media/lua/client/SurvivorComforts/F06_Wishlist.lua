@@ -23,7 +23,6 @@ require "ISUI/ISTabPanel"
 require "ISUI/ISInventoryPane"
 require "ISUI/ISInventoryPaneContextMenu"
 require "SurvivorComforts/Recipes"
-require "SurvivorComforts/Sidebar"
 require "SurvivorComforts/CraftMenu"
 
 local FEATURE_ID = "F06"
@@ -36,8 +35,7 @@ SurvivorComforts.registerFeature({
     name = "UI_SurvivorComforts_F06_Name",
     tooltip = "UI_SurvivorComforts_F06_Tooltip",
     addOptions = function(options)
-        options:addTickBox(FEATURE_ID .. "_sidebar", getText("UI_SurvivorComforts_F06_Sidebar"), true, getText("UI_SurvivorComforts_F06_Sidebar_Tooltip"))
-        options:addKeyBind(FEATURE_ID .. "_key", getText("UI_SurvivorComforts_F06_Key"), 0)
+        SurvivorComforts.addWindowOptions(options, FEATURE_ID)
         options:addTickBox(FEATURE_ID .. "_shared", getText("UI_SurvivorComforts_F06_UseShared"), true, getText("UI_SurvivorComforts_F06_UseShared_Tooltip"))
     end,
 })
@@ -638,8 +636,10 @@ end
 
 function SurvivorComforts_WishlistWindow:new(x, y, width, height, playerNum)
     local o = SurvivorComforts_Window.new(self, x, y, width, height, playerNum, "UI_SurvivorComforts_F06_Title")
+    title = "UI_SurvivorComforts_F06_Title",
     o.minimumWidth = 200
     o.minimumHeight = 150
+    sidebar = { order = 2, icon = "Wishlist" },
     return o
 end
 
@@ -655,17 +655,6 @@ refreshWindows = function()
     windows.forEach(function(window) window:refresh() end)
 end
 
-SurvivorComforts.addSidebarButton({
-    id = FEATURE_ID,
-    order = 2,
-    icon = "Wishlist",
-    tooltip = "UI_SurvivorComforts_F06_Title",
-    isShown = function()
-        return SurvivorComforts.isEnabled(FEATURE_ID) and SurvivorComforts.getOptionValue(FEATURE_ID .. "_sidebar") == true
-    end,
-    isActive = windows.isOpen,
-    onClick = windows.toggle,
-})
 
 ---------------------------------------------------------------------------
 -- Right-click menu
@@ -753,15 +742,6 @@ SurvivorComforts.addCraftMenuProvider({
     end,
 })
 
-local function onKeyPressed(key)
-    if key == nil or key == 0 then return end
-    if key ~= SurvivorComforts.getOptionValue(FEATURE_ID .. "_key") then return end
-    local player = getPlayer()
-    if not player then return end
-    windows.toggle(player:getPlayerNum())
-end
-
 Events.OnFillInventoryObjectContextMenu.Add(onFillContextMenu)
-Events.OnKeyPressed.Add(onKeyPressed)
 Events.OnServerCommand.Add(onServerCommand)
 Events.OnGameStart.Add(onGameStart)
