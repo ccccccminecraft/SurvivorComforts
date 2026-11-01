@@ -4,7 +4,8 @@
 
 - ページの「編集」→「説明」に、下のコードブロックの中身をそのまま貼り付けます
 - ワークショップの説明は BBCode で書きます（`[h1]` `[b]` `[list]` など。Markdown は使えません）
-- 説明は 8000 文字までです。日本語と英語の両方を載せても収まります
+- 説明は 8000 バイト（UTF-8）までです。日本語は1文字が3バイトなので、文字数ではおよそ2600字が目安です。超えると、ゲームからのアップロードが「failed to update workshop item result 8」で失敗します
+- そのため、説明は日本語だけにしています（日本語と英語の両方では 10000 バイトを超えたため。2026-11-01）。英語の説明は載せません
 - 機能を追加・変更したら、機能の一覧（[feature-list.md](feature-list.md)）と一緒にここも直してから、ページに貼り直してください
 
 ## タイトル
@@ -13,7 +14,7 @@
 Survivor Comforts
 ```
 
-## 説明（日本語＋英語）
+## 説明（日本語）
 
 ```
 [h1]Survivor Comforts[/h1]
@@ -86,81 +87,6 @@ Mods=SurvivorComforts
 [*]機能の ON/OFF は、各プレイヤーが自分のオプションで切り替える設定です
 [*]「PvP の切り替えボタンを隠す」は初期状態で ON です。PvP を使うサーバーでは OFF にしてください
 [*]MOD を外しても、セーブデータに残るのは「みんなのウィッシュリスト」の中身と最終ログインの記録だけで、ゲームには影響しません
-[/list]
-
-[hr][/hr]
-
-[h1]Survivor Comforts (English)[/h1]
-A small collection of quality-of-life features for Project Zomboid (Build 42.21 or later).
-Made for a private multiplayer server, but it also works in single player.
-
-[list]
-[*]Each feature can be turned on or off in Options > Mods > Survivor Comforts
-[*]No new items, recipes or game rules (the game balance does not change)
-[*]Only the shared wishlist and the player list's last-online times are saved to the world
-[/list]
-
-[h2]Features[/h2]
-[list]
-[*][b]Inventory search[/b]
-A search box on the inventory and nearby container lists narrows the list by name. Matching items move to the top and the others are dimmed (or hidden, in the options). Hiragana and katakana are treated as the same, and English names (hammer and so on) work too. While searching, "Loot all" and "Transfer all" move only the matching items. Based on Inventory Search by itsu07.
-
-[*][b]Show recipes for an item[/b]
-Right-click an item and choose "Show recipes" to open the crafting window filtered to recipes that make it. The option is shown in red when no recipe makes the item.
-
-[*][b]Follow ingredient recipes[/b]
-In the crafting and building windows, right-click an ingredient and choose "Show recipes" to see the recipes that make it. The Back button left of the search box returns to what was shown before.
-
-[*][b]Wishlist[/b]
-Right-click an item to add it to your wishlist. Wanted items are highlighted in your inventory and in nearby containers (your list in orange).
-Share an item from your list to show it on a shared list everyone on the server can see (light blue). Items on both are shown in red. "Add and share" does both in one step.
-Only the player who shared an item, or an admin, can take it off. Any number of players can share the same item, and unsharing never removes someone else's share.
-You can also add items from recipes and ingredients in the crafting and building windows. Open the list with the star button on the left of the screen.
-Your list holds up to 100 items; each player can share up to 30 kinds, and the shared list holds up to 300.
-
-[*][b]Group cooking ingredients[/b]
-In the menu for adding ingredients to soups and salads, the same ingredient is shown on one line, and the item with the least left is used first.
-
-[*][b]Player list[/b]
-Lists who is online on the server, and who was online in the last 7 days with when they were last online ("3 h ago"). Open it with the people button on the left of the screen. Multiplayer only.
-
-[*][b]Reading time left[/b]
-While reading, shows the time left under your character: in-game time in orange, real time in green.
-
-[*][b]Members' skills[/b]
-Click an online player in the player list to see their skill levels in a window. The skills are read on the server, so they cannot be faked. Multiplayer only. Based on Skill Viewer by itsu07.
-
-[*][b]Skills window[/b]
-Shows your skills in a separate, resizable window. Open it with the button on the left of the screen, or set a key for it in the options.
-
-[*][b]Hide the PvP button[/b]
-Hides the skull button on the left of the screen and keeps PvP off. The G key no longer toggles PvP.
-
-[*][b]Hide the user panel button[/b]
-Hides the user panel button (factions, safehouses and more) on the left of the screen and moves the buttons below up. Admins always see it. While it is hidden, the windows in the user panel (factions, tickets and more) cannot be opened; turn it off in the options when you need them.
-
-[*][b]Search by English name too[/b]
-When the game is in another language, the search in the crafting and building windows also finds recipes by English name (plank, saw logs and so on). Recipes with every word you type are shown. You can turn English names off in the options.
-[/list]
-
-[h2]Installation[/h2]
-[b]Server[/b]
-Add these lines to your server settings (<server name>.ini). Separate other mods with ;.
-[code]
-WorkshopItems=3829529741
-Mods=SurvivorComforts
-[/code]
-Players download the mod automatically when they join.
-
-[b]Single player[/b]
-Subscribe, then enable Survivor Comforts in Main Menu > Mods.
-
-[h2]Notes[/h2]
-[list]
-[*]Requires Build 42.21 or later. Does not work on Build 41
-[*]Each player turns features on or off in their own options
-[*]"Hide the PvP button" is on by default. Turn it off on servers that use PvP
-[*]If you remove the mod, only the shared wishlist and the last-online times stay in the save, and they do not affect the game
 [/list]
 ```
 
