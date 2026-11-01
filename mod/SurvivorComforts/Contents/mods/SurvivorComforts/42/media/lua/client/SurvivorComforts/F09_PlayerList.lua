@@ -11,11 +11,11 @@
 
 require "SurvivorComforts/Core"
 require "SurvivorComforts/Window"
+require "SurvivorComforts/Commands"
 require "ISUI/ISScrollingListBox"
 
 local FEATURE_ID = "F09"
 local LAYOUT_NAME = "survivorcomforts.players"
-local MODULE = "SurvivorComforts" -- client/server command module, see the server file
 local REQUEST_INTERVAL = 60 * 1000 -- ms between requests while the window is open
 local REQUEST_GAP = 5 * 1000       -- ms at least between asking for both lists
 local HIDE_AFTER = 7 * 24 * 3600   -- players not seen for this long are not shown
@@ -48,10 +48,7 @@ local function refreshWindows()
 end
 
 local function requestLastSeen()
-    local player = getSpecificPlayer(0)
-    if player then
-        sendClientCommand(player, MODULE, "playersRequest", {})
-    end
+    SurvivorComforts.sendCommand("playersRequest", {})
 end
 
 -- Opening and closing the window quickly, or players joining one after
@@ -99,20 +96,17 @@ local function onMiniScoreboardUpdate()
     end
 end
 
-local function onServerCommand(module, command, args)
-    if module ~= MODULE or command ~= "players" then return end
-    SurvivorComforts.safeCall(FEATURE_ID, function()
-        local players = {}
-        for _, entry in pairs(args.players or {}) do
-            if type(entry) == "table" and type(entry.name) == "string" and tonumber(entry.lastSeen) then
-                table.insert(players, { name = entry.name, lastSeen = tonumber(entry.lastSeen) })
-            end
+SurvivorComforts.onServerCommand(FEATURE_ID, "players", function(args)
+    local players = {}
+    for _, entry in pairs(args.players or {}) do
+        if type(entry) == "table" and type(entry.name) == "string" and tonumber(entry.lastSeen) then
+            table.insert(players, { name = entry.name, lastSeen = tonumber(entry.lastSeen) })
         end
-        table.sort(players, function(a, b) return a.lastSeen > b.lastSeen end)
-        lastSeen = { now = tonumber(args.now) or 0, receivedAt = getTimestampMs(), players = players }
-        refreshWindows()
-    end)
-end
+    end
+    table.sort(players, function(a, b) return a.lastSeen > b.lastSeen end)
+    lastSeen = { now = tonumber(args.now) or 0, receivedAt = getTimestampMs(), players = players }
+    refreshWindows()
+end)
 
 -- "5 minutes ago" under an hour, "3 hours ago" under a day, then "2 days ago".
 local function agoText(seconds)
@@ -230,17 +224,17 @@ function SurvivorComforts_PlayerListWindow:new(x, y, width, height, playerNum)
     local o = SurvivorComforts_Window.new(self, x, y, width, height, playerNum, "UI_SurvivorComforts_F09_Title")
     o.minimumWidth = 200
     o.minimumHeight = 150
-    title = "UI_SurvivorComforts_F09_Title",
     return o
 end
-    sidebar = { order = 3, icon = "Players" },
-    -- Multiplayer only: no button in single player.
 
 windows = SurvivorComforts.addWindow({
     id = FEATURE_ID,
     class = SurvivorComforts_PlayerListWindow,
+    title = "UI_SurvivorComforts_F09_Title",
     layout = LAYOUT_NAME,
     x = 200, y = 150, width = 260, height = 320,
+    sidebar = { order = 3, icon = "Players" },
+    -- Multiplayer only: no button in single player.
     isAvailable = function() return isClient() end,
     onOpen = function(window)
         window:refresh()
@@ -250,6 +244,5 @@ windows = SurvivorComforts.addWindow({
     end,
 })
 
-Events.OnServerCommand.Add(onServerCommand)
 Events.OnScoreboardUpdate.Add(onScoreboardUpdate)
 Events.OnMiniScoreboardUpdate.Add(onMiniScoreboardUpdate)

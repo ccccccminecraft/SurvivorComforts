@@ -13,11 +13,11 @@
 
 if not isServer() then return end
 
--- Each player can ask a few times a second at most (CommandLimit.lua).
-require "SurvivorComforts/CommandLimit"
+-- Each player can ask a few times a second at most (CommandLimit.lua, through ServerCommands.lua).
+require "SurvivorComforts/ServerCommands"
 require "SurvivorComforts/PlayerName"
 
-local MODULE = "SurvivorComforts"
+local FEATURE_ID = "F09"
 local DATA_KEY = "SurvivorComforts_PlayerList"
 local WRITE_INTERVAL = 30          -- seconds between writes
 local FORGET_AFTER = 30 * 24 * 3600 -- players not seen for this long are dropped
@@ -78,16 +78,8 @@ local function listArgs()
     return { now = now, players = players }
 end
 
-local function onClientCommand(module, command, player, args)
-    if module ~= MODULE or command ~= "playersRequest" or not player then return end
-    if not SurvivorComfortsServer.allowCommand(player, "F09") then return end
-    local ok, err = pcall(function()
-        sendServerCommand(player, MODULE, "players", listArgs())
-    end)
-    if not ok then
-        print("[SurvivorComforts] F09 server: " .. command .. " failed: " .. tostring(err))
-    end
-end
+SurvivorComfortsServer.onCommand(FEATURE_ID, "playersRequest", function(player, args)
+    SurvivorComfortsServer.send(player, "players", listArgs())
+end)
 
 Events.EveryOneMinute.Add(onEveryOneMinute)
-Events.OnClientCommand.Add(onClientCommand)

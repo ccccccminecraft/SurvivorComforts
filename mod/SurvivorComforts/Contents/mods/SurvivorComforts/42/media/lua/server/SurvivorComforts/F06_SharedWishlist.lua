@@ -6,9 +6,8 @@
 -- an item off for everyone.
 --
 -- Stored in the world's Global ModData. If the mod is removed, the data just
--- stays unused. Clients ask with sendClientCommand; every change is sent to
--- all players with sendServerCommand. In single player the game passes the
--- client commands on locally, and the list goes back through sendList below.
+-- stays unused. Clients ask with commands; every change is sent to all
+-- players (ServerCommands.lua, which also covers single player).
 
 -- Safety limits against flooding: each player can share at most
 -- MAX_PER_PLAYER kinds, send a few commands a second (CommandLimit.lua), and
@@ -18,11 +17,11 @@
 -- Only on the server (or in single player), never on a multiplayer client.
 if isClient() then return end
 
-require "SurvivorComforts/CommandLimit"
+require "SurvivorComforts/ServerCommands"
 require "SurvivorComforts/Admin"
 require "SurvivorComforts/PlayerName"
 
-local MODULE = "SurvivorComforts"
+local FEATURE_ID = "F06"
 local DATA_KEY = "SurvivorComforts_SharedWishlist"
 local MAX_ITEMS = 300
 local MAX_PER_PLAYER = 30
@@ -69,17 +68,9 @@ local function listArgs()
     return { items = items }
 end
 
--- In single player sendServerCommand does nothing (only a dedicated or
--- hosting server sends it), so the list is handed to the client side
--- directly; both run in the same Lua there.
+-- player nil: everyone.
 local function sendList(player)
-    if not isServer() then
-        triggerEvent("OnServerCommand", MODULE, "wishlist", listArgs())
-    elseif player then
-        sendServerCommand(player, MODULE, "wishlist", listArgs())
-    else
-        sendServerCommand(MODULE, "wishlist", listArgs())
-    end
+    SurvivorComfortsServer.send(player, "wishlist", listArgs())
 end
 
 -- At most one list to everyone per BROADCAST_INTERVAL_MS. A change inside
@@ -177,18 +168,10 @@ function handlers.wishlistAdminRemove(player, args)
     sendToAll()
 end
 
-local function onClientCommand(module, command, player, args)
-    if module ~= MODULE then return end
-    local handler = handlers[command]
-    if not handler or not player then return end
-    if not SurvivorComfortsServer.allowCommand(player, "F06") then return end
-    local ok, err = pcall(handler, player, args)
-    if not ok then
-        print("[SurvivorComforts] F06 server: " .. command .. " failed: " .. tostring(err))
-    end
+for command, handler in pairs(handlers) do
+    SurvivorComfortsServer.onCommand(FEATURE_ID, command, handler)
 end
 
-Events.OnClientCommand.Add(onClientCommand)
 -- OnTick sends a held-back list quickly; EveryOneMinute (every few seconds of
 -- real time) covers a server that does not run OnTick.
 Events.OnTick.Add(flushBroadcast)

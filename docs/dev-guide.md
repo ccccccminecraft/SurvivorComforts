@@ -27,6 +27,7 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
             ├── icon.png               ゲームのMOD一覧で名前の横に出すアイコン（64x64）
             └── media\lua\
                 ├── client\SurvivorComforts\
+                │   ├── Commands.lua       サーバーとのやり取り（画面側）。サーバーに送る、サーバーから届いたものを機能に渡す（F06・F09で共通）
                 │   ├── Core.lua           共通処理とMod Options
                 │   ├── EnglishNames.lua   英語名の表（F14。tools\make_english_names.ps1 で作る。手で直さない）
                 │   ├── CraftMenu.lua      制作・建築の画面の右クリックメニュー（F03・F06で共通）
@@ -47,7 +48,8 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
                 ├── server\SurvivorComforts\
                 │   ├── CommandLimit.lua        1人が送れるコマンドの回数の制限（F06・F09で共通）
                 │   ├── F06_SharedWishlist.lua  みんなのウィッシュリストの保存と配信（サーバーで動く）
-                │   └── F09_PlayerList.lua      最終ログインの記録と配信（サーバーで動く。シングルでは動かない）
+                │   ├── F09_PlayerList.lua      最終ログインの記録と配信（サーバーで動く。シングルでは動かない）
+                │   └── ServerCommands.lua      サーバーとのやり取り（サーバー側）。届いたものを回数の制限を通して機能に渡す、送る（シングルプレイでは画面側に直接渡す）。F06・F09で共通
                 └── shared\
                     ├── SurvivorComforts\
                     │   ├── Admin.lua           管理者の判定（キックできる人）。画面側とサーバー側の両方で使う（F06・F13で共通）

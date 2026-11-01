@@ -17,6 +17,7 @@ require "SurvivorComforts/Core"
 require "SurvivorComforts/Admin"
 require "SurvivorComforts/PlayerName"
 require "SurvivorComforts/Window"
+require "SurvivorComforts/Commands"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISButton"
 require "ISUI/ISTabPanel"
@@ -28,7 +29,6 @@ require "SurvivorComforts/CraftMenu"
 local FEATURE_ID = "F06"
 local FILE_NAME = "SurvivorComforts_Wishlist.txt"
 local LAYOUT_NAME = "survivorcomforts.wishlist"
-local MODULE = "SurvivorComforts" -- client/server command module, see the server file
 
 SurvivorComforts.registerFeature({
     id = FEATURE_ID,
@@ -215,12 +215,7 @@ local function blockOption(option, textKey)
     option.toolTip = tooltip
 end
 
-local function sendCommand(command, args)
-    local player = getSpecificPlayer(0)
-    if player then
-        sendClientCommand(player, MODULE, command, args)
-    end
-end
+local sendCommand = SurvivorComforts.sendCommand
 
 -- The actions on "my list". Sharing and unsharing change the shared list on
 -- the server, which sends it back; the window is refreshed then.
@@ -312,39 +307,36 @@ local function byOrder(a, b)
     return (tonumber(a.order) or 0) < (tonumber(b.order) or 0)
 end
 
-local function onServerCommand(module, command, args)
-    if module ~= MODULE or command ~= "wishlist" then return end
-    SurvivorComforts.safeCall(FEATURE_ID, function()
-        -- Lists lose their order on the way, so sort by the order the server keeps.
-        local received = {}
-        for _, entry in pairs(args.items or {}) do
-            if type(entry) == "table" and type(entry.fullType) == "string" then
-                table.insert(received, entry)
+SurvivorComforts.onServerCommand(FEATURE_ID, "wishlist", function(args)
+    -- Lists lose their order on the way, so sort by the order the server keeps.
+    local received = {}
+    for _, entry in pairs(args.items or {}) do
+        if type(entry) == "table" and type(entry.fullType) == "string" then
+            table.insert(received, entry)
+        end
+    end
+    table.sort(received, byOrder)
+    shared = { order = {}, sharers = {} }
+    for _, entry in ipairs(received) do
+        local sharers = {}
+        for _, sharer in pairs(entry.sharers or {}) do
+            if type(sharer) == "table" and type(sharer.name) == "string" then
+                table.insert(sharers, sharer)
             end
         end
-        table.sort(received, byOrder)
-        shared = { order = {}, sharers = {} }
-        for _, entry in ipairs(received) do
-            local sharers = {}
-            for _, sharer in pairs(entry.sharers or {}) do
-                if type(sharer) == "table" and type(sharer.name) == "string" then
-                    table.insert(sharers, sharer)
-                end
+        if #sharers > 0 then
+            table.sort(sharers, byOrder)
+            local names = {}
+            for _, sharer in ipairs(sharers) do
+                table.insert(names, sharer.name)
             end
-            if #sharers > 0 then
-                table.sort(sharers, byOrder)
-                local names = {}
-                for _, sharer in ipairs(sharers) do
-                    table.insert(names, sharer.name)
-                end
-                shared.sharers[entry.fullType] = names
-                table.insert(shared.order, entry.fullType)
-            end
+            shared.sharers[entry.fullType] = names
+            table.insert(shared.order, entry.fullType)
         end
-        invalidateColors()
-        refreshWindows()
-    end)
-end
+    end
+    invalidateColors()
+    refreshWindows()
+end)
 
 local function onGameStart()
     sendCommand("wishlistRequest", {})
@@ -636,18 +628,18 @@ end
 
 function SurvivorComforts_WishlistWindow:new(x, y, width, height, playerNum)
     local o = SurvivorComforts_Window.new(self, x, y, width, height, playerNum, "UI_SurvivorComforts_F06_Title")
-    title = "UI_SurvivorComforts_F06_Title",
     o.minimumWidth = 200
     o.minimumHeight = 150
-    sidebar = { order = 2, icon = "Wishlist" },
     return o
 end
 
 local windows = SurvivorComforts.addWindow({
     id = FEATURE_ID,
     class = SurvivorComforts_WishlistWindow,
+    title = "UI_SurvivorComforts_F06_Title",
     layout = LAYOUT_NAME,
     x = 150, y = 150, width = 260, height = 320,
+    sidebar = { order = 2, icon = "Wishlist" },
     onOpen = function(window) window:refresh() end,
 })
 
@@ -743,5 +735,4 @@ SurvivorComforts.addCraftMenuProvider({
 })
 
 Events.OnFillInventoryObjectContextMenu.Add(onFillContextMenu)
-Events.OnServerCommand.Add(onServerCommand)
 Events.OnGameStart.Add(onGameStart)

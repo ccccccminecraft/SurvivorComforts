@@ -5,6 +5,8 @@
 -- few at a time, so anything over the limit is dropped.
 --
 --   if not SurvivorComfortsServer.allowCommand(player, "F06") then return end
+--
+-- ServerCommands.lua does this for every command, by the feature's id.
 
 if isClient() then return end
 
