@@ -4,13 +4,13 @@
 
 ```
 SurvivorComforts\           リポジトリのルート（git clone した場所）
-├── LICENSE                   MIT ライセンス
+├── LICENSE                   MIT ライセンス（deploy.ps1 が MOD の中にも LICENSE.txt としてコピーする）
 ├── README.md                 MOD の紹介と、各ドキュメントへのリンク
 ├── docs\                     遊ぶ人向けのページ（feature-list.md、install.md、install-server.md）、開発手順（development.md）、テスト（testing.md）、フォルダ構成（folders.md）、調査メモ、機能一覧（features.md）、このガイド、点検の結果（review-日付.md）
 │   └── features\             機能ごとの要望・調査結果・仕様・確認項目（Fxx_名前.md）
 ├── tools\
 │   ├── check.ps1             Luaの構文チェック（ゲーム本体のコンパイラを使う）と、翻訳キー・ゲームのLuaにない関数の点検
-│   ├── deploy.ps1            開発用のフォルダ（%USERPROFILE%\PZDev\Workshop）へMODをコピーする
+│   ├── deploy.ps1            開発用のフォルダ（%USERPROFILE%\PZDev\Workshop）へMODをコピーする（LICENSE も MOD の中へ LICENSE.txt として入れる）
 │   ├── dev_game.ps1          deploy.ps1 でコピーして、開発用のフォルダでゲームを Steam ありで起動する（試す・アップロード）
 │   ├── test_server.ps1       テスト用のサーバーとゲーム2つを Steam なしで起動する（1台で複数人を試す）
 │   ├── test_debug.ps1        ゲームをデバッグモードで Steam なしで起動する（アイテムを出して試す）

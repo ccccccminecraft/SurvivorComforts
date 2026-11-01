@@ -7,7 +7,7 @@ MOD の開発に使うスクリプトです。MOD 本体には含まれません
 | `check.ps1` | MOD の Lua ファイルすべての構文を、ゲームと同じ Lua コンパイラでチェックします。続けて、翻訳キー（日本語と英語でそろっているか、コードで使っているキーがあるか）と、ゲームの Lua にない関数を使っていないかを点検します。JDK（13 以降）が必要です |
 | `LuaSyntaxCheck.java` | `check.ps1` が使う構文チェッカーです。直接実行する必要はありません |
 | `ModRules.java` | `check.ps1` が使う点検（翻訳キー、ゲームの Lua にない関数）です。直接実行する必要はありません |
-| `deploy.ps1` | MOD を開発用のフォルダ `%USERPROFILE%\PZDev\Workshop\SurvivorComforts` にコピーし、開発用のゲームから読み込んだりアップロードしたりできるようにします。いつも遊ぶゲーム（`%USERPROFILE%\Zomboid`）には置きません（そこでは Steam で購読した版を使うため。[dev-guide.md の「開発用のフォルダ」](../docs/dev-guide.md#開発用のフォルダ)） |
+| `deploy.ps1` | MOD を開発用のフォルダ `%USERPROFILE%\PZDev\Workshop\SurvivorComforts` にコピーし（リポジトリの `LICENSE` も、MOD の中に `LICENSE.txt` として入れます）、開発用のゲームから読み込んだりアップロードしたりできるようにします。いつも遊ぶゲーム（`%USERPROFILE%\Zomboid`）には置きません（そこでは Steam で購読した版を使うため。[dev-guide.md の「開発用のフォルダ」](../docs/dev-guide.md#開発用のフォルダ)） |
 | `dev_game.ps1` | `deploy.ps1` でコピーしてから、開発用のフォルダ（`-cachedir=%USERPROFILE%\PZDev`）で、Steam ありでゲームを起動します。MOD は有効にした状態で起動します。試すときと、ワークショップにアップロードするときに使います。`-Debug` でデバッグモード |
 | `test_server.ps1` | このPCでテスト用のサーバーとゲーム（初期値2つ）を Steam なしで起動し、1台で複数人のマルチプレイを試せるようにします。データは `%USERPROFILE%\PZTest` に分けて置き、普段のセーブには触れません。`-Debug` を付けると、ゲームをデバッグモードで起動します（管理者のアカウントでしか入れません。ユーザー名 `admin`、パスワード `admin`。詳しくは [dev-guide.md](../docs/dev-guide.md)）。`-Test` を付けると、テスト用の MOD（[docs/testing.md](../docs/testing.md)）もサーバーとゲームに入れます |
 | `test_debug.ps1` | ゲームをデバッグモード（`-debug`）で、Steam なしで1つ起動します。シングルプレイで、デバッグのメニューからアイテムを出して試すときに使います。MOD は有効にした状態で起動し、データは `%USERPROFILE%\PZTest\debug` に分けて置きます。`-Test` を付けると、テスト用の MOD も入れて有効にします。テストはデバッグメニューの「ユニットテスト」から始めます（[docs/testing.md](../docs/testing.md)） |

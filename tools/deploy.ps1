@@ -8,6 +8,8 @@
 # use this copy instead of the one the other players have
 # (docs\dev-guide.md, "開発用のフォルダ").
 #
+# The repository's LICENSE is copied into the mod as LICENSE.txt.
+#
 # workshop.txt in the destination is kept: the game writes the Workshop item
 # id into it after the first upload. If there is none yet, the one from the
 # old place (%USERPROFILE%\Zomboid\Workshop\SurvivorComforts) is copied over.
@@ -21,6 +23,11 @@ $dest = Join-Path $DevRoot "Workshop\SurvivorComforts"
 robocopy $source $dest /MIR /XF workshop.txt /NFL /NDL /NJH /NP | Out-Host
 # robocopy: 0-7 = success (8 or more = failure)
 if ($LASTEXITCODE -ge 8) { throw "robocopy failed with exit code $LASTEXITCODE" }
+
+# The license goes into the mod itself, so the Workshop copy carries it (the
+# MIT License asks for its text in every copy; F02 and F15 are based on
+# itsu07's MIT code). The repository's LICENSE is the only source.
+Copy-Item (Join-Path $PSScriptRoot "..\LICENSE") (Join-Path $dest "Contents\mods\SurvivorComforts\LICENSE.txt") -Force
 
 $itemFile = Join-Path $dest "workshop.txt"
 $oldItemFile = Join-Path $env:USERPROFILE "Zomboid\Workshop\SurvivorComforts\workshop.txt"
