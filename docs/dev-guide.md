@@ -33,6 +33,7 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
                 │   ├── Core.lua           共通処理とMod Options
                 │   ├── EnglishNames.lua   英語名の表（F14。tools\make_english_names.ps1 で作る。手で直さない）
                 │   ├── CraftMenu.lua      制作・建築の画面の右クリックメニュー（F03・F06で共通）
+                │   ├── F02_InventorySearch.lua
                 │   ├── F03_RecipeTrail.lua
                 │   ├── F04_ReadingTime.lua
                 │   ├── F06_Wishlist.lua
@@ -44,7 +45,7 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
                 │   ├── F13_HideUserPanel.lua
                 │   ├── F14_EnglishSearch.lua
                 │   ├── Recipes.lua        「レシピを見る」の処理と「戻る」の履歴（F03・F06・F12で共通）。レシピの材料・完成品のアイテムを1つずつ調べる処理（制作の画面の右クリック・F14でも使う）
-                │   ├── Search.lua         検索の決まり（語の区切り方、英語名・日本語名で比べる）。F14 と、今後の F02 で共通
+                │   ├── Search.lua         検索の決まり（語の区切り方、ひらがなとカタカナを区別しない、英語名・日本語名で比べる）。F14・F02で共通
                 │   ├── Sidebar.lua        画面左のアイコンにボタンを並べる。画面の下に近づいたら次の列へ。本体のボタンを隠して詰める（F06・F08・F09・F10・F13で共通）
                 │   └── Window.lua         機能のウィンドウの作り（プレイヤーごとに作る・開閉・閉じたら画面から外す・位置と大きさを覚える）と、それを開く画面左のボタン・キー・その2つの設定。F06・F08・F09で共通
                 ├── server\SurvivorComforts\
@@ -64,7 +65,7 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
 - 機能ごとに `client\SurvivorComforts\Fxx_機能名.lua` を1ファイル作る。仕様と確認項目は `docs\features\Fxx_名前.md` に書く（[features.md の「新しい機能を足すとき」](features.md#新しい機能を足すとき)）。
 - 各機能は `SurvivorComforts.registerFeature()` で Mod Options に「有効にする」のチェックボックスを登録し、処理の入口で `SurvivorComforts.isEnabled("Fxx")` を確認する。
   - 機能だけの設定は、`registerFeature` の `addOptions` の中で足す。順番は「左のアイコンにボタンを表示する」→ 開く/閉じるキー → その機能だけの設定、にそろえる。
-  - 設定画面での機能の並び順は、`Core.lua` の `OPTIONS_ORDER` で決める（ファイル名の順ではない）。今は「画面左のボタン（F08・F06・F09。ボタンと同じ順）」「レシピ（F12・F03・F14）」「普段の行動（F07・F04）」「マルチプレイ（F10・F13）」の順。新しい機能を足したら、近い機能の隣に入れる。
+  - 設定画面での機能の並び順は、`Core.lua` の `OPTIONS_ORDER` で決める（ファイル名の順ではない）。今は「画面左のボタン（F08・F06・F09。ボタンと同じ順）」「レシピと検索（F12・F03・F14・F02）」「普段の行動（F07・F04）」「マルチプレイ（F10・F13）」の順。新しい機能を足したら、近い機能の隣に入れる。
 - 処理は `SurvivorComforts.safeCall()` で囲み、エラーがほかの機能に波及しないようにする。
 - 表示する文字列は `UI.json`（EN と JP）に追加し、`getText("UI_SurvivorComforts_...")` で使う。
 

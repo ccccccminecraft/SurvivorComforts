@@ -47,7 +47,9 @@ end
 local function englishWords(panel)
     local text = panel._filterString
     if type(text) ~= "string" or not search.useEnglish() then return nil end
-    text = string.gsub(text, "%-@%-.*$", "")
+    -- A plain find: the text may hold Japanese (see Search.lua).
+    local cut = string.find(text, "-@-", 1, true)
+    if cut then text = string.sub(text, 1, cut - 1) end
     if not search.hasLatin(text) then return nil end
     local first = string.sub(text, 1, 1)
     if first == "!" or first == "@" or first == "$" then return nil end

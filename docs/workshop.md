@@ -51,7 +51,7 @@ Project Zomboid（Build 42.21 以降）用の、ちょっとした便利機能�
 画面左のドクロのボタンを隠し、PvP を常にオフにします。G キーでの切り替えも無効になります。
 
 [*][b]ユーザーパネルのボタンを隠す[/b]
-画面左のユーザーパネル（派閥・セーフハウスなど）のボタンを隠し、下のボタンを詰めます。ボタンを隠すだけで、派閥などの機能はそのまま使えます。管理者には常に表示します。
+画面左のユーザーパネル（派閥・セーフハウスなど）のボタンを隠し、下のボタンを詰めます。管理者には常に表示します。隠している間は、パネルの中の画面（派閥、チケットなど）も開けません。使うときはオプションで OFF にしてください。
 
 [*][b]アイテムからレシピを見る[/b]
 アイテムを右クリック →「レシピを見る」で、そのアイテムを作れるレシピに絞り込んだ制作の画面を開きます。作れるレシピがないときは赤く表示されます。
@@ -61,6 +61,9 @@ Project Zomboid（Build 42.21 以降）用の、ちょっとした便利機能�
 
 [*][b]英語名でも検索する[/b]
 日本語でプレイしていても、制作・建築の画面の検索で、英語名（plank、saw logs など）でもレシピが見つかります。空白で区切った語は、全部入っているものが出ます。オプションで、英語名を含めるかを選べます。
+
+[*][b]インベントリ検索[/b]
+インベントリと周りの容器の一覧の検索欄で、名前で一覧を絞り込みます。合うアイテムが上にまとまり、ほかは暗く表示されます（オプションで隠すこともできます）。ひらがなとカタカナは区別せず、英語名（hammer など）でも見つかります。検索中の「すべて取る」「すべて移す」は、合うアイテムだけを移します。itsu07 さんの Inventory Search を元にしています。
 [/list]
 
 [h2]導入[/h2]
@@ -120,7 +123,7 @@ Lists who is online on the server, and who was online in the last 7 days with wh
 Hides the skull button on the left of the screen and keeps PvP off. The G key no longer toggles PvP.
 
 [*][b]Hide the user panel button[/b]
-Hides the user panel button (factions, safehouses and more) on the left of the screen and moves the buttons below up. Only the button is hidden; factions and the rest still work. Admins always see it.
+Hides the user panel button (factions, safehouses and more) on the left of the screen and moves the buttons below up. Admins always see it. While it is hidden, the windows in the user panel (factions, tickets and more) cannot be opened; turn it off in the options when you need them.
 
 [*][b]Show recipes for an item[/b]
 Right-click an item and choose "Show recipes" to open the crafting window filtered to recipes that make it. The option is shown in red when no recipe makes the item.
@@ -130,6 +133,9 @@ In the crafting and building windows, right-click an ingredient and choose "Show
 
 [*][b]Search by English name too[/b]
 When the game is in another language, the search in the crafting and building windows also finds recipes by English name (plank, saw logs and so on). Recipes with every word you type are shown. You can turn English names off in the options.
+
+[*][b]Inventory search[/b]
+A search box on the inventory and nearby container lists narrows the list by name. Matching items move to the top and the others are dimmed (or hidden, in the options). Hiragana and katakana are treated as the same, and English names (hammer and so on) work too. While searching, "Loot all" and "Transfer all" move only the matching items. Based on Inventory Search by itsu07.
 [/list]
 
 [h2]Installation[/h2]
