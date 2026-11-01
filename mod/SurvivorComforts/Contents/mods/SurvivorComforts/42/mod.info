@@ -3,6 +3,6 @@ id=SurvivorComforts
 poster=poster.png
 icon=icon.png
 description=Small quality-of-life improvements for our server. Each feature can be turned on/off in Options > Mods.
-modversion=0.3.0
+modversion=0.4.0
 versionMin=42.21
 category=interface
