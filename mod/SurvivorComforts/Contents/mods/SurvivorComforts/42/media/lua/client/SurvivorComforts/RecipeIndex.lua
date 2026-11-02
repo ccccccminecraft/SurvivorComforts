@@ -116,7 +116,7 @@ local function build()
             local recipe = recipes:get(i)
             if fromBuildList then buildable[recipe:getName()] = true end
             local isBuilding = recipeIndex.isBuild(recipe)
-            local key = (isBuilding and "b:" or "c:") .. recipe:getName()
+            local key = recipeIndex.recipeKey(recipe)
             if not seen[key] then
                 seen[key] = true
                 count = count + 1
@@ -159,6 +159,12 @@ end
 
 function recipeIndex.isBuild(recipe)
     return recipe:isBuildableRecipe() == true or buildable[recipe:getName()] == true
+end
+
+-- A key for one recipe: its name, apart for crafting and building (the two
+-- lists may use the same name). Also used by RecipeCanMake.lua.
+function recipeIndex.recipeKey(recipe)
+    return (recipeIndex.isBuild(recipe) and "b:" or "c:") .. recipe:getName()
 end
 
 -- part = { items = { script, ... }, amount, maxAmount (when it varies) }

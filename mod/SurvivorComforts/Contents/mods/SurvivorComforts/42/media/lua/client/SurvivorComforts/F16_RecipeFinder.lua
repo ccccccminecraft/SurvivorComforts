@@ -14,9 +14,11 @@ require "SurvivorComforts/Core"
 require "SurvivorComforts/Window"
 require "SurvivorComforts/Search"
 require "SurvivorComforts/RecipeIndex"
+require "SurvivorComforts/RecipeCanMake"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISTextEntryBox"
 require "ISUI/ISComboBox"
+require "ISUI/ISTickBox"
 require "ISUI/ISButton"
 require "ISUI/ISContextMenu"
 require "Entity/ISEntityUI"
@@ -26,9 +28,13 @@ local LAYOUT_NAME = "survivorcomforts.recipefinder"
 local MAX_HISTORY = 50
 local INDENT = 16
 local TITLE_HEIGHT = 56 -- the item's own row at the top of the right side
+local RECHECK_GAP = 500   -- ms at least between two "can make now" checks
+local SURFACE_GAP = 1000  -- ms between looks for a crafting surface nearby
+local DIM_ALPHA = 0.4     -- rows that cannot be made now, with "can make" on
 
 local search = SurvivorComforts.search
 local recipeIndex = SurvivorComforts.recipeIndex
+local recipeCanMake = SurvivorComforts.recipeCanMake
 
 local LINK_COLOR = { r = 0.55, g = 0.9, b = 0.55 }    -- an item name that can be clicked
 local TEXT_COLOR = { r = 1, g = 1, b = 1 }
@@ -36,10 +42,20 @@ local LABEL_COLOR = { r = 0.6, g = 0.6, b = 0.6 }
 local BUILD_COLOR = { r = 0.95, g = 0.75, b = 0.4 }
 local CRAFT_COLOR = { r = 0.55, g = 0.75, b = 1 }
 
+-- Some recipe that makes the entry can be made now (made: RecipeCanMake.lua).
+local function canMakeNow(entry, made)
+    if not made then return false end
+    for _, recipe in ipairs(entry.made) do
+        if made[recipeIndex.recipeKey(recipe)] then return true end
+    end
+    return false
+end
+
 -- The filter's choices, in the combo box's order. Craft, build and
 -- "cannot be made" do not overlap and together are all: items are made only
 -- by crafting recipes, buildings only by building recipes. "Craft" and
--- "Build" are the game's own words.
+-- "Build" are the game's own words. Whether it can be made now is another
+-- axis: the "can make" tick box, used together with these.
 local FILTERS = {
     { text = "UI_SurvivorComforts_F16_Filter_All", keep = function(entry) return true end },
     { text = "IGUI_CraftingWindow_Craft", keep = function(entry) return not entry.building and #entry.made > 0 end },
@@ -53,8 +69,14 @@ SurvivorComforts.registerFeature({
     tooltip = "UI_SurvivorComforts_F16_Tooltip",
     addOptions = function(options)
         SurvivorComforts.addWindowOptions(options, FEATURE_ID)
+        options:addTickBox(FEATURE_ID .. "_dim", getText("UI_SurvivorComforts_F16_Dim"), true, getText("UI_SurvivorComforts_F16_Dim_Tooltip"))
     end,
 })
+
+-- "Can make" on: what cannot be made now is listed dimmed below (true) or hidden.
+local function dimOption()
+    return SurvivorComforts.getOptionValue(FEATURE_ID .. "_dim") ~= false
+end
 
 -- What a search compares: the item's names, or a building's recipe names.
 local function entryText(entry, english)
@@ -63,16 +85,29 @@ local function entryText(entry, english)
 end
 
 -- The items and buildings in the index that pass the filter and match the
--- search words (all of them for no words), by name.
-local function findItems(index, words, filter)
-    local found = {}
+-- search words (all of them for no words), by name. made is the result of
+-- the "can make now" check while the "can make" tick box is on (nil: off):
+-- what cannot be made now is left out, or, with dim, put after the rest
+-- (each part still by name) and returned in the second result,
+-- { [entry] = true }, to draw dimmed.
+local function findItems(index, words, filter, made, dim)
+    local found, others = {}, {}
     local english = words and search.useEnglish()
     for _, entry in ipairs(index.order) do
         if filter.keep(entry) and (not words or search.matches(entryText(entry, english), words)) then
-            table.insert(found, entry)
+            if not made or canMakeNow(entry, made) then
+                table.insert(found, entry)
+            elseif dim then
+                table.insert(others, entry)
+            end
         end
     end
-    return found
+    local dimmed = {}
+    for _, entry in ipairs(others) do
+        table.insert(found, entry)
+        dimmed[entry] = true
+    end
+    return found, dimmed
 end
 
 -- The game's own words, so the window reads like the crafting and building
@@ -111,11 +146,14 @@ Rows.__index = Rows
 
 -- current = the item shown (its name is not a link); opened = keys clicked
 -- open or closed, against each row's default.
-local function newRows(current, opened)
-    return setmetatable({ list = {}, current = current, opened = opened }, Rows)
+-- made: the "can make now" check while "can make" is on (nil: off); the
+-- recipes that cannot be made now are dimmed, with their rows.
+local function newRows(current, opened, made)
+    return setmetatable({ list = {}, current = current, opened = opened, made = made }, Rows)
 end
 
 function Rows:add(row)
+    if self.dimming then row.dim = true end
     table.insert(self.list, row)
     return row
 end
@@ -191,6 +229,8 @@ end
 function Rows:addRecipe(recipe, key, openByDefault)
     local info = recipeIndex.describe(recipe)
     local open = self:isOpen(key, openByDefault)
+    -- Every row of a recipe that cannot be made now is dimmed.
+    self.dimming = self.made ~= nil and not self.made[recipeIndex.recipeKey(recipe)]
     local summary = nil
     if not open and info.outputs[1] and info.outputs[1].items and info.outputs[1].items[1] then
         summary = "-> " .. itemName(info.outputs[1].items[1]) .. " " .. amountText(info.outputs[1])
@@ -201,7 +241,10 @@ function Rows:addRecipe(recipe, key, openByDefault)
         kindColor = info.isBuild and BUILD_COLOR or CRAFT_COLOR,
         toggle = key, open = open, recipe = recipe,
     })
-    if not open then return end
+    if not open then
+        self.dimming = nil
+        return
+    end
     for i, part in ipairs(info.consumed) do
         self:addPart(part, 1, getText("IGUI_CraftingWindow_Requires"), key .. ":c" .. i)
     end
@@ -215,6 +258,7 @@ function Rows:addRecipe(recipe, key, openByDefault)
     if conditions ~= "" then
         self:add({ indent = 1, label = getText("UI_SurvivorComforts_F16_Part_Needs"), text = conditions, color = TEXT_COLOR })
     end
+    self.dimming = nil
 end
 
 function Rows:addSection(title, recipes, key, openByDefault)
@@ -225,9 +269,9 @@ function Rows:addSection(title, recipes, key, openByDefault)
     end
 end
 
--- Every row for one item of the index.
-local function itemRows(entry, opened)
-    local rows = newRows(entry.fullType, opened)
+-- Every row for one item of the index (made: see newRows).
+local function itemRows(entry, opened, made)
+    local rows = newRows(entry.fullType, opened, made)
     -- A building shows its category ("Build") only; its key is not a name to show.
     local sub = entry.building and entry.category
         or (entry.category and (entry.category .. "   " .. entry.fullType) or entry.fullType)
@@ -275,10 +319,11 @@ function SurvivorComforts_RecipeFinderItems:doDrawItem(y, item, alt)
     drawHighlight(self, item, y)
     local iconSize = self.itemheight - 4
     local texture = item.item.texture
+    local alpha = (self.dimmed and self.dimmed[item.item]) and DIM_ALPHA or 1
     if texture then
-        self:drawTextureScaledAspect(texture, 4, y + 2, iconSize, iconSize, 1, 1, 1, 1)
+        self:drawTextureScaledAspect(texture, 4, y + 2, iconSize, iconSize, alpha, 1, 1, 1)
     end
-    self:drawText(item.text, iconSize + 10, y + (self.itemheight - self.fontHgt) / 2, 1, 1, 1, 1, self.font)
+    self:drawText(item.text, iconSize + 10, y + (self.itemheight - self.fontHgt) / 2, 1, 1, 1, alpha, self.font)
     return y + self.itemheight
 end
 
@@ -318,29 +363,30 @@ function SurvivorComforts_RecipeFinderDetail:doDrawItem(y, item, alt)
     if (row.fullType or row.toggle) and self.mouseoverselected == item.index and self:isMouseOver() and not self:isMouseOverScrollBar() then
         self:drawMouseOverHighlight(0, y, self:getWidth(), h - 1)
     end
+    local a = row.dim and DIM_ALPHA or 1
     local x = 6 + (row.indent or 0) * INDENT
     if row.toggle then
-        self:drawText(row.open and "[-]" or "[+]", x, textY, LABEL_COLOR.r, LABEL_COLOR.g, LABEL_COLOR.b, 1, self.font)
+        self:drawText(row.open and "[-]" or "[+]", x, textY, LABEL_COLOR.r, LABEL_COLOR.g, LABEL_COLOR.b, a, self.font)
         x = x + getTextManager():MeasureStringX(self.font, "[+]") + 4
     end
     if row.kind then
-        self:drawText(row.kind, x, textY, row.kindColor.r, row.kindColor.g, row.kindColor.b, 1, self.font)
+        self:drawText(row.kind, x, textY, row.kindColor.r, row.kindColor.g, row.kindColor.b, a, self.font)
         x = x + getTextManager():MeasureStringX(self.font, row.kind) + 6
     end
     if row.label then
-        self:drawText(row.label, x, textY, LABEL_COLOR.r, LABEL_COLOR.g, LABEL_COLOR.b, 1, self.font)
+        self:drawText(row.label, x, textY, LABEL_COLOR.r, LABEL_COLOR.g, LABEL_COLOR.b, a, self.font)
         x = x + getTextManager():MeasureStringX(self.font, row.label) + 6
     end
     if row.texture then
         local iconSize = h - 4
-        self:drawTextureScaledAspect(row.texture, x, y + 2, iconSize, iconSize, 1, 1, 1, 1)
+        self:drawTextureScaledAspect(row.texture, x, y + 2, iconSize, iconSize, a, 1, 1, 1)
         x = x + iconSize + 4
     end
     local color = row.color or TEXT_COLOR
-    self:drawText(row.text, x, textY, color.r, color.g, color.b, 1, self.font)
+    self:drawText(row.text, x, textY, color.r, color.g, color.b, a, self.font)
     if row.sub or row.summary then
         x = x + getTextManager():MeasureStringX(self.font, row.text) + 8
-        self:drawText(row.sub or row.summary, x, textY, LABEL_COLOR.r, LABEL_COLOR.g, LABEL_COLOR.b, 1, self.font)
+        self:drawText(row.sub or row.summary, x, textY, LABEL_COLOR.r, LABEL_COLOR.g, LABEL_COLOR.b, a, self.font)
     end
     return y + h
 end
@@ -405,6 +451,15 @@ function SurvivorComforts_RecipeFinderWindow:createChildren()
     self.filterCombo.selected = 1
     self:addChild(self.filterCombo)
 
+    -- "Can make": on/off, apart from the filter (another axis).
+    local tickHeight = getTextManager():getFontHeight(font)
+    self.canMakeBox = ISTickBox:new(0, 0, 100, tickHeight, "", self, SurvivorComforts_RecipeFinderWindow.onCanMakeChange)
+    self.canMakeBox:initialise()
+    self.canMakeBox:instantiate()
+    self.canMakeBox:addOption(getText("UI_SurvivorComforts_F16_CanMake"))
+    self.canMakeBox:setWidthToFit()
+    self:addChild(self.canMakeBox)
+
     self.itemList = newList(SurvivorComforts_RecipeFinderItems, self)
     self.itemList:setOnMouseDownFunction(self, SurvivorComforts_RecipeFinderWindow.onPickItem)
     self.detail = newList(SurvivorComforts_RecipeFinderDetail, self)
@@ -431,8 +486,12 @@ function SurvivorComforts_RecipeFinderWindow:layout()
     local gap = 6
     local top = th + gap
     local comboWidth = self.filterCombo:getWidth()
-    place(self.searchBox, gap, top, math.max(50, self.width - comboWidth - gap * 3))
-    place(self.filterCombo, self.width - comboWidth - gap, top, comboWidth)
+    local tickWidth = self.canMakeBox:getWidth()
+    local tickX = self.width - tickWidth - gap
+    local comboX = tickX - comboWidth - gap * 2
+    place(self.searchBox, gap, top, math.max(50, comboX - gap * 2))
+    place(self.filterCombo, comboX, top, comboWidth)
+    place(self.canMakeBox, tickX, top + math.floor((h - self.canMakeBox:getHeight()) / 2), tickWidth)
     local listTop = top + h + gap
     local listHeight = math.max(20, self.height - listTop - rh)
     local leftWidth = math.max(160, math.floor(self.width * 0.36))
@@ -444,19 +503,63 @@ function SurvivorComforts_RecipeFinderWindow:layout()
     place(self.detail, leftWidth, detailTop, self.width - leftWidth, math.max(20, self.height - detailTop - rh))
 end
 
+function SurvivorComforts_RecipeFinderWindow:currentFilter()
+    return FILTERS[self.filterCombo.selected] or FILTERS[1]
+end
+
+function SurvivorComforts_RecipeFinderWindow:isCanMakeOn()
+    return self.canMakeBox ~= nil and self.canMakeBox:isSelected(1)
+end
+
+-- "Can make": check again when the containers may have changed (the same
+-- moments the vanilla windows look again, see RecipeCanMake.lua) or a
+-- crafting surface came or went nearby; at most once every RECHECK_GAP.
+-- Only while the window is shown (prerender) and the tick box is on.
+function SurvivorComforts_RecipeFinderWindow:updateCanMake()
+    if not self:isCanMakeOn() then return end
+    local now = getTimestampMs()
+    local player = getSpecificPlayer(self.playerNum)
+    if player and now - (self.surfaceCheckedAt or 0) >= SURFACE_GAP then
+        self.surfaceCheckedAt = now
+        local surface = recipeCanMake.findSurface(player)
+        if surface ~= self.surface then
+            self.surface = surface
+            recipeCanMake.markDirty(self.playerNum)
+        end
+    end
+    if self.made and not recipeCanMake.isDirty(self.playerNum) then return end
+    if self.made and now - (self.checkedAt or 0) < RECHECK_GAP then return end
+    self:checkCanMake()
+end
+
+function SurvivorComforts_RecipeFinderWindow:checkCanMake()
+    self.checkedAt = getTimestampMs()
+    self.made = recipeCanMake.check(self.playerNum)
+    self:refreshResults(true)
+    self:refreshDetail()
+end
+
 function SurvivorComforts_RecipeFinderWindow:prerender()
     ISCollapsableWindow.prerender(self)
     if self.itemList then
+        SurvivorComforts.safeCall(FEATURE_ID, self.updateCanMake, self)
+        -- The dim option changed while the window is open.
+        if self:isCanMakeOn() and self.shownDim ~= nil and self.shownDim ~= dimOption() then
+            SurvivorComforts.safeCall(FEATURE_ID, self.refreshResults, self, true)
+        end
         self:layout()
         self.backButton:setEnable(#self.history > 0)
         self.forwardButton:setEnable(#self.forward > 0)
     end
 end
 
--- The left list, from the search box and the filter.
-function SurvivorComforts_RecipeFinderWindow:refreshResults()
+-- The left list, from the search box, the filter and the "can make" tick
+-- box. keepScroll keeps the list where it was (when "can make" was checked
+-- again).
+function SurvivorComforts_RecipeFinderWindow:refreshResults(keepScroll)
     local list = self.itemList
     if not list then return end
+    local scroll = list:getYScroll()
     list:clear()
     local index = recipeIndex.get()
     if not index then
@@ -464,19 +567,26 @@ function SurvivorComforts_RecipeFinderWindow:refreshResults()
         return
     end
     local words = search.parse(self.searchBox:getInternalText())
-    list:setYScroll(0)
-    -- Nothing is listed until a name is typed.
-    if not words then
+    list:setYScroll(keepScroll and scroll or 0)
+    local filter = self:currentFilter()
+    local canMakeOn = self:isCanMakeOn()
+    -- Nothing is listed until a name is typed, except with "can make" on,
+    -- which lists everything that can be made now.
+    if not words and not canMakeOn then
         list.emptyText = getText("UI_SurvivorComforts_F16_TypeToSearch")
         return
     end
-    local filter = FILTERS[self.filterCombo.selected] or FILTERS[1]
     list.selected = -1 -- only the item shown on the right is highlighted
-    for _, entry in ipairs(findItems(index, words, filter)) do
+    local dim = dimOption()
+    self.shownDim = dim
+    local found, dimmed = findItems(index, words, filter, canMakeOn and (self.made or {}) or nil, dim)
+    list.dimmed = dimmed
+    for _, entry in ipairs(found) do
         list:addItem(entry.name, entry)
         if entry.fullType == self.current then list.selected = #list.items end
     end
     list.emptyText = getText("UI_SurvivorComforts_F16_NotFound")
+    if keepScroll then list:setYScroll(scroll) end
 end
 
 local function push(list, fullType)
@@ -524,7 +634,8 @@ function SurvivorComforts_RecipeFinderWindow:refreshDetail()
     local index = recipeIndex.get()
     local entry = index and self.current and index.items[self.current]
     if not entry then return end
-    for _, row in ipairs(itemRows(entry, self.opened)) do
+    local made = self:isCanMakeOn() and (self.made or {}) or nil
+    for _, row in ipairs(itemRows(entry, self.opened, made)) do
         local item = detail:addItem(row.text or "", row)
         if row.title then
             detail:setScrollHeight(detail:getScrollHeight() + TITLE_HEIGHT - item.height)
@@ -540,6 +651,18 @@ end
 
 function SurvivorComforts_RecipeFinderWindow:onFilterChange()
     SurvivorComforts.safeCall(FEATURE_ID, self.refreshResults, self)
+end
+
+-- "Can make" is checked again each time it is turned on.
+function SurvivorComforts_RecipeFinderWindow:onCanMakeChange(index, selected)
+    SurvivorComforts.safeCall(FEATURE_ID, function()
+        if selected then
+            self:checkCanMake()
+        else
+            self:refreshResults()
+            self:refreshDetail()
+        end
+    end)
 end
 
 function SurvivorComforts_RecipeFinderWindow:onPickItem(entry)
@@ -701,6 +824,7 @@ SurvivorComforts.internals.F16 = {
     findItems = findItems,
     itemRows = itemRows,
     fillMenu = fillMenu,
+    canMakeNow = canMakeNow,
     FILTERS = FILTERS,
     windows = windows,
 }

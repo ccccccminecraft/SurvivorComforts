@@ -182,6 +182,40 @@ T.add("F16: rows for planks: title, open recipes, links, closed uses", function(
     t:equal(selfLinks, 0, "planks themselves are not a link")
 end)
 
+T.add("F16: with can make on, the recipes that cannot be made now are dimmed on the right", function(t)
+    local f16 = internals(t)
+    local index = getIndex(t)
+    if not f16 or not index then return end
+    local plank = entryOf(t, index, "Base.Plank")
+    if not plank or not t:ok(plank.made[1], "a recipe for planks") then return end
+    local function dimOf(rows)
+        local recipes, dimmed, inside = 0, 0, 0
+        for _, row in ipairs(rows) do
+            if row.recipe and row.toggle then
+                recipes = recipes + 1
+                if row.dim then dimmed = dimmed + 1 end
+            elseif row.dim then
+                inside = inside + 1
+            end
+        end
+        return recipes, dimmed, inside
+    end
+    local _, dimmedOff = dimOf(f16.itemRows(plank, {}, nil))
+    t:equal(dimmedOff, 0, "can make off: nothing dimmed")
+    local recipes, dimmedNone, inside = dimOf(f16.itemRows(plank, {}, {}))
+    t:equal(dimmedNone, recipes, "nothing can be made: every recipe dimmed")
+    t:ok(inside > 0, "the rows inside an open recipe are dimmed too")
+    local made = { [recipeIndex.recipeKey(plank.made[1])] = true }
+    local rows = f16.itemRows(plank, {}, made)
+    local _, dimmedOne = dimOf(rows)
+    t:equal(dimmedOne, recipes - 1, "the one that can be made is not dimmed")
+    for _, row in ipairs(rows) do
+        if row.title or row.header then
+            if row.dim then return t:fail("the item's row or a header is dimmed") end
+        end
+    end
+end)
+
 T.add("F16: opening a used-in recipe adds its rows", function(t)
     local f16 = internals(t)
     local index = getIndex(t)
@@ -261,6 +295,75 @@ T.add("F16: right-click lines: craft for items and crafting recipes, build for b
     end
 end)
 
+-- Simple crafting recipes to try "can make now" with: made in hand, in the
+-- dark, with no tools, skills or learning, from a few items.
+local function simpleRecipes(index, max)
+    local found, seen = {}, {}
+    for _, entry in ipairs(index.order) do
+        for _, recipe in ipairs(entry.made) do
+            local key = recipeIndex.recipeKey(recipe)
+            if not seen[key] and not recipeIndex.isBuild(recipe) then
+                seen[key] = true
+                local info = recipeIndex.describe(recipe)
+                local simple = info.inHand and not info.needLight and not info.needLearn
+                    and #info.tools == 0 and #info.skills == 0 and #info.consumed > 0
+                for _, part in ipairs(info.consumed) do
+                    if not part.items or #part.items == 0 or part.maxAmount or part.amount > 5 then simple = false end
+                end
+                if simple then
+                    table.insert(found, info)
+                    if #found >= max then return found end
+                end
+            end
+        end
+    end
+    return found
+end
+
+T.add("F16: can make now: a simple recipe becomes possible with its materials", function(t)
+    local player = H.player(t)
+    local f16 = internals(t)
+    local index = getIndex(t)
+    if not player or not f16 or not index then return end
+    local canMake = SurvivorComforts.recipeCanMake
+    local made = canMake.check(0)
+    if not t:ok(made, "checked") then return end
+    t:equal(canMake.isDirty(0), false, "the check clears the dirty mark")
+    -- With "can make" on, every entry found has a recipe that can be made
+    -- now, also together with a filter.
+    for _, filter in ipairs(f16.FILTERS) do
+        for _, entry in ipairs(f16.findItems(index, nil, filter, made)) do
+            if not f16.canMakeNow(entry, made) then return t:fail("cannot be made now: " .. entry.fullType) end
+            if not filter.keep(entry) then return t:fail("not in its filter: " .. entry.fullType) end
+        end
+    end
+    t:equal(#f16.findItems(index, nil, f16.FILTERS[4], made), 0, "cannot be made + can make: nothing")
+    -- With dim: everything in the filter, what can be made first, the rest dimmed.
+    local all = f16.FILTERS[1]
+    local found, dimmed = f16.findItems(index, nil, all, made, true)
+    t:equal(#found, #index.order, "dim: every entry is listed")
+    local seenDimmed = false
+    for _, entry in ipairs(found) do
+        local isMade = f16.canMakeNow(entry, made)
+        if isMade == (dimmed[entry] == true) then return t:fail("dimmed does not match can make: " .. entry.fullType) end
+        if dimmed[entry] then
+            seenDimmed = true
+        elseif seenDimmed then
+            return t:fail("can be made, after a dimmed one: " .. entry.fullType)
+        end
+    end
+    -- Some simple recipe becomes possible once its materials are in the inventory.
+    local candidates = simpleRecipes(index, 10)
+    if not t:ok(#candidates > 0, "some simple recipe") then return end
+    for _, info in ipairs(candidates) do
+        for _, part in ipairs(info.consumed) do
+            H.giveItems(t, player, part.items[1]:getFullName(), part.amount)
+        end
+        if canMake.check(0)[recipeIndex.recipeKey(info.recipe)] then return end
+    end
+    t:fail("none of " .. #candidates .. " simple recipes became possible with their materials")
+end)
+
 T.add("F16: the window opens, finds and shows an item", function(t)
     H.player(t)
     H.setOption(t, "F16_enabled", true)
@@ -273,13 +376,20 @@ T.add("F16: the window opens, finds and shows an item", function(t)
     -- The window may have been used by hand before: start with no history,
     -- and put back what it showed afterwards.
     local history, forward, current = window.history, window.forward, window.current
+    local filter = window.filterCombo.selected
+    local canMakeOn = window.canMakeBox:isSelected(1)
     window.history = {}
     window.forward = {}
     window.current = nil
+    window.filterCombo.selected = 1
+    window.canMakeBox:setSelected(1, false)
     t:cleanup(function()
         window.history = history
         window.forward = forward
         window.current = current
+        window.filterCombo.selected = filter
+        window.canMakeBox:setSelected(1, canMakeOn)
+        window:refreshResults()
     end)
     window.searchBox:setText("plank")
     window:refreshResults()
@@ -304,6 +414,11 @@ T.add("F16: the window opens, finds and shows an item", function(t)
     window.searchBox:setText("")
     window:refreshResults()
     t:equal(#window.itemList.items, 0, "an empty search lists nothing")
+    -- Except with "can make" on: everything that can be made now.
+    window.canMakeBox:setSelected(1, true)
+    window:checkCanMake()
+    local index = recipeIndex.get()
+    t:equal(#window.itemList.items, #f16.findItems(index, nil, f16.FILTERS[1], window.made), "can make lists all with an empty search")
 end)
 
 T.add("F16: nothing opens while the feature is off", function(t)
