@@ -453,6 +453,12 @@ function SurvivorComforts_RecipeFinderWindow:refreshResults()
         return
     end
     local words = search.parse(self.searchBox:getInternalText())
+    list:setYScroll(0)
+    -- Nothing is listed until a name is typed.
+    if not words then
+        list.emptyText = getText("UI_SurvivorComforts_F16_TypeToSearch")
+        return
+    end
     local filter = FILTERS[self.filterCombo.selected] or FILTERS[1]
     list.selected = -1 -- only the item shown on the right is highlighted
     for _, entry in ipairs(findItems(index, words, filter)) do
@@ -460,7 +466,6 @@ function SurvivorComforts_RecipeFinderWindow:refreshResults()
         if entry.fullType == self.current then list.selected = #list.items end
     end
     list.emptyText = getText("UI_SurvivorComforts_F16_NotFound")
-    list:setYScroll(0)
 end
 
 -- Shows one item on the right; remember = put the one shown now in the history.

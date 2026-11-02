@@ -99,6 +99,7 @@
     "UI_SurvivorComforts_F16_Back": "Back",
     "UI_SurvivorComforts_F16_Select": "Pick an item from the list on the left",
     "UI_SurvivorComforts_F16_NotFound": "Nothing found",
+    "UI_SurvivorComforts_F16_TypeToSearch": "Type a name to search",
     "UI_SurvivorComforts_F16_Failed": "Could not read the recipes",
     "UI_SurvivorComforts_F16_Made": "How to make (%1)",
     "UI_SurvivorComforts_F16_NotMade": "No recipe makes this (found, foraged, taken apart, ...)",

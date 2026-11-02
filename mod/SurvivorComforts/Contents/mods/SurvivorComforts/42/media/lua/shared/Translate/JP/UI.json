@@ -99,6 +99,7 @@
     "UI_SurvivorComforts_F16_Back": "戻る",
     "UI_SurvivorComforts_F16_Select": "左の一覧からアイテムを選んでください",
     "UI_SurvivorComforts_F16_NotFound": "見つかりません",
+    "UI_SurvivorComforts_F16_TypeToSearch": "名前を入れて検索してください",
     "UI_SurvivorComforts_F16_Failed": "レシピを読めませんでした",
     "UI_SurvivorComforts_F16_Made": "作り方（%1）",
     "UI_SurvivorComforts_F16_NotMade": "レシピでは作れません（拾う・採る・解体するなど）",

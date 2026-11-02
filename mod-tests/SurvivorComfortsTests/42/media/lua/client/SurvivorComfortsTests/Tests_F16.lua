@@ -280,6 +280,8 @@ T.add("F16: the window opens, finds and shows an item", function(t)
     t:equal(window.current, "Base.Plank", "back to planks")
     t:equal(#window.history, 0, "history empty again")
     window.searchBox:setText("")
+    window:refreshResults()
+    t:equal(#window.itemList.items, 0, "an empty search lists nothing")
 end)
 
 T.add("F16: nothing opens while the feature is off", function(t)
