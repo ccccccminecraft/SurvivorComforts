@@ -2,10 +2,11 @@
 -- from every crafting and building recipe (RecipeIndex.lua). Based on
 -- itsu07's HTML app "PZ レシピ検索"; written again in Lua for the game.
 --
--- Top: search box, filter and back button. Left: the items found. Right: the
--- chosen item, one row per line: the recipes that make it (open), and the
--- recipes that use it up or use it as a tool (closed; a click opens one).
--- Clicking an item's name shows that item; "back" goes to the one before.
+-- Top: search box and filter. Left: the items found. Right: back and forward
+-- buttons, then the chosen item, one row per line: the recipes that make it
+-- (open), and the recipes that use it up or use it as a tool (closed; a
+-- click opens one). Clicking an item's name shows that item; back and
+-- forward move through the items shown, as in a web browser.
 -- A right-click on an item or a recipe opens the vanilla crafting or building
 -- window on it, and has the wishlist lines (F06, see CraftMenu.lua).
 
@@ -35,12 +36,15 @@ local LABEL_COLOR = { r = 0.6, g = 0.6, b = 0.6 }
 local BUILD_COLOR = { r = 0.95, g = 0.75, b = 0.4 }
 local CRAFT_COLOR = { r = 0.55, g = 0.75, b = 1 }
 
--- The filter's choices, in the combo box's order.
+-- The filter's choices, in the combo box's order. Craft, build and
+-- "cannot be made" do not overlap and together are all: items are made only
+-- by crafting recipes, buildings only by building recipes. "Craft" and
+-- "Build" are the game's own words.
 local FILTERS = {
     { text = "UI_SurvivorComforts_F16_Filter_All", keep = function(entry) return true end },
-    { text = "UI_SurvivorComforts_F16_Filter_Craftable", keep = function(entry) return #entry.made > 0 end },
-    { text = "UI_SurvivorComforts_F16_Filter_Material", keep = function(entry) return #entry.made == 0 end },
-    { text = "UI_SurvivorComforts_F16_Filter_Building", keep = function(entry) return entry.building == true end },
+    { text = "IGUI_CraftingWindow_Craft", keep = function(entry) return not entry.building and #entry.made > 0 end },
+    { text = "IGUI_CraftingWindow_Build", keep = function(entry) return entry.building == true end },
+    { text = "UI_SurvivorComforts_F16_Filter_Uncraftable", keep = function(entry) return not entry.building and #entry.made == 0 end },
 }
 
 SurvivorComforts.registerFeature({
@@ -372,12 +376,16 @@ function SurvivorComforts_RecipeFinderWindow:createChildren()
     local h = getTextManager():getFontHeight(font) + 6
     self.controlHeight = h
 
-    local backText = getText("UI_SurvivorComforts_F16_Back")
-    local backWidth = getTextManager():MeasureStringX(font, backText) + 20
-    self.backButton = ISButton:new(0, 0, backWidth, h, backText, self, SurvivorComforts_RecipeFinderWindow.onBack)
-    self.backButton:initialise()
-    self.backButton:instantiate()
-    self:addChild(self.backButton)
+    -- Back and forward, above the chosen item on the right.
+    local function addButton(text, onClick)
+        local button = ISButton:new(0, 0, getTextManager():MeasureStringX(font, text) + 20, h, text, self, onClick)
+        button:initialise()
+        button:instantiate()
+        self:addChild(button)
+        return button
+    end
+    self.backButton = addButton("< " .. getText("UI_SurvivorComforts_F16_Back"), SurvivorComforts_RecipeFinderWindow.onBack)
+    self.forwardButton = addButton(getText("UI_SurvivorComforts_F16_Forward") .. " >", SurvivorComforts_RecipeFinderWindow.onForward)
 
     self.searchBox = ISTextEntryBox:new("", 0, 0, 100, h)
     self.searchBox.font = font
@@ -403,7 +411,8 @@ function SurvivorComforts_RecipeFinderWindow:createChildren()
     self.detail:setOnMouseDownFunction(self, SurvivorComforts_RecipeFinderWindow.onClickRow)
     self.detail.emptyText = getText("UI_SurvivorComforts_F16_Select")
 
-    self.history = {}
+    self.history = {} -- items to go back to, the previous one last
+    self.forward = {} -- items to go forward to, the next one last
     self.opened = {}
     self:layout()
 end
@@ -421,17 +430,18 @@ function SurvivorComforts_RecipeFinderWindow:layout()
     local h = self.controlHeight
     local gap = 6
     local top = th + gap
-    local back = self.backButton
-    place(back, gap, top, back:getWidth())
     local comboWidth = self.filterCombo:getWidth()
-    local searchX = gap + back:getWidth() + gap
-    place(self.searchBox, searchX, top, math.max(50, self.width - searchX - comboWidth - gap * 2))
+    place(self.searchBox, gap, top, math.max(50, self.width - comboWidth - gap * 3))
     place(self.filterCombo, self.width - comboWidth - gap, top, comboWidth)
     local listTop = top + h + gap
     local listHeight = math.max(20, self.height - listTop - rh)
     local leftWidth = math.max(160, math.floor(self.width * 0.36))
     place(self.itemList, 0, listTop, leftWidth, listHeight)
-    place(self.detail, leftWidth, listTop, self.width - leftWidth, listHeight)
+    -- The right side: the buttons' row, then the chosen item's rows.
+    place(self.backButton, leftWidth + gap, listTop, self.backButton:getWidth())
+    place(self.forwardButton, leftWidth + gap * 2 + self.backButton:getWidth(), listTop, self.forwardButton:getWidth())
+    local detailTop = listTop + h + gap
+    place(self.detail, leftWidth, detailTop, self.width - leftWidth, math.max(20, self.height - detailTop - rh))
 end
 
 function SurvivorComforts_RecipeFinderWindow:prerender()
@@ -439,6 +449,7 @@ function SurvivorComforts_RecipeFinderWindow:prerender()
     if self.itemList then
         self:layout()
         self.backButton:setEnable(#self.history > 0)
+        self.forwardButton:setEnable(#self.forward > 0)
     end
 end
 
@@ -468,14 +479,28 @@ function SurvivorComforts_RecipeFinderWindow:refreshResults()
     list.emptyText = getText("UI_SurvivorComforts_F16_NotFound")
 end
 
--- Shows one item on the right; remember = put the one shown now in the history.
-function SurvivorComforts_RecipeFinderWindow:showItem(fullType, remember)
+local function push(list, fullType)
+    table.insert(list, fullType)
+    if #list > MAX_HISTORY then table.remove(list, 1) end
+end
+
+-- Shows one item on the right. how is how it was reached, as in a web browser:
+--   "new"     (picked or clicked; the default) the one shown now goes into
+--             the back history and the forward history is cleared
+--   "back"    the one shown now goes into the forward history
+--   "forward" the one shown now goes into the back history
+function SurvivorComforts_RecipeFinderWindow:showItem(fullType, how)
     local index = recipeIndex.get()
     local entry = index and index.items[fullType]
     if not entry then return end
-    if remember and self.current and self.current ~= fullType then
-        table.insert(self.history, self.current)
-        if #self.history > MAX_HISTORY then table.remove(self.history, 1) end
+    how = how or "new"
+    if self.current and self.current ~= fullType then
+        if how == "back" then
+            push(self.forward, self.current)
+        else
+            push(self.history, self.current)
+        end
+        if how == "new" then self.forward = {} end
     end
     self.current = fullType
     self.opened = {}
@@ -519,14 +544,14 @@ end
 
 function SurvivorComforts_RecipeFinderWindow:onPickItem(entry)
     if not entry then return end
-    SurvivorComforts.safeCall(FEATURE_ID, self.showItem, self, entry.fullType, true)
+    SurvivorComforts.safeCall(FEATURE_ID, self.showItem, self, entry.fullType, "new")
 end
 
 function SurvivorComforts_RecipeFinderWindow:onClickRow(row)
     if not row then return end
     SurvivorComforts.safeCall(FEATURE_ID, function()
         if row.fullType then
-            self:showItem(row.fullType, true)
+            self:showItem(row.fullType, "new")
         elseif row.toggle then
             self.opened[row.toggle] = not self.opened[row.toggle] or nil
             self:refreshDetail()
@@ -636,7 +661,14 @@ end
 function SurvivorComforts_RecipeFinderWindow:onBack()
     local fullType = table.remove(self.history)
     if fullType then
-        SurvivorComforts.safeCall(FEATURE_ID, self.showItem, self, fullType, false)
+        SurvivorComforts.safeCall(FEATURE_ID, self.showItem, self, fullType, "back")
+    end
+end
+
+function SurvivorComforts_RecipeFinderWindow:onForward()
+    local fullType = table.remove(self.forward)
+    if fullType then
+        SurvivorComforts.safeCall(FEATURE_ID, self.showItem, self, fullType, "forward")
     end
 end
 

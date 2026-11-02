@@ -79,7 +79,7 @@ T.add("F16: building recipes are in the index, each as a building", function(t)
     t:ok(building.recipe and recipeIndex.isBuild(building.recipe), "made by a building recipe")
     t:equal(#building.made, 1, "one way to make it")
     t:ok(type(building.name) == "string" and building.name ~= "", "a name")
-    local filter = f16.FILTERS[4]
+    local filter = f16.FILTERS[3]
     for _, entry in ipairs(f16.findItems(index, nil, filter)) do
         if not entry.building then return t:fail("not a building in the buildings filter: " .. entry.fullType) end
     end
@@ -132,7 +132,7 @@ T.add("F16: search and filter", function(t)
     local f16 = internals(t)
     local index = getIndex(t)
     if not f16 or not index then return end
-    local all, craftable, material = f16.FILTERS[1], f16.FILTERS[2], f16.FILTERS[3]
+    local all, craft, build, uncraftable = f16.FILTERS[1], f16.FILTERS[2], f16.FILTERS[3], f16.FILTERS[4]
     local found = f16.findItems(index, SurvivorComforts.search.parse("plank"), all)
     local hasPlank = false
     for _, entry in ipairs(found) do
@@ -140,11 +140,22 @@ T.add("F16: search and filter", function(t)
     end
     t:ok(hasPlank, "'plank' finds planks (English names on)")
     t:equal(#f16.findItems(index, nil, all), #index.order, "no words: every item")
-    local made = #f16.findItems(index, nil, craftable)
-    local notMade = #f16.findItems(index, nil, material)
-    t:equal(made + notMade, #index.order, "craftable + materials = all")
-    for _, entry in ipairs(f16.findItems(index, nil, material)) do
-        if #entry.made > 0 then return t:fail("a craftable item in materials: " .. entry.fullType) end
+    -- Craft, build and "cannot be made" do not overlap and together are all.
+    local seen = {}
+    for _, filter in ipairs({ craft, build, uncraftable }) do
+        for _, entry in ipairs(f16.findItems(index, nil, filter)) do
+            if seen[entry.fullType] then return t:fail("in two filters: " .. entry.fullType) end
+            seen[entry.fullType] = true
+        end
+    end
+    local count = 0
+    for _ in pairs(seen) do count = count + 1 end
+    t:equal(count, #index.order, "craft + build + cannot be made = all")
+    for _, entry in ipairs(f16.findItems(index, nil, craft)) do
+        if entry.building or #entry.made == 0 then return t:fail("not a crafted item in craft: " .. entry.fullType) end
+    end
+    for _, entry in ipairs(f16.findItems(index, nil, uncraftable)) do
+        if entry.building or #entry.made > 0 then return t:fail("can be made, in cannot be made: " .. entry.fullType) end
     end
 end)
 
@@ -261,24 +272,35 @@ T.add("F16: the window opens, finds and shows an item", function(t)
     if not t:ok(window, "opened") then return end
     -- The window may have been used by hand before: start with no history,
     -- and put back what it showed afterwards.
-    local history, current = window.history, window.current
+    local history, forward, current = window.history, window.forward, window.current
     window.history = {}
+    window.forward = {}
     window.current = nil
     t:cleanup(function()
         window.history = history
+        window.forward = forward
         window.current = current
     end)
     window.searchBox:setText("plank")
     window:refreshResults()
     t:ok(#window.itemList.items > 0, "items found")
-    window:showItem("Base.Plank", true)
+    window:showItem("Base.Plank")
     t:equal(window.current, "Base.Plank", "planks shown")
     t:ok(#window.detail.items > 0, "rows on the right")
-    window:showItem("Base.Nails", true)
+    window:showItem("Base.Nails")
     t:equal(#window.history, 1, "planks in the history")
     window:onBack()
     t:equal(window.current, "Base.Plank", "back to planks")
     t:equal(#window.history, 0, "history empty again")
+    t:equal(#window.forward, 1, "nails to go forward to")
+    window:onForward()
+    t:equal(window.current, "Base.Nails", "forward to nails")
+    t:equal(#window.history, 1, "planks to go back to again")
+    t:equal(#window.forward, 0, "nothing more to go forward to")
+    window:onBack()
+    window:showItem("Base.Hammer")
+    t:equal(#window.forward, 0, "going to another item after going back clears forward")
+    t:equal(window.history[#window.history], "Base.Plank", "planks to go back to")
     window.searchBox:setText("")
     window:refreshResults()
     t:equal(#window.itemList.items, 0, "an empty search lists nothing")
