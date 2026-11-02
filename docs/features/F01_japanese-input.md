@@ -51,4 +51,4 @@ MODを使わない回避策：
 
 結論（2026-10-30 に決定）：
 - 日本語入力は、Lua だけの SurvivorComforts には入れられない。ZombieBuddy を前提にした別のMODとして扱い、**SurvivorComforts には同梱しない**のがよい
-- 状況を「⏸️ 見送り」にし、[features.md](../features.md) の「実装しない機能」に移した。日本語入力が必要な人は、ZombieBuddy を使った別のMOD（身内で作ったもの）を使う
+- 状況を「⏸️ 見送り」にし、[features.md](../features.md) の「実装しない機能」に移した。日本語入力が必要な人は、ZombieBuddy を使った別のMODを使う
