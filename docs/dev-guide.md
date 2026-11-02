@@ -254,6 +254,7 @@ Project Zomboid のアップデートが来たら、次を行う。
 | | 安定版 | アルファ版 |
 | --- | --- | --- |
 | 名前 | Survivor Comforts | Survivor Comforts (Alpha) |
+| Workshop ID | `3829529741` | `3832140066`（2026-11-02 に初めて公開） |
 | MOD ID | `SurvivorComforts` | `SurvivorComfortsAlpha` |
 | 開発用のフォルダ | `PZDev\Workshop\SurvivorComforts` | `PZDev\Workshop\SurvivorComfortsAlpha` |
 | 上げるブランチ | `main` | `dev`（この決まりの例外） |
@@ -274,7 +275,7 @@ Project Zomboid のアップデートが来たら、次を行う。
    ```
    - 初めてのときは、`workshop-alpha.md` の説明から `workshop.txt` が作られる
 3. メインメニュー →「WORKSHOP」→「アイテムの作成と更新」→ **SurvivorComfortsAlpha** を選ぶ
-   - 初めてのとき：「新規のWORKSHOPアイテムです」を選ぶ。公開設定が「未掲載」になっていることを確かめる。終わると `workshop.txt` に Workshop ID が書き込まれるので、[workshop-alpha.md](workshop-alpha.md) の安定版の ID の近くと、この表にも書いておく
+   - 初めてのとき：「新規のWORKSHOPアイテムです」を選ぶ。公開設定が「未掲載」になっていることを確かめる。終わると `workshop.txt` に Workshop ID が書き込まれる（アルファ版は `3832140066`。この表と [workshop-alpha.md](workshop-alpha.md) に書いた）
    - 2回目から：既存のアイテムの更新になる。「変更履歴の編集」に、`workshop-alpha.md` の更新内容を貼る
 4. タグは付けない（アルファ版は何度も上げ直すため）
 

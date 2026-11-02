@@ -2,7 +2,11 @@
 
 - [README に戻る](../README.md)
 
-アルファ版「Survivor Comforts (Alpha)」のワークショップのページに載せる文です。アルファ版の決まりとアップロードの手順は [dev-guide.md の「アルファ版」](dev-guide.md#アルファ版) にあります。
+アルファ版「Survivor Comforts (Alpha)」のワークショップのページに載せる文です。
+
+- ページ：https://steamcommunity.com/sharedfiles/filedetails/?id=3832140066（Workshop ID `3832140066`、MOD ID `SurvivorComfortsAlpha`、未掲載）
+
+アルファ版の決まりとアップロードの手順は [dev-guide.md の「アルファ版」](dev-guide.md#アルファ版) にあります。
 
 - 初めて `tools\deploy.ps1 -Alpha` を実行したときに、下の「説明」のコードブロックから `workshop.txt` を作ります（`workshop.txt` がまだないときだけ）。アップロードしたあとに説明を変えるときは、Steam のページで直すか、`%USERPROFILE%\PZDev\Workshop\SurvivorComfortsAlpha\workshop.txt` の `description=` の行を直します
 - 説明は 8000 バイトまでです（日本語は1文字3バイト）
@@ -34,7 +38,7 @@ Survivor Comforts の開発中の版です。次の版に入れる予定の機�
 
 アップロードするときの「変更履歴の編集」に貼る文です。
 
-### アルファ版の最初の公開
+### アルファ版の最初の公開（0.5.0-alpha.1a95f1c、2026-11-02 公開）
 
 ```
 アルファ版の最初の公開。F16 レシピ検索（アイテム検索のウィンドウ）を追加。
