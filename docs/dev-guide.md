@@ -247,6 +247,37 @@ Project Zomboid のアップデートが来たら、次を行う。
    git switch dev
    ```
 
+### アルファ版
+
+開発中の機能を、選んだ人だけが先に試せるようにする版（2026-11-02 に決定）。Steam ワークショップには版の分け方（ベータ版など）がないので、別のアイテムとして上げる。
+
+| | 安定版 | アルファ版 |
+| --- | --- | --- |
+| 名前 | Survivor Comforts | Survivor Comforts (Alpha) |
+| MOD ID | `SurvivorComforts` | `SurvivorComfortsAlpha` |
+| 開発用のフォルダ | `PZDev\Workshop\SurvivorComforts` | `PZDev\Workshop\SurvivorComfortsAlpha` |
+| 上げるブランチ | `main` | `dev`（この決まりの例外） |
+| ページの文 | [workshop.md](workshop.md) | [workshop-alpha.md](workshop-alpha.md) |
+
+- 中身は `dev` のそのままで、`deploy.ps1 -Alpha` がコピーするときに `mod.info` だけ書き換える（MOD ID、名前、版の後ろに `-alpha` と `dev` のコミット、「一緒に使えない MOD」に安定版）
+- 中身のファイルの場所（`media/lua/client/SurvivorComforts/...`）は安定版と同じなので、2つを同時に有効にすると壊れる。`mod.info` の `incompatible=` に互いの MOD ID を書いて、ゲームの MOD の画面で止める（安定版の `mod.info` にも書いた。安定版のページに出るのは、次の安定版から）
+- コードの中の MOD ID（`Core.lua` の `MOD_ID`、オプションの保存名）は `SurvivorComforts` のまま。オプションの設定は安定版と共通になる
+- マルチプレイでは、サーバーの MOD の一覧どおりの MOD が使われるので、一人だけアルファ版にはできない。シングルプレイか、アルファ版を入れた別のサーバーで試してもらう
+- アルファ版の機能を安定版に入れたら（リリースの手順）、アルファ版も同じ内容で更新しておく
+
+アップロードの手順：
+
+1. `dev` で `tools\check.ps1` を通す
+2. アルファ版をコピーして、開発用のフォルダでゲームを起動する（Steam を起動しておく）
+   ```
+   powershell -File tools\dev_game.ps1 -Alpha
+   ```
+   - 初めてのときは、`workshop-alpha.md` の説明から `workshop.txt` が作られる
+3. メインメニュー →「WORKSHOP」→「アイテムの作成と更新」→ **SurvivorComfortsAlpha** を選ぶ
+   - 初めてのとき：「新規のWORKSHOPアイテムです」を選ぶ。公開設定が「未掲載」になっていることを確かめる。終わると `workshop.txt` に Workshop ID が書き込まれるので、[workshop-alpha.md](workshop-alpha.md) の安定版の ID の近くと、この表にも書いておく
+   - 2回目から：既存のアイテムの更新になる。「変更履歴の編集」に、`workshop-alpha.md` の更新内容を貼る
+4. タグは付けない（アルファ版は何度も上げ直すため）
+
 ### サーバーに入れる
 - サーバーの設定（`servertest.ini` などの `<サーバー名>.ini`）に次の2つを書く。
   - `WorkshopItems=` に Workshop ID（ほかのMODがあれば `;` で区切って追加）

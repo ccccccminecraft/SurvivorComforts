@@ -10,27 +10,30 @@
 #   powershell -File tools\dev_game.ps1              copy the mod and start the game
 #   powershell -File tools\dev_game.ps1 -Debug       start it in debug mode
 #   powershell -File tools\dev_game.ps1 -SetupOnly   only copy the mod and write the launch file
+#   powershell -File tools\dev_game.ps1 -Alpha       the alpha mod, Survivor Comforts (Alpha),
+#                                                    instead of the stable one (deploy.ps1 -Alpha)
 #
 # The launch file is also written to <PZDev>\dev.cmd, to start it again by hand.
 
 param(
     [string]$GameDir = $env:PZ_GAME_DIR,
     [switch]$Debug,
-    [switch]$SetupOnly
+    [switch]$SetupOnly,
+    [switch]$Alpha
 )
 
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "GameDir.ps1")
 $GameDir = Resolve-GameDir $GameDir
 
-$ModId = "SurvivorComforts"
+$ModId = if ($Alpha) { "SurvivorComfortsAlpha" } else { "SurvivorComforts" }
 $Root = if ($env:PZ_DEV_DIR) { $env:PZ_DEV_DIR } else { Join-Path $env:USERPROFILE "PZDev" }
 $modSource = Join-Path $PSScriptRoot "..\mod\SurvivorComforts\Contents\mods\SurvivorComforts"
 . (Join-Path $PSScriptRoot "TestLaunch.ps1")
 
 New-Item -ItemType Directory -Force $Root | Out-Null
 
-& (Join-Path $PSScriptRoot "deploy.ps1")
+& (Join-Path $PSScriptRoot "deploy.ps1") -Alpha:$Alpha
 if ($LASTEXITCODE -ne 0) { throw "deploy.ps1 failed" }
 
 Initialize-ClientOptions $Root

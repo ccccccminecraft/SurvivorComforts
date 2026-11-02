@@ -22,6 +22,7 @@
 | `features.md` | 機能の一覧（予定や見送りも含む、開発の管理用）と、機能ごとの仕様（`features/`） |
 | `dev-guide.md` | 開発ガイド（詳しいフォルダ構成、試し方、アップロードなど） |
 | `workshop.md` | ワークショップのページの原稿と、更新内容 |
+| `workshop-alpha.md` | アルファ版（Survivor Comforts (Alpha)）のワークショップのページの原稿と、更新内容 |
 | `review-日付.md` | 点検の結果（全体の点検、F02・F15 の点検） |
 | `research.md` | 調査メモ |
 
