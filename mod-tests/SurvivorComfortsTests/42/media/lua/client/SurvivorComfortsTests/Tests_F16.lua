@@ -414,11 +414,16 @@ T.add("F16: the window opens, finds and shows an item", function(t)
     window.searchBox:setText("")
     window:refreshResults()
     t:equal(#window.itemList.items, 0, "an empty search lists nothing")
-    -- Except with "can make" on: everything that can be made now.
-    window.canMakeBox:setSelected(1, true)
-    window:checkCanMake()
+    -- Except with "can make" on: everything that can be made now, and with
+    -- the dim option on, everything else dimmed below.
     local index = recipeIndex.get()
-    t:equal(#window.itemList.items, #f16.findItems(index, nil, f16.FILTERS[1], window.made), "can make lists all with an empty search")
+    window.canMakeBox:setSelected(1, true)
+    H.setOption(t, "F16_dim", false)
+    window:checkCanMake()
+    t:equal(#window.itemList.items, #f16.findItems(index, nil, f16.FILTERS[1], window.made), "can make, hide: what can be made, with an empty search")
+    H.setOption(t, "F16_dim", true)
+    window:refreshResults()
+    t:equal(#window.itemList.items, #index.order, "can make, dim: everything, with an empty search")
 end)
 
 T.add("F16: nothing opens while the feature is off", function(t)
