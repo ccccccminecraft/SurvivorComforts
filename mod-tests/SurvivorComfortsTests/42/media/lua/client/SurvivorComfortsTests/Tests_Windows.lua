@@ -81,11 +81,11 @@ local function sidebarButtons(t)
     return sidebar.survivorComforts.buttons
 end
 
-T.add("Sidebar: the buttons are in the order F08, F06, F09", function(t)
+T.add("Sidebar: the buttons are in the order F08, F06, F09, F16", function(t)
     H.player(t)
     local ids = {}
     for _, entry in ipairs(sidebarButtons(t)) do table.insert(ids, entry.def.id) end
-    t:equal(table.concat(ids, ","), "F08,F06,F09")
+    t:equal(table.concat(ids, ","), "F08,F06,F09,F16")
 end)
 
 T.add("Sidebar: a button hides when its option is off (F08)", function(t)

@@ -30,7 +30,7 @@ local OPTION_GROUPS = {
     { features = { "F09", "F15" } },         -- player list, and members' skills opened from it
     { title = "UI_SurvivorComforts_Group_Search", features = { "F02", "F14" } }, -- F14's option also covers F02
     { features = { "F04" } },                -- reading time
-    { title = "UI_SurvivorComforts_Group_Recipes", features = { "F12", "F03", "F07" } },
+    { title = "UI_SurvivorComforts_Group_Recipes", features = { "F16", "F12", "F03", "F07" } },
     { title = "UI_SurvivorComforts_Group_HideButtons", features = { "F10", "F13" } },
 }
 

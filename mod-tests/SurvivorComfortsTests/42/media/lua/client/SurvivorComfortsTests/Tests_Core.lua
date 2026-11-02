@@ -13,7 +13,7 @@ require "SurvivorComforts/Admin"
 local T = SurvivorComfortsTests
 local H = T.helpers
 
-local FEATURES = { "F02", "F03", "F04", "F06", "F07", "F08", "F09", "F10", "F12", "F13", "F14", "F15" }
+local FEATURES = { "F02", "F03", "F04", "F06", "F07", "F08", "F09", "F10", "F12", "F13", "F14", "F15", "F16" }
 
 ---------------------------------------------------------------------------
 -- A: no world needed

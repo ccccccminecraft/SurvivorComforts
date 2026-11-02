@@ -17,6 +17,7 @@
 --   "result"         a result icon
 --   "ingredientList" a row of the list of items that can be used for an ingredient
 --   "recipe"         a recipe in the recipe list (entries are its results)
+--   "finder"         an item or recipe in F16's window (an item, or a recipe's results)
 
 require "SurvivorComforts/Core"
 require "SurvivorComforts/Recipes"
@@ -41,15 +42,21 @@ local function anyEnabled()
     return false
 end
 
-local function showMenu(player, entries, kind)
-    if #entries == 0 or not player then return end
-    local playerNum = player:getPlayerNum()
-    local context = ISContextMenu.get(playerNum, getMouseX(), getMouseY())
+-- Adds every enabled feature's lines to a menu. Also used by F16's window
+-- (kind "finder"), which has its own right-click menu.
+function SurvivorComforts.fillCraftMenu(context, playerNum, entries, kind)
     for _, def in ipairs(providers) do
         if def.isEnabled() then
             SurvivorComforts.safeCall(def.id, def.fill, context, playerNum, entries, kind)
         end
     end
+end
+
+local function showMenu(player, entries, kind)
+    if #entries == 0 or not player then return end
+    local playerNum = player:getPlayerNum()
+    local context = ISContextMenu.get(playerNum, getMouseX(), getMouseY())
+    SurvivorComforts.fillCraftMenu(context, playerNum, entries, kind)
     if context:isEmpty() then
         context:hideAndChildren()
         context:setVisible(false)

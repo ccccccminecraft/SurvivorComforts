@@ -4,6 +4,7 @@
 #   Skills   (F08): a rising bar chart
 #   Wishlist (F06): a star
 #   Players  (F09): two people
+#   Recipes  (F16): a magnifying glass
 # Output: mod\...\42\media\ui\SurvivorComforts\<Name>_{On,Off}_<size>.png
 # Only needs to be re-run when the icon design changes.
 
@@ -69,6 +70,23 @@ function Draw-Players($g, $brush, $pen) {
     }
 }
 
+function Draw-Recipes($g, $brush, $pen) {
+    # The handle first, so the ring is drawn over its end.
+    $handle = New-Object System.Drawing.Drawing2D.GraphicsPath
+    $handle.AddPolygon([System.Drawing.PointF[]]@(
+        [System.Drawing.PointF]::new(286, 236), [System.Drawing.PointF]::new(326, 196),
+        [System.Drawing.PointF]::new(436, 306), [System.Drawing.PointF]::new(396, 346)))
+    $g.FillPath($brush, $handle)
+    $g.DrawPath($pen, $handle)
+    # The ring: the outer circle with the inner one cut out (alternate fill).
+    $cx = 220; $cy = 170; $outer = 136; $inner = 88
+    $ring = New-Object System.Drawing.Drawing2D.GraphicsPath
+    $ring.AddEllipse($cx - $outer, $cy - $outer, $outer * 2, $outer * 2)
+    $ring.AddEllipse($cx - $inner, $cy - $inner, $inner * 2, $inner * 2)
+    $g.FillPath($brush, $ring)
+    $g.DrawPath($pen, $ring)
+}
+
 function Draw-Icon($shape, $top, $bottom) {
     $bmp = New-Object System.Drawing.Bitmap $W, $H
     $g = [System.Drawing.Graphics]::FromImage($bmp)
@@ -87,7 +105,7 @@ $offBottom = [System.Drawing.Color]::FromArgb(90, 90, 90)
 $onTop = [System.Drawing.Color]::FromArgb(255, 222, 130)
 $onBottom = [System.Drawing.Color]::FromArgb(176, 112, 28)
 
-foreach ($icon in "Skills", "Wishlist", "Players") {
+foreach ($icon in "Skills", "Wishlist", "Players", "Recipes") {
     $shape = Get-Command "Draw-$icon"
     $variants = @{
         Off = Draw-Icon $shape $offTop $offBottom
