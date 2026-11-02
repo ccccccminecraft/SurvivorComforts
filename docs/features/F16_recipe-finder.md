@@ -1,6 +1,6 @@
 # F16 レシピ検索
 
-- 状況：⬜ 未実装（段階 1 を作成し、2026-11-02 にデバッグモードのシングルプレイで確認した。未公開）
+- 状況：⬜ 未実装（段階 1 と段階 4 を作成し、2026-11-02 にデバッグモードのシングルプレイで確認した。アルファ版（`0.5.0-alpha.145ba5d`）で公開。安定版には未収録。段階 2・3 とマルチプレイでの確認はまだ）
 - コード：`client/SurvivorComforts/F16_RecipeFinder.lua`（ウィンドウ）、`client/SurvivorComforts/RecipeIndex.lua`（索引）
 - 一覧に戻る：[features.md](../features.md)
 
