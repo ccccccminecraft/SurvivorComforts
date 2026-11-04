@@ -5,8 +5,12 @@
 -- Top: search box and filter. Left: the items found. Right: back and forward
 -- buttons, then the chosen item, one row per line: the recipes that make it
 -- (open), and the recipes that use it up or use it as a tool (closed; a
--- click opens one). Clicking an item's name shows that item; back and
--- forward move through the items shown, as in a web browser.
+-- click opens one). A material made by a recipe opens with [+] to show how
+-- it is made, one step in each time. Clicking an item's name shows that
+-- item; back and forward move through the items shown, as in a web browser.
+-- What is at hand comes first: the recipes that can be made now, and the
+-- items that can stand in for each other that are there in the amount
+-- needed (RecipeCanMake.lua, checked again when the inventory changes).
 -- A right-click on an item or a recipe opens the vanilla crafting or building
 -- window on it, and has the wishlist lines (F06, see CraftMenu.lua).
 
@@ -31,6 +35,7 @@ local TITLE_HEIGHT = 56 -- the item's own row at the top of the right side
 local RECHECK_GAP = 500   -- ms at least between two "can make now" checks
 local SURFACE_GAP = 1000  -- ms between looks for a crafting surface nearby
 local DIM_ALPHA = 0.4     -- rows that cannot be made now, with "can make" on
+local MAX_DEPTH = 20      -- materials opened one inside another, at most (a stop for mistakes)
 
 local search = SurvivorComforts.search
 local recipeIndex = SurvivorComforts.recipeIndex
@@ -146,10 +151,17 @@ Rows.__index = Rows
 
 -- current = the item shown (its name is not a link); opened = keys clicked
 -- open or closed, against each row's default.
--- made: the "can make now" check while "can make" is on (nil: off); the
+-- dimMade: the "can make now" check while "can make" is on (nil: off); the
 -- recipes that cannot be made now are dimmed, with their rows.
-local function newRows(current, opened, made)
-    return setmetatable({ list = {}, current = current, opened = opened, made = made }, Rows)
+-- extra = { made = the last "can make now" check (whatever the tick box),
+--           counts = { [fullType] = count at hand }, tools = open tools too }:
+-- what is at hand comes first (see sortRecipes and sortItems).
+local function newRows(current, opened, dimMade, extra)
+    extra = extra or {}
+    return setmetatable({
+        list = {}, current = current, opened = opened, dimMade = dimMade,
+        made = extra.made or {}, counts = extra.counts or {}, tools = extra.tools == true,
+    }, Rows)
 end
 
 function Rows:add(row)
@@ -163,21 +175,94 @@ function Rows:isOpen(key, default)
     return default
 end
 
-function Rows:addItem(script, indent, label, suffix)
+-- The recipes that can be made now first, the rest after, each part in the
+-- order given.
+function Rows:sortRecipes(recipes)
+    local first, rest = {}, {}
+    for _, recipe in ipairs(recipes) do
+        table.insert(self.made[recipeIndex.recipeKey(recipe)] and first or rest, recipe)
+    end
+    for _, recipe in ipairs(rest) do
+        table.insert(first, recipe)
+    end
+    return first
+end
+
+-- Items that can stand in for each other: those at hand in the amount
+-- needed first, then those at hand but too few, then the rest, each part in
+-- the game's order.
+function Rows:sortItems(items, amount)
+    local parts = { {}, {}, {} }
+    for _, script in ipairs(items) do
+        local count = self.counts[script:getFullName()] or 0
+        local part = (count >= math.max(amount or 1, 1)) and 1 or (count > 0 and 2 or 3)
+        table.insert(parts[part], script)
+    end
+    local sorted = parts[1]
+    for i = 2, 3 do
+        for _, script in ipairs(parts[i]) do
+            table.insert(sorted, script)
+        end
+    end
+    return sorted
+end
+
+-- The crafting recipes that make the item (items are never the result of
+-- building).
+local function craftRecipesOf(fullType)
+    local index = recipeIndex.get()
+    local entry = index and index.items[fullType]
+    local recipes = {}
+    if not entry or entry.building then return recipes end
+    for _, recipe in ipairs(entry.made) do
+        if not recipeIndex.isBuild(recipe) then table.insert(recipes, recipe) end
+    end
+    return recipes
+end
+
+-- node = { key, depth, ancestors } for a material that can be opened to show
+-- how it is made (stage 2): not the item shown, not one already above it on
+-- the way (it would go round), not deeper than MAX_DEPTH, and only when a
+-- crafting recipe makes it.
+function Rows:canOpen(fullType, node)
+    if not node or fullType == self.current or node.ancestors[fullType] then return false end
+    if node.depth >= MAX_DEPTH then return false end
+    return #craftRecipesOf(fullType) > 0
+end
+
+function Rows:addItem(script, indent, label, suffix, node)
     local fullType = script:getFullName()
     local isCurrent = fullType == self.current
-    self:add({
+    local row = self:add({
         indent = indent, label = label, texture = script:getNormalTexture(),
         text = itemName(script) .. (suffix and (" " .. suffix) or ""),
         color = isCurrent and TEXT_COLOR or LINK_COLOR,
         fullType = (not isCurrent) and fullType or nil,
         item = { fullType = fullType, name = itemName(script) },
     })
+    if not self:canOpen(fullType, node) then return end
+    local key = node.key .. ">" .. fullType
+    row.toggle = key
+    row.open = self:isOpen(key, false)
+    if not row.open then return end
+    -- How it is made, one step in.
+    local recipes = self:sortRecipes(craftRecipesOf(fullType))
+    local ancestors = {}
+    for above in pairs(node.ancestors) do
+        ancestors[above] = true
+    end
+    ancestors[fullType] = true
+    for _, recipe in ipairs(recipes) do
+        -- With a single way to make it, that way is shown open.
+        self:addRecipe(recipe, key .. "/" .. recipeIndex.recipeKey(recipe), #recipes == 1,
+            indent + 1, node.depth + 1, ancestors)
+    end
 end
 
 -- One input, tool or output: a single item, a group of items that can stand
 -- in for each other ("hammer and 4 more", opened by a click), or fluids.
-function Rows:addPart(part, indent, label, key)
+-- node: see canOpen (nil: its items are not opened).
+function Rows:addPart(part, indent, label, key, node)
     local amount = amountText(part)
     if part.fluids then
         self:add({ indent = indent, label = label, text = table.concat(part.fluids, " / ") .. " " .. amount, color = TEXT_COLOR })
@@ -185,10 +270,12 @@ function Rows:addPart(part, indent, label, key)
     end
     local items = part.items
     if #items == 0 then return end
+    local itemNode = node and { key = key, depth = node.depth, ancestors = node.ancestors }
     if #items == 1 then
-        self:addItem(items[1], indent, label, amount)
+        self:addItem(items[1], indent, label, amount, itemNode)
         return
     end
+    items = self:sortItems(items, part.amount)
     -- The item being shown is named first when it is one of them.
     local first = items[1]
     for _, script in ipairs(items) do
@@ -202,7 +289,7 @@ function Rows:addPart(part, indent, label, key)
     })
     if open then
         for _, script in ipairs(items) do
-            self:addItem(script, indent + 1, nil, nil)
+            self:addItem(script, indent + 1, nil, nil, itemNode)
         end
     end
 end
@@ -225,53 +312,61 @@ local function conditionsText(info)
 end
 
 -- A recipe: its name row (a click opens or closes it), then, when open, what
--- it uses up, the tools, what it makes and what it needs.
-function Rows:addRecipe(recipe, key, openByDefault)
+-- it uses up, the tools, what it makes and what it needs. indent and depth:
+-- 0 and 1 at the top; a recipe shown under an opened material is one step
+-- in and one deeper. ancestors: the items above it on the way (see canOpen).
+function Rows:addRecipe(recipe, key, openByDefault, indent, depth, ancestors)
+    indent = indent or 0
+    depth = depth or 1
+    ancestors = ancestors or { [self.current] = true }
     local info = recipeIndex.describe(recipe)
     local open = self:isOpen(key, openByDefault)
-    -- Every row of a recipe that cannot be made now is dimmed.
-    self.dimming = self.made ~= nil and not self.made[recipeIndex.recipeKey(recipe)]
+    -- Every row of a recipe that cannot be made now is dimmed; a recipe shown
+    -- inside it goes by its own.
+    local outer = self.dimming
+    self.dimming = self.dimMade ~= nil and not self.dimMade[recipeIndex.recipeKey(recipe)]
     local summary = nil
     if not open and info.outputs[1] and info.outputs[1].items and info.outputs[1].items[1] then
         summary = "-> " .. itemName(info.outputs[1].items[1]) .. " " .. amountText(info.outputs[1])
     end
     self:add({
-        indent = 0, recipe = true, text = info.name, summary = summary,
+        indent = indent, text = info.name, summary = summary,
         kind = kindText(info.isBuild),
         kindColor = info.isBuild and BUILD_COLOR or CRAFT_COLOR,
         toggle = key, open = open, recipe = recipe,
     })
-    if not open then
-        self.dimming = nil
-        return
+    if open then
+        local node = { depth = depth, ancestors = ancestors }
+        for i, part in ipairs(info.consumed) do
+            self:addPart(part, indent + 1, getText("IGUI_CraftingWindow_Requires"), key .. ":c" .. i, node)
+        end
+        for i, part in ipairs(info.tools) do
+            self:addPart(part, indent + 1, getText("UI_SurvivorComforts_F16_Part_Tool"), key .. ":t" .. i, self.tools and node or nil)
+        end
+        for i, part in ipairs(info.outputs) do
+            self:addPart(part, indent + 1, getText("IGUI_CraftingWindow_Creates"), key .. ":o" .. i, nil)
+        end
+        local conditions = conditionsText(info)
+        if conditions ~= "" then
+            self:add({ indent = indent + 1, label = getText("UI_SurvivorComforts_F16_Part_Needs"), text = conditions, color = TEXT_COLOR })
+        end
     end
-    for i, part in ipairs(info.consumed) do
-        self:addPart(part, 1, getText("IGUI_CraftingWindow_Requires"), key .. ":c" .. i)
-    end
-    for i, part in ipairs(info.tools) do
-        self:addPart(part, 1, getText("UI_SurvivorComforts_F16_Part_Tool"), key .. ":t" .. i)
-    end
-    for i, part in ipairs(info.outputs) do
-        self:addPart(part, 1, getText("IGUI_CraftingWindow_Creates"), key .. ":o" .. i)
-    end
-    local conditions = conditionsText(info)
-    if conditions ~= "" then
-        self:add({ indent = 1, label = getText("UI_SurvivorComforts_F16_Part_Needs"), text = conditions, color = TEXT_COLOR })
-    end
-    self.dimming = nil
+    self.dimming = outer
 end
 
+-- A section of recipes, what can be made now first. Each recipe's key is
+-- the section's and the recipe's, so it stays open when the order changes.
 function Rows:addSection(title, recipes, key, openByDefault)
     if #recipes == 0 then return end
     self:add({ header = true, text = getText(title, tostring(#recipes)) })
-    for i, recipe in ipairs(recipes) do
-        self:addRecipe(recipe, key .. i, openByDefault)
+    for _, recipe in ipairs(self:sortRecipes(recipes)) do
+        self:addRecipe(recipe, key .. "|" .. recipeIndex.recipeKey(recipe), openByDefault)
     end
 end
 
--- Every row for one item of the index (made: see newRows).
-local function itemRows(entry, opened, made)
-    local rows = newRows(entry.fullType, opened, made)
+-- Every row for one item of the index (dimMade and extra: see newRows).
+local function itemRows(entry, opened, dimMade, extra)
+    local rows = newRows(entry.fullType, opened, dimMade, extra)
     -- A building shows its category ("Build") only; its key is not a name to show.
     local sub = entry.building and entry.category
         or (entry.category and (entry.category .. "   " .. entry.fullType) or entry.fullType)
@@ -391,6 +486,17 @@ function SurvivorComforts_RecipeFinderDetail:doDrawItem(y, item, alt)
     return y + h
 end
 
+-- Where the mouse went down, for a row that both opens ([+]) and links.
+function SurvivorComforts_RecipeFinderDetail:onMouseDown(x, y)
+    self.downX = x
+    return ISScrollingListBox.onMouseDown(self, x, y)
+end
+
+-- The right end of a row's [+], in the list.
+local function toggleRight(list, row)
+    return 6 + (row.indent or 0) * INDENT + getTextManager():MeasureStringX(list.font, "[+]") + 4
+end
+
 function SurvivorComforts_RecipeFinderDetail:render()
     ISScrollingListBox.render(self)
     if #self.items == 0 and self.emptyText then
@@ -460,6 +566,14 @@ function SurvivorComforts_RecipeFinderWindow:createChildren()
     self.canMakeBox:setWidthToFit()
     self:addChild(self.canMakeBox)
 
+    -- "Open tools too": tools are not opened to how they are made unless on.
+    self.toolsBox = ISTickBox:new(0, 0, 100, tickHeight, "", self, SurvivorComforts_RecipeFinderWindow.onToolsChange)
+    self.toolsBox:initialise()
+    self.toolsBox:instantiate()
+    self.toolsBox:addOption(getText("UI_SurvivorComforts_F16_ExpandTools"))
+    self.toolsBox:setWidthToFit()
+    self:addChild(self.toolsBox)
+
     self.itemList = newList(SurvivorComforts_RecipeFinderItems, self)
     self.itemList:setOnMouseDownFunction(self, SurvivorComforts_RecipeFinderWindow.onPickItem)
     self.detail = newList(SurvivorComforts_RecipeFinderDetail, self)
@@ -469,6 +583,7 @@ function SurvivorComforts_RecipeFinderWindow:createChildren()
     self.history = {} -- items to go back to, the previous one last
     self.forward = {} -- items to go forward to, the next one last
     self.opened = {}
+    self.openedBy = {} -- [fullType] = what was opened on that item, kept for going back
     self:layout()
 end
 
@@ -498,7 +613,10 @@ function SurvivorComforts_RecipeFinderWindow:layout()
     place(self.itemList, 0, listTop, leftWidth, listHeight)
     -- The right side: the buttons' row, then the chosen item's rows.
     place(self.backButton, leftWidth + gap, listTop, self.backButton:getWidth())
-    place(self.forwardButton, leftWidth + gap * 2 + self.backButton:getWidth(), listTop, self.forwardButton:getWidth())
+    local forwardX = leftWidth + gap * 2 + self.backButton:getWidth()
+    place(self.forwardButton, forwardX, listTop, self.forwardButton:getWidth())
+    place(self.toolsBox, forwardX + self.forwardButton:getWidth() + gap * 2,
+        listTop + math.floor((h - self.toolsBox:getHeight()) / 2), self.toolsBox:getWidth())
     local detailTop = listTop + h + gap
     place(self.detail, leftWidth, detailTop, self.width - leftWidth, math.max(20, self.height - detailTop - rh))
 end
@@ -511,12 +629,16 @@ function SurvivorComforts_RecipeFinderWindow:isCanMakeOn()
     return self.canMakeBox ~= nil and self.canMakeBox:isSelected(1)
 end
 
--- "Can make": check again when the containers may have changed (the same
--- moments the vanilla windows look again, see RecipeCanMake.lua) or a
+function SurvivorComforts_RecipeFinderWindow:isToolsOn()
+    return self.toolsBox ~= nil and self.toolsBox:isSelected(1)
+end
+
+-- "Can make now": check again when the containers may have changed (the
+-- same moments the vanilla windows look again, see RecipeCanMake.lua) or a
 -- crafting surface came or went nearby; at most once every RECHECK_GAP.
--- Only while the window is shown (prerender) and the tick box is on.
+-- Only while the window is shown (prerender), with the tick box on or not:
+-- the right side puts what is at hand first either way.
 function SurvivorComforts_RecipeFinderWindow:updateCanMake()
-    if not self:isCanMakeOn() then return end
     local now = getTimestampMs()
     local player = getSpecificPlayer(self.playerNum)
     if player and now - (self.surfaceCheckedAt or 0) >= SURFACE_GAP then
@@ -532,10 +654,30 @@ function SurvivorComforts_RecipeFinderWindow:updateCanMake()
     self:checkCanMake()
 end
 
-function SurvivorComforts_RecipeFinderWindow:checkCanMake()
+local function sameKeys(a, b)
+    if not a or not b then return a == b end
+    for key in pairs(a) do
+        if not b[key] then return false end
+    end
+    for key in pairs(b) do
+        if not a[key] then return false end
+    end
+    return true
+end
+
+-- fresh: new logics (see RecipeCanMake.lua). force: draw both sides again
+-- even when nothing changed (the tick box was changed). Otherwise nothing is
+-- drawn again when no item came or went, and the left list only when what
+-- can be made changed while "can make" is on.
+function SurvivorComforts_RecipeFinderWindow:checkCanMake(fresh, force)
     self.checkedAt = getTimestampMs()
-    self.made = recipeCanMake.check(self.playerNum)
-    self:refreshResults(true)
+    local made, changed = recipeCanMake.check(self.playerNum, fresh)
+    if not changed and not force then return end
+    local before = self.made
+    self.made = made
+    if force or (self:isCanMakeOn() and not sameKeys(before, made)) then
+        self:refreshResults(true)
+    end
     self:refreshDetail()
 end
 
@@ -613,7 +755,8 @@ function SurvivorComforts_RecipeFinderWindow:showItem(fullType, how)
         if how == "new" then self.forward = {} end
     end
     self.current = fullType
-    self.opened = {}
+    self.opened = self.openedBy[fullType] or {}
+    self.openedBy[fullType] = self.opened
     self:refreshDetail()
     self.detail:setYScroll(0)
     -- Select it on the left too, when it is in the list.
@@ -634,8 +777,13 @@ function SurvivorComforts_RecipeFinderWindow:refreshDetail()
     local index = recipeIndex.get()
     local entry = index and self.current and index.items[self.current]
     if not entry then return end
-    local made = self:isCanMakeOn() and (self.made or {}) or nil
-    for _, row in ipairs(itemRows(entry, self.opened, made)) do
+    local dimMade = self:isCanMakeOn() and (self.made or {}) or nil
+    local extra = {
+        made = self.made or {},
+        counts = recipeCanMake.counts(self.playerNum),
+        tools = self:isToolsOn(),
+    }
+    for _, row in ipairs(itemRows(entry, self.opened, dimMade, extra)) do
         local item = detail:addItem(row.text or "", row)
         if row.title then
             detail:setScrollHeight(detail:getScrollHeight() + TITLE_HEIGHT - item.height)
@@ -653,16 +801,21 @@ function SurvivorComforts_RecipeFinderWindow:onFilterChange()
     SurvivorComforts.safeCall(FEATURE_ID, self.refreshResults, self)
 end
 
--- "Can make" is checked again each time it is turned on.
+-- "Can make" is checked again from new each time it is turned on (a recipe
+-- learnt, a skill level up meanwhile).
 function SurvivorComforts_RecipeFinderWindow:onCanMakeChange(index, selected)
     SurvivorComforts.safeCall(FEATURE_ID, function()
         if selected then
-            self:checkCanMake()
+            self:checkCanMake(true, true)
         else
             self:refreshResults()
             self:refreshDetail()
         end
     end)
+end
+
+function SurvivorComforts_RecipeFinderWindow:onToolsChange()
+    SurvivorComforts.safeCall(FEATURE_ID, self.refreshDetail, self)
 end
 
 function SurvivorComforts_RecipeFinderWindow:onPickItem(entry)
@@ -673,7 +826,9 @@ end
 function SurvivorComforts_RecipeFinderWindow:onClickRow(row)
     if not row then return end
     SurvivorComforts.safeCall(FEATURE_ID, function()
-        if row.fullType then
+        local onToggle = row.toggle and (not row.fullType
+            or (self.detail.downX or 0) < toggleRight(self.detail, row))
+        if row.fullType and not onToggle then
             self:showItem(row.fullType, "new")
         elseif row.toggle then
             self.opened[row.toggle] = not self.opened[row.toggle] or nil
@@ -813,8 +968,10 @@ local windows = SurvivorComforts.addWindow({
     x = 100, y = 80, width = 1200, height = 800,
     sidebar = { order = 4, icon = "Recipes" },
     onOpen = function(window)
-        -- The first open builds the index (once, see RecipeIndex.lua).
-        window:refreshResults()
+        -- The first open builds the index (once, see RecipeIndex.lua). What
+        -- can be made is checked from new on each open (a recipe learnt, a
+        -- skill level up while it was closed).
+        SurvivorComforts.safeCall(FEATURE_ID, window.checkCanMake, window, true, true)
         window.searchBox:focus()
     end,
 })
@@ -823,6 +980,8 @@ local windows = SurvivorComforts.addWindow({
 SurvivorComforts.internals.F16 = {
     findItems = findItems,
     itemRows = itemRows,
+    newRows = newRows,
+    MAX_DEPTH = MAX_DEPTH,
     fillMenu = fillMenu,
     canMakeNow = canMakeNow,
     FILTERS = FILTERS,

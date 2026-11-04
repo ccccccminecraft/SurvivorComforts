@@ -97,6 +97,7 @@
     "UI_SurvivorComforts_F16_Filter_All": "All",
     "UI_SurvivorComforts_F16_Filter_Uncraftable": "Cannot be made",
     "UI_SurvivorComforts_F16_CanMake": "Can make",
+    "UI_SurvivorComforts_F16_ExpandTools": "Expand tools too",
     "UI_SurvivorComforts_F16_Back": "Back",
     "UI_SurvivorComforts_F16_Forward": "Forward",
     "UI_SurvivorComforts_F16_Select": "Pick an item from the list on the left",

@@ -223,8 +223,117 @@ T.add("F16: opening a used-in recipe adds its rows", function(t)
     local plank = entryOf(t, index, "Base.Plank")
     if not plank then return end
     local closed = #f16.itemRows(plank, {})
-    local opened = #f16.itemRows(plank, { c1 = true })
+    local opened = #f16.itemRows(plank, { ["c|" .. recipeIndex.recipeKey(plank.consumed[1])] = true })
     t:ok(opened > closed, "more rows when the first used-in recipe is open")
+end)
+
+-- Stage 2: a material made by a crafting recipe opens to how it is made.
+-- Some item made from a crafted material, found in the index.
+local function madeFromCrafted(index)
+    for _, entry in ipairs(index.order) do
+        if not entry.building then
+            for _, recipe in ipairs(entry.made) do
+                for _, part in ipairs(recipeIndex.describe(recipe).consumed) do
+                    local script = part.items and #part.items == 1 and part.items[1]
+                    local material = script and index.items[script:getFullName()]
+                    if material and material.fullType ~= entry.fullType and #material.made > 0 then
+                        return entry, recipe, material
+                    end
+                end
+            end
+        end
+    end
+end
+
+T.add("F16: a material made by a recipe opens to how it is made", function(t)
+    local f16 = internals(t)
+    local index = getIndex(t)
+    if not f16 or not index then return end
+    local entry, recipe, material = madeFromCrafted(index)
+    if not t:ok(entry, "an item made from a crafted material") then return end
+    local opened = {} -- the ways to make it start open
+    local rows = f16.itemRows(entry, opened)
+    local materialRow = nil
+    for _, row in ipairs(rows) do
+        if row.fullType == material.fullType and row.toggle then materialRow = row end
+    end
+    if not t:ok(materialRow, "the material has [+]: " .. material.fullType) then return end
+    t:equal(materialRow.open, false, "closed at first")
+    t:ok(materialRow.fullType ~= nil, "still a link")
+    opened[materialRow.toggle] = true
+    local more = f16.itemRows(entry, opened)
+    t:ok(#more > #rows, "opening it adds rows")
+    local inner = 0
+    for _, row in ipairs(more) do
+        if row.recipe and (row.indent or 0) > 0 then inner = inner + 1 end
+    end
+    t:ok(inner > 0, "a recipe one step in")
+    for _, row in ipairs(more) do
+        if row.toggle and row.fullType == entry.fullType then return t:fail("the item shown opens") end
+    end
+end)
+
+T.add("F16: what is at hand comes first", function(t)
+    local f16 = internals(t)
+    local index = getIndex(t)
+    if not f16 or not index then return end
+    -- Items: enough at hand, then too few, then none.
+    local plank = entryOf(t, index, "Base.Plank")
+    local nails = entryOf(t, index, "Base.Nails")
+    local hammer = entryOf(t, index, "Base.Hammer")
+    if not plank or not nails or not hammer then return end
+    local rows = f16.newRows(nil, {}, nil, { counts = { ["Base.Hammer"] = 3, ["Base.Nails"] = 1 } })
+    local sorted = rows:sortItems({ plank.script, nails.script, hammer.script }, 2)
+    t:equal(sorted[1]:getFullName(), "Base.Hammer", "enough: first")
+    t:equal(sorted[2]:getFullName(), "Base.Nails", "too few: second")
+    t:equal(sorted[3]:getFullName(), "Base.Plank", "none: last")
+    -- Recipes: those that can be made now first, else as given.
+    local many = nil
+    for _, entry in ipairs(index.order) do
+        if #entry.made >= 2 then many = entry break end
+    end
+    if not t:ok(many, "an item with two ways to make it") then return end
+    local last = many.made[#many.made]
+    local order = f16.newRows(nil, {}, nil, { made = { [recipeIndex.recipeKey(last)] = true } }):sortRecipes(many.made)
+    t:equal(order[1], last, "the one that can be made first")
+    t:equal(#order, #many.made, "none lost")
+    t:equal(f16.newRows(nil, {}, nil, {}):sortRecipes(many.made)[1], many.made[1], "else the game's order")
+end)
+
+T.add("F16: tools open only with expand tools on", function(t)
+    local f16 = internals(t)
+    local index = getIndex(t)
+    if not f16 or not index then return end
+    local toolLabel = getText("UI_SurvivorComforts_F16_Part_Tool")
+    local function toolToggles(entry, tools)
+        local count = 0
+        for _, row in ipairs(f16.itemRows(entry, {}, nil, { tools = tools })) do
+            if row.label == toolLabel and row.fullType and row.toggle then count = count + 1 end
+        end
+        return count
+    end
+    for _, entry in ipairs(index.order) do
+        if not entry.building and toolToggles(entry, true) > 0 then
+            t:equal(toolToggles(entry, false), 0, "off: no tool opens (" .. entry.fullType .. ")")
+            return
+        end
+    end
+    t:fail("no item with a crafted tool")
+end)
+
+T.add("F16: opening stops at the depth limit", function(t)
+    local f16 = internals(t)
+    local index = getIndex(t)
+    if not f16 or not index then return end
+    local entry, recipe, material = madeFromCrafted(index)
+    if not t:ok(entry, "an item made from a crafted material") then return end
+    local rows = f16.newRows(entry.fullType, {}, nil, {})
+    local node = { key = "x", depth = f16.MAX_DEPTH, ancestors = {} }
+    t:equal(rows:canOpen(material.fullType, node), false, "at the limit: no [+]")
+    node.depth = f16.MAX_DEPTH - 1
+    t:equal(rows:canOpen(material.fullType, node), true, "one above: [+]")
+    node.ancestors[material.fullType] = true
+    t:equal(rows:canOpen(material.fullType, node), false, "already above it: no [+]")
 end)
 
 T.add("F16: the item's own row has the category and the item for the menu", function(t)
@@ -359,7 +468,14 @@ T.add("F16: can make now: a simple recipe becomes possible with its materials", 
         for _, part in ipairs(info.consumed) do
             H.giveItems(t, player, part.items[1]:getFullName(), part.amount)
         end
-        if canMake.check(0)[recipeIndex.recipeKey(info.recipe)] then return end
+        if canMake.check(0)[recipeIndex.recipeKey(info.recipe)] then
+            local counts = canMake.counts(0)
+            local first = info.consumed[1]
+            t:ok((counts[first.items[1]:getFullName()] or 0) >= first.amount, "counted at hand")
+            local again, changed = canMake.check(0)
+            t:equal(changed, false, "nothing came or went: not changed")
+            return
+        end
     end
     t:fail("none of " .. #candidates .. " simple recipes became possible with their materials")
 end)
@@ -419,7 +535,7 @@ T.add("F16: the window opens, finds and shows an item", function(t)
     local index = recipeIndex.get()
     window.canMakeBox:setSelected(1, true)
     H.setOption(t, "F16_dim", false)
-    window:checkCanMake()
+    window:checkCanMake(false, true)
     t:equal(#window.itemList.items, #f16.findItems(index, nil, f16.FILTERS[1], window.made), "can make, hide: what can be made, with an empty search")
     H.setOption(t, "F16_dim", true)
     window:refreshResults()

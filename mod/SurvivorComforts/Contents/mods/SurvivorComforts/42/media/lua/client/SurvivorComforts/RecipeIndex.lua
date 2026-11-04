@@ -16,7 +16,8 @@
 --   SurvivorComforts.recipeIndex.describe(recipe) -- what one recipe takes and makes
 --
 -- Built once, the first time it is asked for: recipes do not change while
--- playing. Kept apart from the window so the tests can check it.
+-- playing. For the same reason each recipe's description and key are worked
+-- out once and kept. Kept apart from the window so the tests can check it.
 
 require "SurvivorComforts/Core"
 require "SurvivorComforts/Recipes"
@@ -34,7 +35,22 @@ local index = nil
 local failed = false
 -- Names of the recipes in the game's building list, so they count as
 -- building recipes even if the recipe does not say so itself.
-local buildable = {}
+local buildable = nil
+
+-- The building list's names, read once.
+local function buildableNames()
+    if not buildable then
+        buildable = {}
+        local recipes = ScriptManager.instance:getAllBuildableRecipes()
+        for i = 0, recipes:size() - 1 do
+            buildable[recipes:get(i):getName()] = true
+        end
+    end
+    return buildable
+end
+-- [recipe] = what recipeKey and describe gave for it.
+local keys = {}
+local described = {}
 
 local function isItem(part)
     return part:getResourceType() == ResourceType.Item
@@ -111,10 +127,9 @@ local function build()
     -- A recipe found in both lists is added once.
     local seen = {}
     local count = 0
-    local function addList(recipes, fromBuildList)
+    local function addList(recipes)
         for i = 0, recipes:size() - 1 do
             local recipe = recipes:get(i)
-            if fromBuildList then buildable[recipe:getName()] = true end
             local isBuilding = recipeIndex.isBuild(recipe)
             local key = recipeIndex.recipeKey(recipe)
             if not seen[key] then
@@ -125,8 +140,8 @@ local function build()
             end
         end
     end
-    addList(ScriptManager.instance:getAllCraftRecipes(), false)
-    addList(ScriptManager.instance:getAllBuildableRecipes(), true)
+    addList(ScriptManager.instance:getAllCraftRecipes())
+    addList(ScriptManager.instance:getAllBuildableRecipes())
     local order = {}
     for _, entry in pairs(items) do
         table.insert(order, entry)
@@ -155,16 +170,24 @@ end
 function recipeIndex.reset()
     index = nil
     failed = false
+    buildable = nil
+    keys = {}
+    described = {}
 end
 
 function recipeIndex.isBuild(recipe)
-    return recipe:isBuildableRecipe() == true or buildable[recipe:getName()] == true
+    return recipe:isBuildableRecipe() == true or buildableNames()[recipe:getName()] == true
 end
 
 -- A key for one recipe: its name, apart for crafting and building (the two
 -- lists may use the same name). Also used by RecipeCanMake.lua.
 function recipeIndex.recipeKey(recipe)
-    return (recipeIndex.isBuild(recipe) and "b:" or "c:") .. recipe:getName()
+    local key = keys[recipe]
+    if not key then
+        key = (recipeIndex.isBuild(recipe) and "b:" or "c:") .. recipe:getName()
+        keys[recipe] = key
+    end
+    return key
 end
 
 -- part = { items = { script, ... }, amount, maxAmount (when it varies) }
@@ -199,7 +222,10 @@ end
 -- { recipe, name, isBuild, consumed = { part, ... }, tools = { part, ... },
 --   outputs = { part, ... }, skills = { { name, level }, ... }, needLearn,
 --   needLight, inHand, anySurface, places = { tag, ... } }
+-- Kept: the same table each time, not to be changed by the caller.
 function recipeIndex.describe(recipe)
+    local kept = described[recipe]
+    if kept then return kept end
     local info = {
         recipe = recipe,
         name = recipe:getTranslationName(),
@@ -237,5 +263,6 @@ function recipeIndex.describe(recipe)
             table.insert(info.places, tag)
         end
     end
+    described[recipe] = info
     return info
 end
