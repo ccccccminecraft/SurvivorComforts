@@ -24,7 +24,7 @@
 | `dev-guide.md` | 開発ガイド（詳しいフォルダ構成、試し方、アップロードなど） |
 | `workshop.md` | ワークショップのページの原稿と、更新内容 |
 | `workshop-alpha.md` | アルファ版（Survivor Comforts (Alpha)）のワークショップのページの原稿と、更新内容 |
-| `review-日付.md` | 点検の結果（全体の点検、F02・F15 の点検） |
+| `review-日付.md` | 点検の結果（全体の点検、F02・F15 の点検、不正な操作の点検） |
 | `research.md` | 調査メモ |
 
 MOD 本体の中のファイル（機能ごとの Lua ファイルなど）は、[dev-guide.md の「フォルダ構成」](dev-guide.md#フォルダ構成)にあります。
