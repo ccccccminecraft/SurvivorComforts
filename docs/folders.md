@@ -16,6 +16,7 @@
 | --- | --- |
 | `feature-list.md` | 機能の一覧（遊ぶ人向け） |
 | `install.md`・`install-server.md` | 導入（一人で遊ぶ・サーバー） |
+| `item-finder.md` | アイテム検索（F16）の使い方（遊ぶ人向け） |
 | `development.md` | 開発手順（手元で試す） |
 | `testing.md` | テスト（テスト用の MOD と、ゲームの中で動かすテスト） |
 | `folders.md` | このページ |
