@@ -4,7 +4,7 @@ MOD の開発に使うスクリプトです。MOD 本体には含まれません
 
 | ファイル | 説明 |
 | --- | --- |
-| `check.ps1` | MOD の Lua ファイルすべての構文を、ゲームと同じ Lua コンパイラでチェックします。続けて、翻訳キー（日本語と英語でそろっているか、コードで使っているキーがあるか）と、ゲームの Lua にない関数を使っていないかを点検します。JDK（13 以降）が必要です |
+| `check.ps1` | MOD の Lua ファイルすべての構文を、ゲームと同じ Lua コンパイラでチェックします。続けて、翻訳ファイルが JSON として正しいか（ゲームと同じ読み方で。壊れているとゲームが起動の途中で止まる）、翻訳キー（日本語と英語でそろっているか、コードで使っているキーがあるか）と、ゲームの Lua にない関数を使っていないかを点検します。JDK（13 以降）が必要です |
 | `LuaSyntaxCheck.java` | `check.ps1` が使う構文チェッカーです。直接実行する必要はありません |
 | `ModRules.java` | `check.ps1` が使う点検（翻訳キー、ゲームの Lua にない関数）です。直接実行する必要はありません |
 | `deploy.ps1` | MOD を開発用のフォルダ `%USERPROFILE%\PZDev\Workshop\SurvivorComforts` にコピーし（リポジトリの `LICENSE` も、MOD の中に `LICENSE.txt` として入れます）、開発用のゲームから読み込んだりアップロードしたりできるようにします。いつも遊ぶゲーム（`%USERPROFILE%\Zomboid`）には置きません（そこでは Steam で購読した版を使うため。[dev-guide.md の「開発用のフォルダ」](../docs/dev-guide.md#開発用のフォルダ)）。`-Alpha` を付けると、アルファ版（Survivor Comforts (Alpha)、MOD ID `SurvivorComfortsAlpha`）として `PZDev\Workshop\SurvivorComfortsAlpha` にコピーします（[dev-guide.md の「アルファ版」](../docs/dev-guide.md#アルファ版)） |

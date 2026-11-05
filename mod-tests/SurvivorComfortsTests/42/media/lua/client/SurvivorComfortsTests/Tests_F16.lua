@@ -355,6 +355,34 @@ T.add("F16: opening stops at the depth limit", function(t)
     t:equal(rows:canOpen(material.fullType, node), false, "already above it: no [+]")
 end)
 
+-- "Show recipes" (F03, F06, F12) asks before the index is built: a small
+-- list of what crafting makes, which has to agree with the index.
+T.add("F16: hasRecipe agrees with the index, before and after it is built", function(t)
+    local index = getIndex(t)
+    if not index then return end
+    local sample = {}
+    for i = 1, #index.order, 25 do
+        table.insert(sample, index.order[i].fullType)
+    end
+    table.insert(sample, "Base.Plank")
+    table.insert(sample, "Base.NoSuchItemForTests")
+    recipeIndex.reset()
+    local before = {}
+    for _, fullType in ipairs(sample) do
+        before[fullType] = SurvivorComforts.hasRecipe(fullType)
+    end
+    index = getIndex(t)
+    if not index then return end
+    for _, fullType in ipairs(sample) do
+        local after = SurvivorComforts.hasRecipe(fullType)
+        if before[fullType] ~= after then
+            return t:fail(fullType .. ": small list " .. tostring(before[fullType]) .. ", index " .. tostring(after))
+        end
+    end
+    t:equal(before["Base.Plank"], true, "planks can be made")
+    t:equal(before["Base.NoSuchItemForTests"], false, "an unknown item")
+end)
+
 -- Stage 3: cooking (evolved recipes) and repairs (fixing).
 T.add("F16: cooking and repairs are in the index", function(t)
     local f16 = internals(t)

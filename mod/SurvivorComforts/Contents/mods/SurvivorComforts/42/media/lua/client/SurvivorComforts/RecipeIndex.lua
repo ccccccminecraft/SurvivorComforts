@@ -36,6 +36,10 @@ local IN_DARK = "canbedoneindark"
 
 local index = nil
 local failed = false
+-- [fullType] = true for every item some crafting recipe makes: a small list
+-- for hasRecipe while the index is not built (it reads cooking and repairs
+-- too, so it is left for F16 to build).
+local craftable = nil
 -- Names of the recipes in the game's building list, so they count as
 -- building recipes even if the recipe does not say so itself.
 local buildable = nil
@@ -346,6 +350,7 @@ function recipeIndex.reset()
     described = {}
     scriptCache = {}
     visibleKept = {}
+    craftable = nil
 end
 
 -- The crafting recipes that make the item (items are never the result of
@@ -361,11 +366,33 @@ function recipeIndex.craftRecipesOf(fullType)
     return recipes
 end
 
+local function buildCraftable()
+    craftable = {}
+    local recipes = ScriptManager.instance:getAllCraftRecipes()
+    for i = 0, recipes:size() - 1 do
+        local recipe = recipes:get(i)
+        if not recipeIndex.isBuild(recipe) then
+            SurvivorComforts.forEachRecipeItem(recipe, "outputs", function(script)
+                craftable[script:getFullName()] = true
+            end)
+        end
+    end
+end
+
 -- Whether some crafting recipe makes the item, for "show recipes" (F03, F06,
--- F12, F16). If the index cannot be built, the option is offered anyway.
+-- F12, F16). The index when it is built, the small list otherwise. If neither
+-- can be built, the option is offered anyway.
 function SurvivorComforts.hasRecipe(fullType)
-    if not recipeIndex.get() then return true end
-    return #recipeIndex.craftRecipesOf(fullType) > 0
+    if index then return #recipeIndex.craftRecipesOf(fullType) > 0 end
+    if failed then return true end
+    if not craftable then
+        local ok, err = pcall(buildCraftable)
+        if not ok then
+            SurvivorComforts.log("recipe list failed: " .. tostring(err))
+            craftable = setmetatable({}, { __index = function() return true end })
+        end
+    end
+    return craftable[fullType] == true
 end
 
 function recipeIndex.isBuild(recipe)
