@@ -7,6 +7,7 @@ require "SurvivorComfortsTests/Runner"
 require "SurvivorComfortsTests/Helpers"
 require "SurvivorComforts/Window"
 require "SurvivorComforts/Recipes"
+require "SurvivorComforts/RecipeIndex"
 require "SurvivorComforts/Search"
 
 local T = SurvivorComfortsTests

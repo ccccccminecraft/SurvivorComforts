@@ -11,6 +11,7 @@
 --
 --   local made, changed = SurvivorComforts.recipeCanMake.check(playerNum, fresh)
 --   made[SurvivorComforts.recipeIndex.recipeKey(recipe)] == true
+--   made[group.key] / made[fix.key] == true -- cooking and repairs (RecipeIndex.lua)
 --   SurvivorComforts.recipeCanMake.counts(playerNum)["Base.Nails"] -- how many at hand
 --
 -- When to check again is up to the caller: the vanilla windows do it when
@@ -75,6 +76,57 @@ local function addMade(made, logic, recipes)
     end
 end
 
+local function has(counts, script, amount)
+    return (counts[script:getFullName()] or 0) >= (amount or 1)
+end
+
+-- Cooking (stage 3): some base of the group at hand, with some ingredient
+-- that is not that base. Whether the food is fresh, frozen or cooked is left
+-- to the vanilla menu.
+local function canCook(group, counts)
+    for _, base in ipairs(group.bases) do
+        if has(counts, base) then
+            local baseType = base:getFullName()
+            for _, script in ipairs(group.items) do
+                if script:getFullName() ~= baseType and has(counts, script) then return true end
+            end
+        end
+    end
+    return false
+end
+
+-- A repair: an item it repairs at hand, with one of the fixers in its number
+-- (one more when it is the same kind as the item) and its skills, and the
+-- item every fixer needs, if any. Fixers that are used up bit by bit (tape)
+-- are counted as items.
+local function canFix(fix, counts, player)
+    if fix.global and not has(counts, fix.global.script, fix.global.count) then return false end
+    for _, item in ipairs(fix.required) do
+        if has(counts, item) then
+            for _, fixer in ipairs(fix.fixers) do
+                local needed = fixer.count + (fixer.script:getFullName() == item:getFullName() and 1 or 0)
+                local skilled = true
+                for _, skill in ipairs(fixer.skills) do
+                    if skill.perk and player:getPerkLevel(skill.perk) < skill.level then skilled = false end
+                end
+                if skilled and has(counts, fixer.script, needed) then return true end
+            end
+        end
+    end
+    return false
+end
+
+local function addCookingAndFixes(made, counts, player)
+    local index = recipeIndex.get()
+    if not index then return end
+    for _, group in ipairs(index.cooking) do
+        if canCook(group, counts) then made[group.key] = true end
+    end
+    for _, fix in ipairs(index.fixes) do
+        if canFix(fix, counts, player) then made[fix.key] = true end
+    end
+end
+
 -- { [recipe key] = true } for the recipes the player can make now, or nil
 -- when there is no such player, and whether it changed since the last check
 -- (true the first time). Clears the player's dirty mark.
@@ -117,6 +169,7 @@ function canMake.check(playerNum, fresh)
     addMade(made, state.buildLogic, ScriptManager.instance:getAllBuildableRecipes())
     state.made = made
     state.counts = nil
+    addCookingAndFixes(made, canMake.counts(playerNum), player)
     return made, true
 end
 

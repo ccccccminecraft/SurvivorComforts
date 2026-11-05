@@ -8,6 +8,7 @@
 
 require "SurvivorComforts/Core"
 require "SurvivorComforts/Recipes"
+require "SurvivorComforts/RecipeIndex"
 require "SurvivorComforts/CraftMenu"
 require "ISUI/ISButton"
 require "Entity/ISUI/CraftRecipe/ISWidgetRecipeFilterPanel"

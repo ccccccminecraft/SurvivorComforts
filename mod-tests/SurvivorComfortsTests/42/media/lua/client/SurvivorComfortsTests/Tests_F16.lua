@@ -132,7 +132,8 @@ T.add("F16: search and filter", function(t)
     local f16 = internals(t)
     local index = getIndex(t)
     if not f16 or not index then return end
-    local all, craft, build, uncraftable = f16.FILTERS[1], f16.FILTERS[2], f16.FILTERS[3], f16.FILTERS[4]
+    local all, craft, build, cook, repair, uncraftable =
+        f16.FILTERS[1], f16.FILTERS[2], f16.FILTERS[3], f16.FILTERS[4], f16.FILTERS[5], f16.FILTERS[6]
     local found = f16.findItems(index, SurvivorComforts.search.parse("plank"), all)
     local hasPlank = false
     for _, entry in ipairs(found) do
@@ -140,17 +141,35 @@ T.add("F16: search and filter", function(t)
     end
     t:ok(hasPlank, "'plank' finds planks (English names on)")
     t:equal(#f16.findItems(index, nil, all), #index.order, "no words: every item")
-    -- Craft, build and "cannot be made" do not overlap and together are all.
-    local seen = {}
-    for _, filter in ipairs({ craft, build, uncraftable }) do
-        for _, entry in ipairs(f16.findItems(index, nil, filter)) do
-            if seen[entry.fullType] then return t:fail("in two filters: " .. entry.fullType) end
-            seen[entry.fullType] = true
+    -- "Cannot be made" overlaps neither craft, cooking nor build; build
+    -- overlaps nothing; together with craft and cooking they are all
+    -- (hidden cooking recipes counted).
+    local function set(filter)
+        local result = {}
+        for _, entry in ipairs(f16.findItems(index, nil, filter, nil, nil, true)) do
+            result[entry.fullType] = true
+        end
+        return result
+    end
+    local sets = { craft = set(craft), build = set(build), cook = set(cook), uncraftable = set(uncraftable) }
+    local seen, count = {}, 0
+    for name, members in pairs(sets) do
+        for fullType in pairs(members) do
+            if not seen[fullType] then
+                seen[fullType] = true
+                count = count + 1
+            end
+            if name ~= "craft" and name ~= "cook" then
+                for other, others in pairs(sets) do
+                    if other ~= name and others[fullType] then return t:fail(name .. " and " .. other .. ": " .. fullType) end
+                end
+            end
         end
     end
-    local count = 0
-    for _ in pairs(seen) do count = count + 1 end
-    t:equal(count, #index.order, "craft + build + cannot be made = all")
+    t:equal(count, #index.order, "craft + build + cooking + cannot be made = all")
+    for _, entry in ipairs(f16.findItems(index, nil, repair)) do
+        if #entry.fixes == 0 then return t:fail("no repair, in repair: " .. entry.fullType) end
+    end
     for _, entry in ipairs(f16.findItems(index, nil, craft)) do
         if entry.building or #entry.made == 0 then return t:fail("not a crafted item in craft: " .. entry.fullType) end
     end
@@ -336,6 +355,87 @@ T.add("F16: opening stops at the depth limit", function(t)
     t:equal(rows:canOpen(material.fullType, node), false, "already above it: no [+]")
 end)
 
+-- Stage 3: cooking (evolved recipes) and repairs (fixing).
+T.add("F16: cooking and repairs are in the index", function(t)
+    local f16 = internals(t)
+    local index = getIndex(t)
+    if not f16 or not index then return end
+    t:ok(#index.cooking > 10, "cooking groups: " .. #index.cooking)
+    t:ok(#index.fixes > 5, "repairs: " .. #index.fixes)
+    -- Groups by name: no two groups of one name (apart from hidden ones).
+    local names = {}
+    for _, group in ipairs(index.cooking) do
+        if names[group.key] then return t:fail("two groups: " .. group.key) end
+        names[group.key] = true
+        if #group.bases == 0 or #group.items == 0 then return t:fail("no base or ingredient: " .. group.key) end
+    end
+    local pot = entryOf(t, index, "Base.Pot")
+    if pot then t:ok(#pot.cookBase > 0, "a pot is a base for cooking") end
+    local shown = recipeIndex.visibleCooking(index.cooking, false)
+    for _, group in ipairs(shown) do
+        if group.hidden then return t:fail("a hidden group shown with the option off") end
+    end
+    t:equal(#recipeIndex.visibleCooking(index.cooking, true), #index.cooking, "all with the option on")
+    -- Rows: a cooked item has a [cooking] row, open with its parts.
+    for _, entry in ipairs(index.order) do
+        if #entry.cooked > 0 then
+            local cookRows, inside = 0, 0
+            for _, row in ipairs(f16.itemRows(entry, {}, nil, { showHidden = true })) do
+                if row.cook then cookRows = cookRows + 1 elseif (row.indent or 0) > 0 then inside = inside + 1 end
+            end
+            t:ok(cookRows > 0, "a cooking row for " .. entry.fullType)
+            t:ok(inside >= 3, "its base, ingredients and result")
+            break
+        end
+    end
+    -- An item with a repair has a repair row in its own repairs section.
+    for _, entry in ipairs(index.order) do
+        if #entry.fixes > 0 then
+            local fixRows = 0
+            for _, row in ipairs(f16.itemRows(entry, {})) do
+                if row.fix then fixRows = fixRows + 1 end
+            end
+            t:ok(fixRows >= #entry.fixes, "repair rows for " .. entry.fullType)
+            break
+        end
+    end
+end)
+
+T.add("F16: cooking and repairs can be done now with what is at hand", function(t)
+    local player = H.player(t)
+    local index = getIndex(t)
+    if not player or not index then return end
+    local canMake = SurvivorComforts.recipeCanMake
+    -- Some group with a pot as a base: a pot and one ingredient.
+    local group = nil
+    for _, value in ipairs(index.cooking) do
+        for _, base in ipairs(value.bases) do
+            if base:getFullName() == "Base.Pot" and not group then group = value end
+        end
+    end
+    if t:ok(group, "a cooking group in a pot") then
+        local ingredient = nil
+        for _, script in ipairs(group.items) do
+            if script:getFullName() ~= "Base.Pot" and not ingredient then ingredient = script end
+        end
+        H.giveItems(t, player, "Base.Pot", 1)
+        H.giveItems(t, player, ingredient:getFullName(), 1)
+        t:ok(canMake.check(0)[group.key], "can cook now: " .. group.key)
+    end
+    -- Some repair with no skills and no item every fixer needs.
+    for _, fix in ipairs(index.fixes) do
+        local fixer = fix.fixers[1]
+        if fixer and #fixer.skills == 0 and not fix.global and fixer.count <= 3 then
+            local item = fix.required[1]:getFullName()
+            H.giveItems(t, player, item, 1)
+            local extra = fixer.script:getFullName() == item and 1 or 0
+            H.giveItems(t, player, fixer.script:getFullName(), fixer.count + extra)
+            t:ok(canMake.check(0)[fix.key], "can repair now: " .. fix.key)
+            return
+        end
+    end
+end)
+
 T.add("F16: the item's own row has the category and the item for the menu", function(t)
     local f16 = internals(t)
     local index = getIndex(t)
@@ -446,7 +546,7 @@ T.add("F16: can make now: a simple recipe becomes possible with its materials", 
             if not filter.keep(entry) then return t:fail("not in its filter: " .. entry.fullType) end
         end
     end
-    t:equal(#f16.findItems(index, nil, f16.FILTERS[4], made), 0, "cannot be made + can make: nothing")
+    t:equal(#f16.findItems(index, nil, f16.FILTERS[6], made), 0, "cannot be made + can make: nothing")
     -- With dim: everything in the filter, what can be made first, the rest dimmed.
     local all = f16.FILTERS[1]
     local found, dimmed = f16.findItems(index, nil, all, made, true)
@@ -529,10 +629,14 @@ T.add("F16: the window opens, finds and shows an item", function(t)
     t:equal(window.history[#window.history], "Base.Plank", "planks to go back to")
     window.searchBox:setText("")
     window:refreshResults()
-    t:equal(#window.itemList.items, 0, "an empty search lists nothing")
-    -- Except with "can make" on: everything that can be made now, and with
-    -- the dim option on, everything else dimmed below.
     local index = recipeIndex.get()
+    t:equal(#window.itemList.items, #index.order, "an empty search lists everything")
+    window.filterCombo.selected = 3
+    window:refreshResults()
+    t:equal(#window.itemList.items, #f16.findItems(index, nil, f16.FILTERS[3]), "an empty search with build: every building")
+    window.filterCombo.selected = 1
+    -- With "can make" on: what can be made now, and with the dim option on,
+    -- everything else dimmed below.
     window.canMakeBox:setSelected(1, true)
     H.setOption(t, "F16_dim", false)
     window:checkCanMake(false, true)

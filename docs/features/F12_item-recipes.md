@@ -1,7 +1,7 @@
 # F12 インベントリのアイテムからレシピを見る
 
 - 状況：✅ 実装済
-- コード：`client/SurvivorComforts/F12_ItemRecipes.lua`、共通の `Recipes.lua`
+- コード：`client/SurvivorComforts/F12_ItemRecipes.lua`、共通の `Recipes.lua`（製作の画面を開く処理）、`RecipeIndex.lua`（作れるアイテムかの判定 `SurvivorComforts.hasRecipe`。2026-11-05 に F16 の索引に寄せた）
 - 一覧に戻る：[features.md](../features.md)
 
 ## 要望

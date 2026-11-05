@@ -24,6 +24,7 @@ require "ISUI/ISTabPanel"
 require "ISUI/ISInventoryPane"
 require "ISUI/ISInventoryPaneContextMenu"
 require "SurvivorComforts/Recipes"
+require "SurvivorComforts/RecipeIndex"
 require "SurvivorComforts/CraftMenu"
 
 local FEATURE_ID = "F06"

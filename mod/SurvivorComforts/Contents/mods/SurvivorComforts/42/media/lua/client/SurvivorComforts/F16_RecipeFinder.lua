@@ -46,12 +46,32 @@ local TEXT_COLOR = { r = 1, g = 1, b = 1 }
 local LABEL_COLOR = { r = 0.6, g = 0.6, b = 0.6 }
 local BUILD_COLOR = { r = 0.95, g = 0.75, b = 0.4 }
 local CRAFT_COLOR = { r = 0.55, g = 0.75, b = 1 }
+local COOK_COLOR = { r = 0.95, g = 0.6, b = 0.6 }
+local FIX_COLOR = { r = 0.7, g = 0.85, b = 0.7 }
 
 -- Some recipe that makes the entry can be made now (made: RecipeCanMake.lua).
-local function canMakeNow(entry, made)
+-- The cooking groups that make the entry (stage 3), without the hidden ones
+-- unless showHidden (the option).
+local function cookedOf(entry, showHidden)
+    return recipeIndex.visibleCooking(entry.cooked or {}, showHidden)
+end
+
+local function canMakeNow(entry, made, showHidden)
     if not made then return false end
     for _, recipe in ipairs(entry.made) do
         if made[recipeIndex.recipeKey(recipe)] then return true end
+    end
+    for _, group in ipairs(cookedOf(entry, showHidden)) do
+        if made[group.key] then return true end
+    end
+    return false
+end
+
+-- Some repair of the entry can be done now.
+local function canFixNow(entry, made)
+    if not made then return false end
+    for _, fix in ipairs(entry.fixes or {}) do
+        if made[fix.key] then return true end
     end
     return false
 end
@@ -61,11 +81,19 @@ end
 -- by crafting recipes, buildings only by building recipes. "Craft" and
 -- "Build" are the game's own words. Whether it can be made now is another
 -- axis: the "can make" tick box, used together with these.
+-- Cooking and repair (stage 3) may overlap the others: an item can be
+-- crafted and cooked, and repaired too. "Cannot be made" is neither crafted
+-- nor cooked. With "can make", "repair" means what can be repaired now
+-- (canDo); the others, what can be made now.
 local FILTERS = {
     { text = "UI_SurvivorComforts_F16_Filter_All", keep = function(entry) return true end },
     { text = "IGUI_CraftingWindow_Craft", keep = function(entry) return not entry.building and #entry.made > 0 end },
     { text = "IGUI_CraftingWindow_Build", keep = function(entry) return entry.building == true end },
-    { text = "UI_SurvivorComforts_F16_Filter_Uncraftable", keep = function(entry) return not entry.building and #entry.made == 0 end },
+    { text = "UI_SurvivorComforts_F16_Filter_Cook", keep = function(entry, showHidden) return #cookedOf(entry, showHidden) > 0 end },
+    { text = "UI_SurvivorComforts_F16_Filter_Repair", keep = function(entry) return #(entry.fixes or {}) > 0 end, canDo = canFixNow },
+    { text = "UI_SurvivorComforts_F16_Filter_Uncraftable", keep = function(entry, showHidden)
+        return not entry.building and #entry.made == 0 and #cookedOf(entry, showHidden) == 0
+    end },
 }
 
 SurvivorComforts.registerFeature({
@@ -75,8 +103,14 @@ SurvivorComforts.registerFeature({
     addOptions = function(options)
         SurvivorComforts.addWindowOptions(options, FEATURE_ID)
         options:addTickBox(FEATURE_ID .. "_dim", getText("UI_SurvivorComforts_F16_Dim"), true, getText("UI_SurvivorComforts_F16_Dim_Tooltip"))
+        options:addTickBox(FEATURE_ID .. "_hidden", getText("UI_SurvivorComforts_F16_Hidden"), false, getText("UI_SurvivorComforts_F16_Hidden_Tooltip"))
     end,
 })
+
+-- Hidden cooking recipes are shown too (true) or not.
+local function hiddenOption()
+    return SurvivorComforts.getOptionValue(FEATURE_ID .. "_hidden") == true
+end
 
 -- "Can make" on: what cannot be made now is listed dimmed below (true) or hidden.
 local function dimOption()
@@ -95,12 +129,21 @@ end
 -- what cannot be made now is left out, or, with dim, put after the rest
 -- (each part still by name) and returned in the second result,
 -- { [entry] = true }, to draw dimmed.
-local function findItems(index, words, filter, made, dim)
+-- showHidden: hidden cooking recipes count too.
+local function findItems(index, words, filter, made, dim, showHidden)
     local found, others = {}, {}
     local english = words and search.useEnglish()
     for _, entry in ipairs(index.order) do
-        if filter.keep(entry) and (not words or search.matches(entryText(entry, english), words)) then
-            if not made or canMakeNow(entry, made) then
+        if filter.keep(entry, showHidden) and (not words or search.matches(entryText(entry, english), words)) then
+            local canDo = false
+            if made then
+                if filter.canDo then
+                    canDo = filter.canDo(entry, made)
+                else
+                    canDo = canMakeNow(entry, made, showHidden)
+                end
+            end
+            if not made or canDo then
                 table.insert(found, entry)
             elseif dim then
                 table.insert(others, entry)
@@ -133,7 +176,9 @@ local function round(value)
     return math.floor(value * 100 + 0.5) / 100
 end
 
+-- nil for a part with no amount (a cooking recipe's bases and ingredients).
 local function amountText(part)
+    if not part.amount then return nil end
     if part.fluids then return tostring(round(part.amount)) .. "L" end
     local result = "x" .. tostring(part.amount)
     if part.maxAmount and part.maxAmount ~= part.amount then
@@ -154,13 +199,15 @@ Rows.__index = Rows
 -- dimMade: the "can make now" check while "can make" is on (nil: off); the
 -- recipes that cannot be made now are dimmed, with their rows.
 -- extra = { made = the last "can make now" check (whatever the tick box),
---           counts = { [fullType] = count at hand }, tools = open tools too }:
+--           counts = { [fullType] = count at hand }, tools = open tools too,
+--           showHidden = hidden cooking recipes too }:
 -- what is at hand comes first (see sortRecipes and sortItems).
 local function newRows(current, opened, dimMade, extra)
     extra = extra or {}
     return setmetatable({
         list = {}, current = current, opened = opened, dimMade = dimMade,
         made = extra.made or {}, counts = extra.counts or {}, tools = extra.tools == true,
+        showHidden = extra.showHidden == true,
     }, Rows)
 end
 
@@ -188,6 +235,18 @@ function Rows:sortRecipes(recipes)
     return first
 end
 
+-- Cooking groups or repairs: those that can be done now first.
+function Rows:sortByKey(list)
+    local first, rest = {}, {}
+    for _, value in ipairs(list) do
+        table.insert(self.made[value.key] and first or rest, value)
+    end
+    for _, value in ipairs(rest) do
+        table.insert(first, value)
+    end
+    return first
+end
+
 -- Items that can stand in for each other: those at hand in the amount
 -- needed first, then those at hand but too few, then the rest, each part in
 -- the game's order.
@@ -207,19 +266,6 @@ function Rows:sortItems(items, amount)
     return sorted
 end
 
--- The crafting recipes that make the item (items are never the result of
--- building).
-local function craftRecipesOf(fullType)
-    local index = recipeIndex.get()
-    local entry = index and index.items[fullType]
-    local recipes = {}
-    if not entry or entry.building then return recipes end
-    for _, recipe in ipairs(entry.made) do
-        if not recipeIndex.isBuild(recipe) then table.insert(recipes, recipe) end
-    end
-    return recipes
-end
-
 -- node = { key, depth, ancestors } for a material that can be opened to show
 -- how it is made (stage 2): not the item shown, not one already above it on
 -- the way (it would go round), not deeper than MAX_DEPTH, and only when a
@@ -227,7 +273,7 @@ end
 function Rows:canOpen(fullType, node)
     if not node or fullType == self.current or node.ancestors[fullType] then return false end
     if node.depth >= MAX_DEPTH then return false end
-    return #craftRecipesOf(fullType) > 0
+    return #recipeIndex.craftRecipesOf(fullType) > 0
 end
 
 function Rows:addItem(script, indent, label, suffix, node)
@@ -246,7 +292,7 @@ function Rows:addItem(script, indent, label, suffix, node)
     row.open = self:isOpen(key, false)
     if not row.open then return end
     -- How it is made, one step in.
-    local recipes = self:sortRecipes(craftRecipesOf(fullType))
+    local recipes = self:sortRecipes(recipeIndex.craftRecipesOf(fullType))
     local ancestors = {}
     for above in pairs(node.ancestors) do
         ancestors[above] = true
@@ -284,7 +330,7 @@ function Rows:addPart(part, indent, label, key, node)
     local open = self:isOpen(key, false)
     self:add({
         indent = indent, label = label, texture = first:getNormalTexture(),
-        text = getText("UI_SurvivorComforts_F16_Group", itemName(first), tostring(#items)) .. " " .. amount,
+        text = getText("UI_SurvivorComforts_F16_Group", itemName(first), tostring(#items)) .. (amount and (" " .. amount) or ""),
         color = TEXT_COLOR, toggle = key, open = open,
     })
     if open then
@@ -354,6 +400,72 @@ function Rows:addRecipe(recipe, key, openByDefault, indent, depth, ancestors)
     self.dimming = outer
 end
 
+-- A cooking group (stage 3): its name row, then, when open, the bases, the
+-- ingredients that can be added, what it makes and how many can go in.
+function Rows:addCook(group, key, openByDefault)
+    local open = self:isOpen(key, openByDefault)
+    local outer = self.dimming
+    self.dimming = self.dimMade ~= nil and not self.dimMade[group.key]
+    local summary = nil
+    if not open and group.results[1] then
+        summary = "-> " .. itemName(group.results[1])
+    end
+    self:add({
+        indent = 0, text = group.name, summary = summary,
+        kind = "[" .. getText("UI_SurvivorComforts_F16_Filter_Cook") .. "]", kindColor = COOK_COLOR,
+        toggle = key, open = open, cook = group,
+    })
+    if open then
+        self:addPart({ items = group.bases }, 1, getText("UI_SurvivorComforts_F16_Part_Base"), key .. ":b")
+        self:addPart({ items = group.items }, 1, getText("IGUI_CraftingWindow_Requires"), key .. ":i")
+        self:addPart({ items = group.results }, 1, getText("IGUI_CraftingWindow_Creates"), key .. ":o")
+        local most = tostring(group.maxItems or 0)
+        if group.minItems and group.minItems ~= group.maxItems then
+            most = tostring(group.minItems) .. "-" .. most
+        end
+        local needs = getText("UI_SurvivorComforts_F16_MaxItems", most)
+        if group.cookable then needs = needs .. " / " .. getText("UI_SurvivorComforts_F16_Cookable") end
+        self:add({ indent = 1, label = getText("UI_SurvivorComforts_F16_Part_Needs"), text = needs, color = TEXT_COLOR })
+    end
+    self.dimming = outer
+end
+
+-- A repair (stage 3): its name row (the game's name, as it is), then, when
+-- open, what it repairs, each fixer (one of them is used) with its number and
+-- skills, what every fixer needs, and how much it repairs.
+function Rows:addFix(fix, key, openByDefault)
+    local open = self:isOpen(key, openByDefault)
+    local outer = self.dimming
+    self.dimming = self.dimMade ~= nil and not self.dimMade[fix.key]
+    local summary = nil
+    if not open and fix.required[1] then
+        summary = "-> " .. itemName(fix.required[1])
+    end
+    self:add({
+        indent = 0, text = fix.name, summary = summary,
+        kind = "[" .. getText("UI_SurvivorComforts_F16_Filter_Repair") .. "]", kindColor = FIX_COLOR,
+        toggle = key, open = open, fix = fix,
+    })
+    if open then
+        self:addPart({ items = fix.required }, 1, getText("UI_SurvivorComforts_F16_Part_Repairs"), key .. ":r")
+        for _, fixer in ipairs(fix.fixers) do
+            local suffix = "x" .. tostring(fixer.count)
+            for _, skill in ipairs(fixer.skills) do
+                suffix = suffix .. "  " .. getText("UI_SurvivorComforts_F16_Skill", tostring(skill.name), tostring(skill.level))
+            end
+            self:addItem(fixer.script, 1, getText("UI_SurvivorComforts_F16_Part_Fixer"), suffix)
+        end
+        if fix.global then
+            self:addItem(fix.global.script, 1, getText("UI_SurvivorComforts_F16_Part_Global"), "x" .. tostring(fix.global.count))
+        end
+        if fix.modifier then
+            self:add({ indent = 1, label = getText("UI_SurvivorComforts_F16_Part_Needs"),
+                text = getText("UI_SurvivorComforts_F16_Modifier", tostring(round(fix.modifier))), color = TEXT_COLOR })
+        end
+    end
+    self.dimming = outer
+end
+
 -- A section of recipes, what can be made now first. Each recipe's key is
 -- the section's and the recipe's, so it stays open when the order changes.
 function Rows:addSection(title, recipes, key, openByDefault)
@@ -361,6 +473,15 @@ function Rows:addSection(title, recipes, key, openByDefault)
     self:add({ header = true, text = getText(title, tostring(#recipes)) })
     for _, recipe in ipairs(self:sortRecipes(recipes)) do
         self:addRecipe(recipe, key .. "|" .. recipeIndex.recipeKey(recipe), openByDefault)
+    end
+end
+
+-- A section of cooking groups or repairs (add: Rows.addCook or Rows.addFix).
+function Rows:addSectionOf(title, list, key, openByDefault, add)
+    if #list == 0 then return end
+    self:add({ header = true, text = getText(title, tostring(#list)) })
+    for _, value in ipairs(self:sortByKey(list)) do
+        add(self, value, key .. "|" .. value.key, openByDefault)
     end
 end
 
@@ -374,17 +495,29 @@ local function itemRows(entry, opened, dimMade, extra)
         title = true, texture = entry.texture, text = entry.name, sub = sub,
         item = { fullType = entry.fullType, name = entry.name },
     })
-    if #entry.made == 0 then
-        rows:add({ header = true, text = getText("UI_SurvivorComforts_F16_Made", "0") })
+    -- How it is made: crafting or building recipes, then cooking.
+    local cooked = cookedOf(entry, rows.showHidden)
+    rows:add({ header = true, text = getText("UI_SurvivorComforts_F16_Made", tostring(#entry.made + #cooked)) })
+    if #entry.made + #cooked == 0 then
         rows:add({ indent = 0, text = getText("UI_SurvivorComforts_F16_NotMade"), color = LABEL_COLOR })
-    else
-        rows:addSection("UI_SurvivorComforts_F16_Made", entry.made, "m", true)
     end
-    -- A building is not an item, so it is never used in a recipe.
+    for _, recipe in ipairs(rows:sortRecipes(entry.made)) do
+        rows:addRecipe(recipe, "m|" .. recipeIndex.recipeKey(recipe), true)
+    end
+    for _, group in ipairs(rows:sortByKey(cooked)) do
+        rows:addCook(group, "m|" .. group.key, true)
+    end
+    -- A building is not an item, so it is never used or repaired.
     if entry.building then return rows.list end
+    rows:addSectionOf("UI_SurvivorComforts_F16_Fixes", entry.fixes, "f", false, Rows.addFix)
+    local cookIn = recipeIndex.visibleCooking(entry.cookIn, rows.showHidden)
+    local cookBase = recipeIndex.visibleCooking(entry.cookBase, rows.showHidden)
     rows:addSection("UI_SurvivorComforts_F16_Consumed", entry.consumed, "c", false)
     rows:addSection("UI_SurvivorComforts_F16_Tool", entry.tool, "t", false)
-    if #entry.consumed == 0 and #entry.tool == 0 then
+    rows:addSectionOf("UI_SurvivorComforts_F16_CookIn", cookIn, "ci", false, Rows.addCook)
+    rows:addSectionOf("UI_SurvivorComforts_F16_CookBase", cookBase, "cb", false, Rows.addCook)
+    rows:addSectionOf("UI_SurvivorComforts_F16_FixUse", entry.fixUse, "fu", false, Rows.addFix)
+    if #entry.consumed + #entry.tool + #cookIn + #cookBase + #entry.fixUse == 0 then
         rows:add({ header = true, text = getText("UI_SurvivorComforts_F16_Uses") })
         rows:add({ indent = 0, text = getText("UI_SurvivorComforts_F16_NoUse"), color = LABEL_COLOR })
     end
@@ -689,6 +822,11 @@ function SurvivorComforts_RecipeFinderWindow:prerender()
         if self:isCanMakeOn() and self.shownDim ~= nil and self.shownDim ~= dimOption() then
             SurvivorComforts.safeCall(FEATURE_ID, self.refreshResults, self, true)
         end
+        -- The hidden recipes option changed while the window is open.
+        if self.shownHidden ~= nil and self.shownHidden ~= hiddenOption() then
+            SurvivorComforts.safeCall(FEATURE_ID, self.refreshResults, self, true)
+            SurvivorComforts.safeCall(FEATURE_ID, self.refreshDetail, self)
+        end
         self:layout()
         self.backButton:setEnable(#self.history > 0)
         self.forwardButton:setEnable(#self.forward > 0)
@@ -712,16 +850,13 @@ function SurvivorComforts_RecipeFinderWindow:refreshResults(keepScroll)
     list:setYScroll(keepScroll and scroll or 0)
     local filter = self:currentFilter()
     local canMakeOn = self:isCanMakeOn()
-    -- Nothing is listed until a name is typed, except with "can make" on,
-    -- which lists everything that can be made now.
-    if not words and not canMakeOn then
-        list.emptyText = getText("UI_SurvivorComforts_F16_TypeToSearch")
-        return
-    end
+    -- With no words, everything in the filter is listed.
     list.selected = -1 -- only the item shown on the right is highlighted
     local dim = dimOption()
     self.shownDim = dim
-    local found, dimmed = findItems(index, words, filter, canMakeOn and (self.made or {}) or nil, dim)
+    local showHidden = hiddenOption()
+    self.shownHidden = showHidden
+    local found, dimmed = findItems(index, words, filter, canMakeOn and (self.made or {}) or nil, dim, showHidden)
     list.dimmed = dimmed
     for _, entry in ipairs(found) do
         list:addItem(entry.name, entry)
@@ -782,6 +917,7 @@ function SurvivorComforts_RecipeFinderWindow:refreshDetail()
         made = self.made or {},
         counts = recipeCanMake.counts(self.playerNum),
         tools = self:isToolsOn(),
+        showHidden = hiddenOption(),
     }
     for _, row in ipairs(itemRows(entry, self.opened, dimMade, extra)) do
         local item = detail:addItem(row.text or "", row)
@@ -840,17 +976,6 @@ end
 ---------------------------------------------------------------------------
 -- Right-click menu
 ---------------------------------------------------------------------------
--- A crafting recipe (not a building one) makes the item.
-local function isCrafted(fullType)
-    local index = recipeIndex.get()
-    local entry = index and index.items[fullType]
-    if not entry then return false end
-    for _, recipe in ipairs(entry.made) do
-        if not recipeIndex.isBuild(recipe) then return true end
-    end
-    return false
-end
-
 -- The vanilla crafting or building window, with this recipe chosen (the
 -- same way the vanilla literature window opens a recipe).
 local function openRecipeWindow(playerNum, recipe)
@@ -895,9 +1020,14 @@ local function fillMenu(context, playerNum, row)
                 table.insert(entries, { fullType = fullType, name = itemName(script) })
             end
         end)
+    elseif row.cook or row.fix then
+        -- No vanilla window for cooking or repairs (both are right-click menus).
+        for _, script in ipairs(row.cook and row.cook.results or row.fix.required) do
+            table.insert(entries, { fullType = script:getFullName(), name = itemName(script) })
+        end
     elseif row.item then
         local fullType = row.item.fullType
-        if isCrafted(fullType) then
+        if SurvivorComforts.hasRecipe(fullType) then
             context:addOption(getText("UI_SurvivorComforts_F16_Craft"), playerNum, function(num)
                 SurvivorComforts.safeCall(FEATURE_ID, SurvivorComforts.showRecipes, num, fullType)
             end)
@@ -910,7 +1040,7 @@ local function fillMenu(context, playerNum, row)
 end
 
 function SurvivorComforts_RecipeFinderWindow:showMenu(row)
-    if not row or not (row.item or row.recipe) then return end
+    if not row or not (row.item or row.recipe or row.cook or row.fix) then return end
     SurvivorComforts.safeCall(FEATURE_ID, function()
         local context = ISContextMenu.get(self.playerNum, getMouseX(), getMouseY())
         fillMenu(context, self.playerNum, row)
@@ -984,6 +1114,7 @@ SurvivorComforts.internals.F16 = {
     MAX_DEPTH = MAX_DEPTH,
     fillMenu = fillMenu,
     canMakeNow = canMakeNow,
+    canFixNow = canFixNow,
     FILTERS = FILTERS,
     windows = windows,
 }
