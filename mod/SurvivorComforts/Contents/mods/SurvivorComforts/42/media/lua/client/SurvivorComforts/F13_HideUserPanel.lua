@@ -1,8 +1,9 @@
 -- F13: hide the user panel button (factions, safehouses, tickets) on the left
 -- sidebar.
 --
--- Only the button is hidden; factions and the rest keep working. Admins
--- (SurvivorComforts.isAdmin) always see it. The buttons below
+-- While it is hidden, players who are not admins cannot open the screens in
+-- the user panel either (factions, safehouses, tickets...): there is no
+-- other way in. Admins (SurvivorComforts.isAdmin) always see it. The buttons below
 -- move up into its place (see Sidebar.lua, shared with F10).
 
 require "SurvivorComforts/Core"

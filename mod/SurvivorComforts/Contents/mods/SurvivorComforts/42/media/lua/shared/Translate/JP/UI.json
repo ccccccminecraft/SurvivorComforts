@@ -86,7 +86,7 @@
     "UI_SurvivorComforts_F15_Loading": "取得中…",
     "UI_SurvivorComforts_F15_NoData": "データがありません（オンラインでない可能性があります）",
     "UI_SurvivorComforts_F16_Name": "レシピ検索",
-    "UI_SurvivorComforts_F16_Tooltip": "アイテムや建築物の名前で検索して、作り方（製作・建築）と使い道（何の材料・道具になるか）をウィンドウで調べます。ゲームが読み込んだレシピを使うので、MOD のレシピも出ます。元のアプリ：PZ レシピ検索（itsu07）",
+    "UI_SurvivorComforts_F16_Tooltip": "アイテムや建築物の名前で検索して、作り方（製作・建築・料理）と直し方、使い道（何の材料・道具になるか）をウィンドウで調べます。材料の作り方をその場でたどったり、今の持ち物で作れるものに絞ったりできます。ゲームが読み込んだレシピを使うので、MOD のレシピも出ます。元のアプリ：PZ レシピ検索（itsu07）",
     "UI_SurvivorComforts_F16_Key": "レシピ検索を開く/閉じる",
     "UI_SurvivorComforts_F16_Sidebar": "左のアイコンにボタンを表示する",
     "UI_SurvivorComforts_F16_Sidebar_Tooltip": "画面左のアイコンの下に、レシピ検索を開く/閉じるボタンを追加します。",

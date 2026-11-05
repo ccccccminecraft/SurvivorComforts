@@ -32,10 +32,10 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
             ├── icon.png               ゲームのMOD一覧で名前の横に出すアイコン（64x64）
             └── media\lua\
                 ├── client\SurvivorComforts\
-                │   ├── Commands.lua       サーバーとのやり取り（画面側）。サーバーに送る、サーバーから届いたものを機能に渡す（F06・F09で共通）
+                │   ├── Commands.lua       サーバーとのやり取り（画面側）。サーバーに送る、サーバーから届いたものを機能に渡す（F06・F09・F15で共通）
                 │   ├── Core.lua           共通処理とMod Options
                 │   ├── EnglishNames.lua   英語名の表（F14。tools\make_english_names.ps1 で作る。手で直さない）
-                │   ├── CraftMenu.lua      制作・建築の画面の右クリックメニュー（F03・F06で共通）
+                │   ├── CraftMenu.lua      製作・建築の画面の右クリックメニュー（F03・F06・F16で共通）
                 │   ├── F02_InventorySearch.lua
                 │   ├── F03_RecipeTrail.lua
                 │   ├── F04_ReadingTime.lua
@@ -48,16 +48,19 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
                 │   ├── F12_ItemRecipes.lua
                 │   ├── F13_HideUserPanel.lua
                 │   ├── F14_EnglishSearch.lua
-                │   ├── Recipes.lua        「レシピを見る」の処理と「戻る」の履歴（F03・F06・F12で共通）。レシピの材料・完成品のアイテムを1つずつ調べる処理（制作の画面の右クリック・F14でも使う）
+                │   ├── F16_RecipeFinder.lua   アイテム検索のウィンドウ（F16）
+                │   ├── RecipeCanMake.lua  今作れるか・持っている数（F16。本体の製作の仕組みを使い回す）
+                │   ├── RecipeIndex.lua    レシピの索引（製作・建築・料理・修理。F16）と、作れるアイテムかの判定（F03・F06・F12・F16で共通）
+                │   ├── Recipes.lua        「レシピを見る」の処理と「戻る」の履歴（F03・F06・F12・F16で共通）。レシピの材料・完成品のアイテムを1つずつ調べる処理（製作の画面の右クリック・F14・F16でも使う）
                 │   ├── Search.lua         検索の決まり（語の区切り方、ひらがなとカタカナを区別しない、英語名・日本語名で比べる）。F14・F02で共通
-                │   ├── Sidebar.lua        画面左のアイコンにボタンを並べる。画面の下に近づいたら次の列へ。本体のボタンを隠して詰める（F06・F08・F09・F10・F13で共通）
-                │   └── Window.lua         機能のウィンドウの作り（プレイヤーごとに作る・開閉・閉じたら画面から外す・位置と大きさを覚える）と、それを開く画面左のボタン・キー・その2つの設定。F06・F08・F09で共通
+                │   ├── Sidebar.lua        画面左のアイコンにボタンを並べる。画面の下に近づいたら次の列へ。本体のボタンを隠して詰める（F06・F08・F09・F10・F13・F16で共通）
+                │   └── Window.lua         機能のウィンドウの作り（プレイヤーごとに作る・開閉・閉じたら画面から外す・位置と大きさを覚える）と、それを開く画面左のボタン・キー・その2つの設定。F06・F08・F09・F15・F16で共通
                 ├── server\SurvivorComforts\
-                │   ├── CommandLimit.lua        1人が送れるコマンドの回数の制限（F06・F09で共通）
+                │   ├── CommandLimit.lua        1人が送れるコマンドの回数の制限（F06・F09・F15で共通）
                 │   ├── F06_SharedWishlist.lua  みんなのウィッシュリストの保存と配信（サーバーで動く）
                 │   ├── F09_PlayerList.lua      最終ログインの記録と配信（サーバーで動く。シングルでは動かない）
                 │   ├── F15_MemberSkills.lua    頼まれたプレイヤーのスキルを読んで返す（サーバーで動く。シングルでは動かない）
-                │   └── ServerCommands.lua      サーバーとのやり取り（サーバー側）。届いたものを回数の制限を通して機能に渡す、送る（シングルプレイでは画面側に直接渡す）。F06・F09で共通
+                │   └── ServerCommands.lua      サーバーとのやり取り（サーバー側）。届いたものを回数の制限を通して機能に渡す、送る（シングルプレイでは画面側に直接渡す）。F06・F09・F15で共通
                 └── shared\
                     ├── SurvivorComforts\
                     │   ├── Admin.lua           管理者の判定（キックできる人）。画面側とサーバー側の両方で使う（F06・F13で共通）
