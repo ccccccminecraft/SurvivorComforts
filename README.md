@@ -13,6 +13,7 @@ Project Zomboid（Build 42.21 以降）用の MOD です。
 - できること
   - インベントリ内検索
   - アイテムからレシピ確認
+  - レシピ検索（アイテムの作り方・直し方・使い道を名前で調べる）
   - 各画面のアイテムレシピ確認
   - ウィッシュリスト作成、共有
   - 料理に加える食材をまとめる
@@ -40,6 +41,6 @@ Project Zomboid（Build 42.21 以降）用の MOD です。
 
 [MIT ライセンス](LICENSE)です。著作権の表示とライセンスの文を残せば、改造・再配布・ほかの MOD への取り込みも自由です。
 
-F02 インベントリ検索は itsu07 さんの [Inventory Search](https://github.com/itsu07/pz-inventory-search)、F15 ほかの人のスキルを見るは itsu07 さんの [Skill Viewer](https://github.com/itsu07/SkillViewer) を元に（どちらも MIT ライセンス）、この MOD に合わせて書き換えたものです。元の著作権表示は [LICENSE](LICENSE) に入れています。ワークショップで配る MOD にも、同じ内容を `LICENSE.txt` として入れています（`tools\deploy.ps1` がコピーします）。
+F02 インベントリ検索は itsu07 さんの [Inventory Search](https://github.com/itsu07/pz-inventory-search)、F15 ほかの人のスキルを見るは itsu07 さんの [Skill Viewer](https://github.com/itsu07/SkillViewer) を元に（どちらも MIT ライセンス）、この MOD に合わせて書き換えたものです。元の著作権表示は [LICENSE](LICENSE) に入れています。F16 レシピ検索は itsu07 さんの HTML のアプリ「PZ レシピ検索」を元に、画面の作りと表示する内容を参考にして Lua で作り直したものです（元のコードは使っていません。公開することは作者に確かめています）。ワークショップで配る MOD にも、同じ内容を `LICENSE.txt` として入れています（`tools\deploy.ps1` がコピーします）。
 
 ただし、F14 の英語名の表（`EnglishNames.lua`）に入っているアイテムやレシピの名前は、ゲーム本体の翻訳ファイルから作ったもので、このライセンスの対象外です（Project Zomboid の権利は The Indie Stone にあります）。
