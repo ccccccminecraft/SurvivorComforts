@@ -74,13 +74,20 @@ local function buildParts(key, values)
     end
     local parts = {}
     local pos = 1
+    -- Plain finds only: the template may hold Japanese (see Search.lua).
     while true do
-        local s, e, n = string.find(template, "@@(%d)@@", pos)
+        local s, e, n = nil, nil, nil
+        for i = 1, 2 do
+            local found = string.find(template, "@@" .. i .. "@@", pos, true)
+            if found and (not s or found < s) then
+                s, e, n = found, found + 4, i
+            end
+        end
         if not s then break end
         if s > pos then
             table.insert(parts, { text = string.sub(template, pos, s - 1), color = TEXT_COLOR })
         end
-        local value = values[tonumber(n)]
+        local value = values[n]
         if value then
             table.insert(parts, value)
         end

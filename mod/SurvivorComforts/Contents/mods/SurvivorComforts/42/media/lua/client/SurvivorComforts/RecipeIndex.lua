@@ -131,19 +131,31 @@ end
 -- Cooking (evolved recipes: soup, salad... a base with ingredients added)
 -- and repairs (fixing), stage 3
 ---------------------------------------------------------------------------
--- An item script by its name, "Base.Pot" or "Pot" (fixing scripts may leave
--- the module out); nil when the game has no such item.
+-- An item script by its name, "Base.Pot" or "Pot"; nil when the game has no
+-- such item. A name without a module (fixing scripts may leave it out) is
+-- looked for in module first, as vanilla does, then in Base.
 local scriptCache = {}
-local function scriptOf(name)
+local function scriptOf(name, module)
     if type(name) ~= "string" or name == "" then return nil end
+    local plain = not string.find(name, ".", 1, true)
+    if plain and module then name = module .. "." .. name end
     local cached = scriptCache[name]
     if cached ~= nil then return cached or nil end
     local script = ScriptManager.instance:getItem(name)
-    if not script and not string.find(name, ".", 1, true) then
-        script = ScriptManager.instance:getItem("Base." .. name)
+    if not script and plain and module and module ~= "Base" then
+        script = ScriptManager.instance:getItem("Base." .. string.sub(name, string.len(module) + 2))
     end
     scriptCache[name] = script or false
     return script
+end
+
+-- What a script's name is, kept: the "can make" checks ask often.
+local function fullTypes(scripts)
+    local types = {}
+    for i, script in ipairs(scripts) do
+        types[i] = script:getFullName()
+    end
+    return types
 end
 
 -- Adds script to list unless seen[fullType] already.
@@ -189,6 +201,8 @@ local function addCooking(items, groups, list)
     end
     for _, group in ipairs(groups) do
         group.seen = nil
+        group.baseTypes = fullTypes(group.bases)
+        group.itemTypes = fullTypes(group.items)
         local added = {}
         local function add(kind, script)
             local entry = addEntry(items, script)
@@ -205,10 +219,10 @@ end
 -- One repair: { fix = true, key, name, fixing, required = { script, ... },
 --   fixers = { { script, count, skills = { { name, perk, level }, ... } }, ... },
 --   global = { script, count } or nil, modifier }
-local function readFixer(fixer)
-    local script = fixer and scriptOf(fixer:getFixerName())
+local function readFixer(fixer, module)
+    local script = fixer and scriptOf(fixer:getFixerName(), module)
     if not script then return nil end
-    local result = { script = script, count = fixer:getNumberOfUse(), skills = {} }
+    local result = { script = script, fullType = script:getFullName(), count = fixer:getNumberOfUse(), skills = {} }
     local skills = fixer:getFixerSkills()
     if skills then
         for i = 0, skills:size() - 1 do
@@ -228,19 +242,23 @@ local function addFixing(items, fixes, list)
     for i = 0, list:size() - 1 do
         local fixing = list:get(i)
         local name = fixing:getName() or "?"
-        local fix = { fix = true, key = "f:" .. name, name = name, fixing = fixing,
+        local moduleObject = fixing:getModule()
+        local module = moduleObject and moduleObject:getName() or "Base"
+        -- Told apart by module and name: a mod may add a repair of the same name.
+        local fix = { fix = true, key = "f:" .. module .. "." .. name, name = name, fixing = fixing,
                       required = {}, fixers = {}, modifier = fixing:getConditionModifier() }
         local seen = {}
         local required = fixing:getRequiredItem()
         for j = 0, required:size() - 1 do
-            addOnce(fix.required, seen, scriptOf(required:get(j)))
+            addOnce(fix.required, seen, scriptOf(required:get(j), module))
         end
+        fix.requiredTypes = fullTypes(fix.required)
         local fixers = fixing:getFixers()
         for j = 0, fixers:size() - 1 do
-            local fixer = readFixer(fixers:get(j))
+            local fixer = readFixer(fixers:get(j), module)
             if fixer then table.insert(fix.fixers, fixer) end
         end
-        fix.global = readFixer(fixing:getGlobalItem())
+        fix.global = readFixer(fixing:getGlobalItem(), module)
         if #fix.required > 0 then
             table.insert(fixes, fix)
             local added = {}
@@ -258,12 +276,17 @@ local function addFixing(items, fixes, list)
 end
 
 -- The cooking groups to show: without the hidden ones unless showHidden.
+-- Kept for each list (a search asks for thousands of them on each key).
+local visibleKept = {}
 function recipeIndex.visibleCooking(groups, showHidden)
-    if showHidden then return groups end
-    local shown = {}
+    if showHidden or #groups == 0 then return groups end
+    local shown = visibleKept[groups]
+    if shown then return shown end
+    shown = {}
     for _, group in ipairs(groups) do
         if not group.hidden then table.insert(shown, group) end
     end
+    visibleKept[groups] = shown
     return shown
 end
 
@@ -322,6 +345,7 @@ function recipeIndex.reset()
     keys = {}
     described = {}
     scriptCache = {}
+    visibleKept = {}
 end
 
 -- The crafting recipes that make the item (items are never the result of

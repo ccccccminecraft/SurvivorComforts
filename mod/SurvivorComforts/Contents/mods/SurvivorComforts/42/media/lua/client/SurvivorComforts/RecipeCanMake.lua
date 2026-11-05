@@ -76,55 +76,73 @@ local function addMade(made, logic, recipes)
     end
 end
 
-local function has(counts, script, amount)
-    return (counts[script:getFullName()] or 0) >= (amount or 1)
+-- The names (fullType) are kept in the index (RecipeIndex.lua), so these
+-- checks do not ask the game for them again and again.
+local function has(counts, fullType, amount)
+    return (counts[fullType] or 0) >= (amount or 1)
 end
 
 -- Cooking (stage 3): some base of the group at hand, with some ingredient
 -- that is not that base. Whether the food is fresh, frozen or cooked is left
 -- to the vanilla menu.
 local function canCook(group, counts)
-    for _, base in ipairs(group.bases) do
-        if has(counts, base) then
-            local baseType = base:getFullName()
-            for _, script in ipairs(group.items) do
-                if script:getFullName() ~= baseType and has(counts, script) then return true end
+    for _, baseType in ipairs(group.baseTypes) do
+        if has(counts, baseType) then
+            for _, itemType in ipairs(group.itemTypes) do
+                if itemType ~= baseType and has(counts, itemType) then return true end
             end
         end
     end
     return false
 end
 
--- A repair: an item it repairs at hand, with one of the fixers in its number
--- (one more when it is the same kind as the item) and its skills, and the
--- item every fixer needs, if any. Fixers that are used up bit by bit (tape)
--- are counted as items.
-local function canFix(fix, counts, player)
-    if fix.global and not has(counts, fix.global.script, fix.global.count) then return false end
-    for _, item in ipairs(fix.required) do
-        if has(counts, item) then
+-- A repair: an item it repairs at hand that is damaged and not broken (as
+-- vanilla's menu offers repairs), with one of the fixers in its number (one
+-- more when it is the same kind as the item) and its skills, and the item
+-- every fixer needs, if any. Fixers that are used up bit by bit (tape) are
+-- counted as items.
+local function canFix(fix, counts, damaged, player)
+    if fix.global and not has(counts, fix.global.fullType, fix.global.count) then return false end
+    for _, itemType in ipairs(fix.requiredTypes) do
+        if has(damaged, itemType) then
             for _, fixer in ipairs(fix.fixers) do
-                local needed = fixer.count + (fixer.script:getFullName() == item:getFullName() and 1 or 0)
+                local needed = fixer.count + (fixer.fullType == itemType and 1 or 0)
                 local skilled = true
                 for _, skill in ipairs(fixer.skills) do
                     if skill.perk and player:getPerkLevel(skill.perk) < skill.level then skilled = false end
                 end
-                if skilled and has(counts, fixer.script, needed) then return true end
+                if skilled and has(counts, fixer.fullType, needed) then return true end
             end
         end
     end
     return false
 end
 
-local function addCookingAndFixes(made, counts, player)
+local function addCookingAndFixes(made, counts, damaged, player)
     local index = recipeIndex.get()
     if not index then return end
     for _, group in ipairs(index.cooking) do
         if canCook(group, counts) then made[group.key] = true end
     end
     for _, fix in ipairs(index.fixes) do
-        if canFix(fix, counts, player) then made[fix.key] = true end
+        if canFix(fix, counts, damaged, player) then made[fix.key] = true end
     end
+end
+
+-- [fullType] = true for every item some repair repairs, from the index.
+local repairable = nil
+local repairableOf = nil
+local function repairableTypes(index)
+    if repairableOf ~= index then
+        repairable = {}
+        repairableOf = index
+        for _, fix in ipairs(index and index.fixes or {}) do
+            for _, itemType in ipairs(fix.requiredTypes) do
+                repairable[itemType] = true
+            end
+        end
+    end
+    return repairable
 end
 
 -- { [recipe key] = true } for the recipes the player can make now, or nil
@@ -169,27 +187,36 @@ function canMake.check(playerNum, fresh)
     addMade(made, state.buildLogic, ScriptManager.instance:getAllBuildableRecipes())
     state.made = made
     state.counts = nil
-    addCookingAndFixes(made, canMake.counts(playerNum), player)
+    local counts, damaged = canMake.counts(playerNum)
+    addCookingAndFixes(made, counts, damaged, player)
     return made, true
 end
 
 -- { [fullType] = count } of the items at hand: the same items the check
 -- looks at (each container's own items, as the game's crafting does), as of
 -- the last check. Counted once after each check that found a change.
+-- Second result: the same for the items some repair repairs that are damaged
+-- and not broken (what vanilla offers to repair).
 function canMake.counts(playerNum)
     local state = states[playerNum]
-    if not state or not state.containers then return {} end
+    if not state or not state.containers then return {}, {} end
     if not state.counts then
-        local counts = {}
+        local counts, damaged = {}, {}
+        local repairs = repairableTypes(recipeIndex.get())
         local containers = state.containers
         for i = 0, containers:size() - 1 do
             local items = containers:get(i):getItems()
             for j = 0, items:size() - 1 do
-                local fullType = items:get(j):getFullType()
+                local item = items:get(j)
+                local fullType = item:getFullType()
                 counts[fullType] = (counts[fullType] or 0) + 1
+                if repairs[fullType] and not item:isBroken() and item:getCondition() < item:getConditionMax() then
+                    damaged[fullType] = (damaged[fullType] or 0) + 1
+                end
             end
         end
         state.counts = counts
+        state.damaged = damaged
     end
-    return state.counts
+    return state.counts, state.damaged
 end

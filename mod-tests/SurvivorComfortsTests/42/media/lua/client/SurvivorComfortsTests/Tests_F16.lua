@@ -427,10 +427,13 @@ T.add("F16: cooking and repairs can be done now with what is at hand", function(
         local fixer = fix.fixers[1]
         if fixer and #fixer.skills == 0 and not fix.global and fixer.count <= 3 then
             local item = fix.required[1]:getFullName()
-            H.giveItems(t, player, item, 1)
+            local given = H.giveItems(t, player, item, 1)[1]
             local extra = fixer.script:getFullName() == item and 1 or 0
             H.giveItems(t, player, fixer.script:getFullName(), fixer.count + extra)
-            t:ok(canMake.check(0)[fix.key], "can repair now: " .. fix.key)
+            -- As vanilla's menu: only a damaged item that is not broken.
+            t:ok(not canMake.check(0, true)[fix.key], "not damaged: cannot repair (" .. fix.key .. ")")
+            given:setCondition(given:getConditionMax() - 1)
+            t:ok(canMake.check(0, true)[fix.key], "damaged: can repair now (" .. fix.key .. ")")
             return
         end
     end
@@ -542,7 +545,8 @@ T.add("F16: can make now: a simple recipe becomes possible with its materials", 
     -- now, also together with a filter.
     for _, filter in ipairs(f16.FILTERS) do
         for _, entry in ipairs(f16.findItems(index, nil, filter, made)) do
-            if not f16.canMakeNow(entry, made) then return t:fail("cannot be made now: " .. entry.fullType) end
+            local canDo = filter.canDo and filter.canDo(entry, made) or f16.canMakeNow(entry, made)
+            if not canDo then return t:fail("cannot be done now: " .. entry.fullType) end
             if not filter.keep(entry) then return t:fail("not in its filter: " .. entry.fullType) end
         end
     end

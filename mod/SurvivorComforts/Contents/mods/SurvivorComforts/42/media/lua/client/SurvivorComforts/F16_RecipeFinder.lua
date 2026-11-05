@@ -67,6 +67,15 @@ local function canMakeNow(entry, made, showHidden)
     return false
 end
 
+-- Some cooking group that makes the entry can be done now.
+local function canCookNow(entry, made, showHidden)
+    if not made then return false end
+    for _, group in ipairs(cookedOf(entry, showHidden)) do
+        if made[group.key] then return true end
+    end
+    return false
+end
+
 -- Some repair of the entry can be done now.
 local function canFixNow(entry, made)
     if not made then return false end
@@ -83,13 +92,14 @@ end
 -- axis: the "can make" tick box, used together with these.
 -- Cooking and repair (stage 3) may overlap the others: an item can be
 -- crafted and cooked, and repaired too. "Cannot be made" is neither crafted
--- nor cooked. With "can make", "repair" means what can be repaired now
--- (canDo); the others, what can be made now.
+-- nor cooked. With "can make", "cooking" means what can be cooked now and
+-- "repair" what can be repaired now (canDo); the others, what can be made
+-- now in any way.
 local FILTERS = {
     { text = "UI_SurvivorComforts_F16_Filter_All", keep = function(entry) return true end },
     { text = "IGUI_CraftingWindow_Craft", keep = function(entry) return not entry.building and #entry.made > 0 end },
     { text = "IGUI_CraftingWindow_Build", keep = function(entry) return entry.building == true end },
-    { text = "UI_SurvivorComforts_F16_Filter_Cook", keep = function(entry, showHidden) return #cookedOf(entry, showHidden) > 0 end },
+    { text = "UI_SurvivorComforts_F16_Filter_Cook", keep = function(entry, showHidden) return #cookedOf(entry, showHidden) > 0 end, canDo = canCookNow },
     { text = "UI_SurvivorComforts_F16_Filter_Repair", keep = function(entry) return #(entry.fixes or {}) > 0 end, canDo = canFixNow },
     { text = "UI_SurvivorComforts_F16_Filter_Uncraftable", keep = function(entry, showHidden)
         return not entry.building and #entry.made == 0 and #cookedOf(entry, showHidden) == 0
@@ -138,7 +148,7 @@ local function findItems(index, words, filter, made, dim, showHidden)
             local canDo = false
             if made then
                 if filter.canDo then
-                    canDo = filter.canDo(entry, made)
+                    canDo = filter.canDo(entry, made, showHidden)
                 else
                     canDo = canMakeNow(entry, made, showHidden)
                 end
@@ -783,7 +793,9 @@ function SurvivorComforts_RecipeFinderWindow:updateCanMake()
         end
     end
     if self.made and not recipeCanMake.isDirty(self.playerNum) then return end
-    if self.made and now - (self.checkedAt or 0) < RECHECK_GAP then return end
+    -- The gap holds even when the last check failed (no result): it is not
+    -- tried again every frame.
+    if self.checkedAt and now - self.checkedAt < RECHECK_GAP then return end
     self:checkCanMake()
 end
 
