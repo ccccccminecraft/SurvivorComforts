@@ -4,6 +4,7 @@
 require "SurvivorComfortsTests/Runner"
 require "SurvivorComfortsTests/Helpers"
 require "SurvivorComforts/Skills"
+require "SurvivorComforts/PlayerName"
 require "SurvivorComforts/F17_SkillTop"
 
 local T = SurvivorComfortsTests
@@ -76,4 +77,34 @@ T.add("Skills: skillGroups has every skill once, in the skill screen's order", f
     t:equal(count, all, "every skill")
     local onlyCooking = SurvivorComforts.skillGroups(function(perk) return perk:getId() == "Cooking" end)
     t:equal(#onlyCooking, 1, "include leaves the others out")
+end)
+
+-- Multiplayer (stage C): the real server's answer. In single player the test
+-- is skipped (t:skip comes with the multiplayer tests; before that it just
+-- ends without checks).
+T.add("MP F17: the server sends the skills of everyone online, mine as my game has them", function(t)
+    if not isClient() then
+        if t.skip then return t:skip("multiplayer only") end
+        return
+    end
+    local player = H.player(t)
+    if not player then return end
+    local got = {}
+    local function onServerCommand(module, command, args)
+        if module == "SurvivorComforts" and command == "skillTop" then table.insert(got, args or {}) end
+    end
+    Events.OnServerCommand.Add(onServerCommand)
+    t:cleanup(function() Events.OnServerCommand.Remove(onServerCommand) end)
+    SurvivorComforts.sendCommand("skillTopRequest", {})
+    t:waitFor(function() return #got > 0 end, 5000, function(t2)
+        local players = got[1].players
+        if not t2:ok(type(players) == "table", "players sent") then return end
+        local online = getOnlinePlayers()
+        t2:equal(SurvivorComforts.internals.F17.countPlayers(players), online and online:size() or 0, "everyone online")
+        local mine = players[SurvivorComforts.playerName(player)]
+        if not t2:ok(type(mine) == "table", "my skills sent") then return end
+        for perk, level in pairs(SurvivorComforts.collectSkills(player)) do
+            t2:equal(mine[perk], level, perk)
+        end
+    end)
 end)
