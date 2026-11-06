@@ -43,7 +43,10 @@ T.add("F17: broken entries are left out", function(t)
     t:equal(table.concat(tops.Cooking.names, ","), "good")
     t:equal(F17.countPlayers(players), 2, "good and badLevel")
     t:equal(F17.countPlayers(nil), 0)
-    t:ok(next(F17.computeTops(nil)) == nil, "no answer, no tops")
+    -- (the game's Lua has no next())
+    local empty = true
+    for _ in pairs(F17.computeTops(nil)) do empty = false end
+    t:ok(empty, "no answer, no tops")
 end)
 
 -- The order F15 and F17 share (Skills.lua): the passive category first.
