@@ -64,7 +64,7 @@ T.add("Window: nothing opens while the feature is off (F08)", function(t)
 end)
 
 T.add("Window: the multiplayer windows do not open in single player (F09, F15)", function(t)
-    if isClient() then return t:fail("single player only") end
+    if isClient() then return t:skip("single player only") end
     H.player(t)
     for _, id in ipairs({ "F09", "F15" }) do
         local windows = windowsOf(t, id)

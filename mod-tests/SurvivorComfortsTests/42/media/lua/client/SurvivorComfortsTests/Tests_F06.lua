@@ -14,7 +14,7 @@ local function F06() return SurvivorComforts.internals.F06 end
 
 local function server(t)
     local s = SurvivorComforts.internals.F06Server
-    if not s then t:fail("single player only (the server's Lua is not in this game)") end
+    if not s then t:skip("single player only (the server's Lua is not in this game)") end
     return s
 end
 
@@ -83,6 +83,7 @@ end)
 T.add("F06: colours for my list, the shared list and both", function(t)
     local player = H.player(t)
     local s = server(t)
+    if not s then return end
     local f = F06()
     H.setOption(t, "F06_shared", true)
     keepMyList(t)
@@ -105,6 +106,7 @@ end)
 T.add("F06: my order and share count follow the lists", function(t)
     local player = H.player(t)
     local s = server(t)
+    if not s then return end
     local f = F06()
     H.setOption(t, "F06_shared", true)
     keepMyList(t)
@@ -124,6 +126,7 @@ end)
 ---------------------------------------------------------------------------
 T.add("F06 server: one share per player, unknown items refused", function(t)
     local s = server(t)
+    if not s then return end
     keepSharedList(t, s)
     local a = H.fakePlayer("shareA")
     s.getData().items["Base.Hammer"] = nil
@@ -136,6 +139,7 @@ end)
 
 T.add("F06 server: 30 kinds per player", function(t)
     local s = server(t)
+    if not s then return end
     keepSharedList(t, s)
     s.getData().items = {}
     local a = H.fakePlayer("limitA")
@@ -151,6 +155,7 @@ end)
 
 T.add("F06 server: 300 kinds in all", function(t)
     local s = server(t)
+    if not s then return end
     keepSharedList(t, s)
     s.getData().items = {}
     local types = H.itemTypes(s.MAX_ITEMS + 10)
@@ -168,6 +173,7 @@ end)
 
 T.add("F06 server: unsharing takes off only your own share", function(t)
     local s = server(t)
+    if not s then return end
     keepSharedList(t, s)
     local a, b = H.fakePlayer("unshareA"), H.fakePlayer("unshareB")
     s.getData().items["Base.Hammer"] = nil
@@ -182,6 +188,7 @@ end)
 
 T.add("F06 server: an admin takes an item off for everyone", function(t)
     local s = server(t)
+    if not s then return end
     keepSharedList(t, s)
     s.getData().items["Base.Hammer"] = nil
     s.handlers.wishlistShare(H.fakePlayer("adminA"), { fullType = "Base.Hammer" })
@@ -193,6 +200,7 @@ end)
 
 T.add("F06 server: old data (one sharer in 'by') becomes a list of sharers", function(t)
     local s = server(t)
+    if not s then return end
     keepSharedList(t, s)
     s.getData().items["Base.Hammer"] = { by = "oldPlayer", order = 7 }
     local entry = s.getData().items["Base.Hammer"]

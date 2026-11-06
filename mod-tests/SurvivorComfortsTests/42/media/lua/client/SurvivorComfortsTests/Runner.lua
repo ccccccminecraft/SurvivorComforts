@@ -16,7 +16,12 @@
 -- unit tests (Panel.lua) and to console.txt:
 --   [SurvivorComfortsTests] PASS <name> (<ms> ms)
 --   [SurvivorComfortsTests] FAIL <name>: <reason>
---   [SurvivorComfortsTests] done: <n> passed, <n> failed
+--   [SurvivorComfortsTests] SKIP <name>: <reason>
+--   [SurvivorComfortsTests] done: <n> passed, <n> failed, <n> skipped
+--
+-- A test that cannot run in this kind of game (single player or
+-- multiplayer) calls `return t:skip("single player only")`; it is neither
+-- passed nor failed.
 --
 -- No Japanese in this file: the game's Lua breaks Japanese written straight
 -- into the source (see Search.lua in the mod).
@@ -28,7 +33,7 @@ local LOG = "[SurvivorComfortsTests] "
 local DEFAULT_TIMEOUT_MS = 5000
 
 local tests = {}   -- [name] = fn(t)
-T.results = {}     -- [name] = { status = "running" | "pass" | "fail", message, ms }
+T.results = {}     -- [name] = { status = "running" | "pass" | "fail" | "skip", message, ms }
 T.listeners = {}   -- called after every change of a result
 
 function T.add(name, fn)
@@ -88,6 +93,14 @@ function Context:equal(actual, expected, message)
     return true
 end
 
+-- The test does not apply to this game (single player or multiplayer): it
+-- ends as skipped, unless a check already failed. Returns false, for
+-- `return t:skip(...)`.
+function Context:skip(reason)
+    self.skipped = reason or "skipped"
+    return false
+end
+
 -- fn() runs when the test ends, passed or not (newest first): for putting
 -- back options, items and data the test changed.
 function Context:cleanup(fn)
@@ -114,7 +127,7 @@ end
 ---------------------------------------------------------------------------
 local queue = nil    -- names still to run, or nil when nothing runs
 local current = nil  -- { name, context, started }
-local passed, failed = 0, 0
+local passed, failed, skipped = 0, 0, 0
 
 local function finish(status, message)
     local cleanups = current.context.cleanups or {}
@@ -129,6 +142,9 @@ local function finish(status, message)
     if status == "pass" then
         passed = passed + 1
         print(LOG .. "PASS " .. current.name .. " (" .. ms .. " ms)")
+    elseif status == "skip" then
+        skipped = skipped + 1
+        print(LOG .. "SKIP " .. current.name .. ": " .. tostring(message))
     else
         failed = failed + 1
         print(LOG .. "FAIL " .. current.name .. ": " .. tostring(message))
@@ -152,6 +168,8 @@ local function start(name)
         finish("fail", errorText(err))
     elseif context.failure then
         finish("fail", context.failure)
+    elseif context.skipped then
+        finish("skip", context.skipped)
     elseif not context.waiting then
         finish("pass")
     end
@@ -175,6 +193,10 @@ local function poll()
                 finish("fail", context.failure)
                 return
             end
+            if context.skipped then
+                finish("skip", context.skipped)
+                return
+            end
             if context.waiting then return end
         end
         finish("pass")
@@ -188,7 +210,7 @@ local onTick
 local function done()
     queue = nil
     Events.OnTick.Remove(onTick)
-    print(LOG .. "done: " .. passed .. " passed, " .. failed .. " failed")
+    print(LOG .. "done: " .. passed .. " passed, " .. failed .. " failed, " .. skipped .. " skipped")
     notify()
 end
 
@@ -212,7 +234,7 @@ function T.run(names)
         table.insert(queue, name)
         T.results[name] = nil
     end
-    passed, failed = 0, 0
+    passed, failed, skipped = 0, 0, 0
     print(LOG .. "running " .. #queue .. " test(s)")
     Events.OnTick.Add(onTick)
     notify()
@@ -238,7 +260,7 @@ function T.isRunning()
     return queue ~= nil
 end
 
--- passed, failed in the last run.
+-- passed, failed, skipped in the last run.
 function T.counts()
-    return passed, failed
+    return passed, failed, skipped
 end
