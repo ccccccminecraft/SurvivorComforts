@@ -49,11 +49,20 @@ T.add("F17: broken entries are left out", function(t)
     t:ok(empty, "no answer, no tops")
 end)
 
--- The order F15 and F17 share (Skills.lua): the passive category first.
-T.add("Skills: skillGroups has every skill once, the passive category first", function(t)
+-- The order F15 and F17 share (Skills.lua): the same as the game's skill
+-- screen (ISCharacterInfo). The category perks themselves are not passive
+-- (only the skills in it are), so this is the order by name in practice.
+T.add("Skills: skillGroups has every skill once, in the skill screen's order", function(t)
     local groups = SurvivorComforts.skillGroups()
     if not t:ok(#groups > 1, "several categories") then return end
-    t:equal(groups[1].perk:isPassiv(), true, "passive first")
+    local function before(a, b)
+        if a:isPassiv() and not b:isPassiv() then return true end
+        if b:isPassiv() and not a:isPassiv() then return false end
+        return not string.sort(a:getName(), b:getName())
+    end
+    for i = 2, #groups do
+        t:ok(not before(groups[i].perk, groups[i - 1].perk), groups[i].name .. " after " .. groups[i - 1].name)
+    end
     local seen, count = {}, 0
     for _, group in ipairs(groups) do
         for _, row in ipairs(group.rows) do
