@@ -200,3 +200,27 @@ T.add("F06 server: old data (one sharer in 'by') becomes a list of sharers", fun
     t:equal(entry.sharers.oldPlayer, 7, "the old sharer keeps the order")
     t:equal(entry.by, nil, "'by' is gone")
 end)
+
+-- Joining a server, the request for the shared list at game start may not
+-- get through: it is sent again until a list arrives (2026-11-06).
+T.add("F06: the shared list is asked for again until it arrives", function(t)
+    H.player(t)
+    local f = F06()
+    -- Afterwards: ask for the real list again (in single player it comes back
+    -- from this game's server side).
+    t:cleanup(function() SurvivorComforts.sendCommand("wishlistRequest", {}) end)
+    f.startAsking()
+    local state = f.asking()
+    t:equal(state.received, false, "nothing received yet")
+    t:equal(state.retrying, true, "asking on each tick")
+    f.retryTick()
+    state = f.asking()
+    t:equal(state.tries, 1, "one try")
+    t:ok(state.requestedAt ~= nil, "sent (the player exists)")
+    -- A list arrives: no more retries.
+    triggerEvent("OnServerCommand", "SurvivorComforts", "wishlist", { items = {} })
+    t:equal(f.asking().received, true, "received")
+    f.retryTick()
+    t:equal(f.asking().retrying, false, "stopped asking")
+    t:equal(f.asking().tries, 1, "no more tries")
+end)
