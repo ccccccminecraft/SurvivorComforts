@@ -38,6 +38,8 @@ local points = {}
 -- direction from (0, 0) to (dx, dy).
 local function directionKey(dx, dy)
     local angle = math.deg(math.atan2(-dy, dx)) -- 0 = east, 90 = north
+    -- 0 to 360: the game's Lua keeps the sign in %, so -1 % 8 is -1 there, not 7
+    if angle < 0 then angle = angle + 360 end
     local index = math.floor((angle + 22.5) / 45) % 8
     return DIRECTIONS[index + 1]
 end
