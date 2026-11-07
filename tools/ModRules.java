@@ -19,6 +19,9 @@ import java.util.stream.Stream;
 /**
  * Checks the mod for mistakes the Lua compiler does not catch:
  *
+ *   - translation files: every Translate/<language>/UI.json is valid JSON, read
+ *     with the same JSON library the game uses (org.json, in the game jar).
+ *     The game stops while starting up on a broken one.
  *   - translation keys: every Translate/<language>/UI.json has the same keys,
  *     no key twice, and every "UI_SurvivorComforts_..." key the code uses is
  *     there. Keys no code uses are only warned about; a key built from parts
@@ -108,6 +111,24 @@ public class ModRules {
     // ------------------------------------------------------------------
     // Translation keys
     // ------------------------------------------------------------------
+    // Reads the file as the game does (org.json.JSONObject, by reflection).
+    private static void checkJson(Path root, Path file) throws Exception {
+        String text = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+        if (!text.isEmpty() && text.charAt(0) == 0xFEFF) text = text.substring(1);
+        Class<?> jsonObject;
+        try {
+            jsonObject = Class.forName("org.json.JSONObject");
+        } catch (ClassNotFoundException e) {
+            warn("org.json is not in the game jar; " + root.relativize(file) + " was not read as JSON");
+            return;
+        }
+        try {
+            jsonObject.getConstructor(String.class).newInstance(text);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            error(root.relativize(file) + ": not valid JSON (the game would stop while starting up): " + e.getCause().getMessage());
+        }
+    }
+
     private static void checkTranslations(Path root, List<Path> translations, Map<Path, String> sources) throws Exception {
         if (translations.isEmpty()) {
             error("no Translate/<language>/UI.json found");
@@ -116,6 +137,7 @@ public class ModRules {
         Map<Path, Set<String>> keysByFile = new LinkedHashMap<>();
         Set<String> allKeys = new TreeSet<>();
         for (Path file : translations) {
+            checkJson(root, file);
             Set<String> keys = new HashSet<>();
             List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
             for (int i = 0; i < lines.size(); i++) {

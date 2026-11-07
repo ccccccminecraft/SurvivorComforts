@@ -24,6 +24,7 @@ require "ISUI/ISTabPanel"
 require "ISUI/ISInventoryPane"
 require "ISUI/ISInventoryPaneContextMenu"
 require "SurvivorComforts/Recipes"
+require "SurvivorComforts/RecipeIndex"
 require "SurvivorComforts/CraftMenu"
 
 local FEATURE_ID = "F06"
@@ -326,7 +327,59 @@ local function byOrder(a, b)
     return (tonumber(a.order) or 0) < (tonumber(b.order) or 0)
 end
 
+---------------------------------------------------------------------------
+-- Asking the server for the shared list. Joining a server, the request at
+-- game start may not get through (the player may not exist yet), so it is
+-- sent again every RETRY_MS until a list arrives, at most MAX_TRIES times;
+-- and again each time the window opens (at most once every REASK_MS).
+---------------------------------------------------------------------------
+local RETRY_MS = 5000
+local MAX_TRIES = 12
+local REASK_MS = 2000
+
+local listReceived = false
+local tries = 0
+local requestedAt = nil
+local retrying = false
+
+local function requestShared()
+    if sendCommand("wishlistRequest", {}) then
+        requestedAt = getTimestampMs()
+        return true
+    end
+    return false
+end
+
+local function retryTick()
+    if listReceived or tries >= MAX_TRIES then
+        Events.OnTick.Remove(retryTick)
+        retrying = false
+        return
+    end
+    if requestedAt and getTimestampMs() - requestedAt < RETRY_MS then return end
+    tries = tries + 1
+    -- Not sent (no player yet): wait the same gap before the next try.
+    if not requestShared() then requestedAt = getTimestampMs() end
+end
+
+local function startAsking()
+    listReceived = false
+    tries = 0
+    requestedAt = nil
+    if not retrying then
+        retrying = true
+        Events.OnTick.Add(retryTick)
+    end
+end
+
+-- The window opened: ask again (the list may be old or never have come).
+local function askAgain()
+    if requestedAt and getTimestampMs() - requestedAt < REASK_MS then return end
+    requestShared()
+end
+
 SurvivorComforts.onServerCommand(FEATURE_ID, "wishlist", function(args)
+    listReceived = true
     -- Lists lose their order on the way, so sort by the order the server keeps.
     local received = {}
     for _, entry in pairs(args.items or {}) do
@@ -358,7 +411,12 @@ SurvivorComforts.onServerCommand(FEATURE_ID, "wishlist", function(args)
 end)
 
 local function onGameStart()
-    sendCommand("wishlistRequest", {})
+    startAsking()
+end
+
+-- The first local player is made (on a server, possibly after game start).
+local function onCreatePlayer(playerNum)
+    if playerNum == 0 and not listReceived then startAsking() end
 end
 
 -- The lines for one item on my list: share or unshare (with the shared list
@@ -654,7 +712,10 @@ local windows = SurvivorComforts.addWindow({
     layout = LAYOUT_NAME,
     x = 150, y = 150, width = 260, height = 320,
     sidebar = { order = 2, icon = "Wishlist" },
-    onOpen = function(window) window:refresh() end,
+    onOpen = function(window)
+        window:refresh()
+        SurvivorComforts.safeCall(FEATURE_ID, askAgain)
+    end,
 })
 
 refreshWindows = function()
@@ -750,6 +811,7 @@ SurvivorComforts.addCraftMenuProvider({
 
 Events.OnFillInventoryObjectContextMenu.Add(onFillContextMenu)
 Events.OnGameStart.Add(onGameStart)
+Events.OnCreatePlayer.Add(onCreatePlayer)
 
 -- For the tests (Core.lua).
 SurvivorComforts.internals.F06 = {
@@ -768,4 +830,8 @@ SurvivorComforts.internals.F06 = {
     getColorMap = getColorMap,
     colors = { personal = PERSONAL_COLOR, shared = SHARED_COLOR, both = BOTH_COLOR },
     MAX_PERSONAL = MAX_PERSONAL,
+    startAsking = startAsking,
+    retryTick = retryTick,
+    askAgain = askAgain,
+    asking = function() return { received = listReceived, tries = tries, requestedAt = requestedAt, retrying = retrying } end,
 }

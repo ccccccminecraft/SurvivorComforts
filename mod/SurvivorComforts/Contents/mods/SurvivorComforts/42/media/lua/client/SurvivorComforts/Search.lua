@@ -117,6 +117,9 @@ end
 -- (search.normalize): in the inventory, items of one kind can have different
 -- names (a named bag, for example).
 local englishParts = { recipes = {}, items = {} }
+-- The whole text (English + the current name) last made for each key, with
+-- the name it was made with: [kind][key] = { loc, text }.
+local combined = { recipes = {}, items = {} }
 
 -- english = search.useEnglish(). One search compares thousands of names, so
 -- callers check it once per search and pass it; nil checks it here.
@@ -124,12 +127,16 @@ local function nameText(kind, key, localName, english)
     local loc = search.normalize(localName or "")
     if english == nil then english = search.useEnglish() end
     if not english then return loc end
+    local kept = combined[kind][key]
+    if kept and kept.loc == loc then return kept.text end
     local eng = englishParts[kind][key]
     if not eng then
         eng = string.lower(englishTable(kind)[key] or "") .. " " .. splitId(key)
         englishParts[kind][key] = eng
     end
-    return eng .. " " .. loc
+    local text = eng .. " " .. loc
+    combined[kind][key] = { loc = loc, text = text }
+    return text
 end
 
 -- fullType = "Base.Nails"; localName = the name in the current language

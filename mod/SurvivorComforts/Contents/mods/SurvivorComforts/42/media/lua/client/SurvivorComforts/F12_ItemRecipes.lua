@@ -5,6 +5,7 @@
 
 require "SurvivorComforts/Core"
 require "SurvivorComforts/Recipes"
+require "SurvivorComforts/RecipeIndex"
 require "ISUI/ISInventoryPane"
 
 local FEATURE_ID = "F12"

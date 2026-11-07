@@ -7,6 +7,7 @@ require "SurvivorComfortsTests/Runner"
 require "SurvivorComfortsTests/Helpers"
 require "SurvivorComforts/Window"
 require "SurvivorComforts/Recipes"
+require "SurvivorComforts/RecipeIndex"
 require "SurvivorComforts/Search"
 
 local T = SurvivorComfortsTests
@@ -63,7 +64,7 @@ T.add("Window: nothing opens while the feature is off (F08)", function(t)
 end)
 
 T.add("Window: the multiplayer windows do not open in single player (F09, F15)", function(t)
-    if isClient() then return t:fail("single player only") end
+    if isClient() then return t:skip("single player only") end
     H.player(t)
     for _, id in ipairs({ "F09", "F15" }) do
         local windows = windowsOf(t, id)
@@ -81,11 +82,11 @@ local function sidebarButtons(t)
     return sidebar.survivorComforts.buttons
 end
 
-T.add("Sidebar: the buttons are in the order F08, F06, F09", function(t)
+T.add("Sidebar: the buttons are in the order F08, F06, F09, F16", function(t)
     H.player(t)
     local ids = {}
     for _, entry in ipairs(sidebarButtons(t)) do table.insert(ids, entry.def.id) end
-    t:equal(table.concat(ids, ","), "F08,F06,F09")
+    t:equal(table.concat(ids, ","), "F08,F06,F09,F16")
 end)
 
 T.add("Sidebar: a button hides when its option is off (F08)", function(t)
