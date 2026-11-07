@@ -5,7 +5,6 @@
 #   Wishlist (F06): a star
 #   Players  (F09): two people
 #   Recipes  (F16): a magnifying glass
-#   SkillTop (F17): a crown
 # Output: mod\...\42\media\ui\SurvivorComforts\<Name>_{On,Off}_<size>.png
 # Only needs to be re-run when the icon design changes.
 
@@ -88,22 +87,6 @@ function Draw-Recipes($g, $brush, $pen) {
     $g.DrawPath($pen, $ring)
 }
 
-function Draw-SkillTop($g, $brush, $pen) {
-    # Five points (the middle one highest) over a band.
-    $points = [System.Drawing.PointF[]]@(
-        [System.Drawing.PointF]::new(92, 300), [System.Drawing.PointF]::new(72, 110),
-        [System.Drawing.PointF]::new(170, 196), [System.Drawing.PointF]::new(256, 60),
-        [System.Drawing.PointF]::new(342, 196), [System.Drawing.PointF]::new(440, 110),
-        [System.Drawing.PointF]::new(420, 300))
-    $crown = New-Object System.Drawing.Drawing2D.GraphicsPath
-    $crown.AddPolygon($points)
-    $band = New-RoundedRect 84 290 344 ($BaseY - 290) 14
-    foreach ($path in $crown, $band) {
-        $g.FillPath($brush, $path)
-        $g.DrawPath($pen, $path)
-    }
-}
-
 function Draw-Icon($shape, $top, $bottom) {
     $bmp = New-Object System.Drawing.Bitmap $W, $H
     $g = [System.Drawing.Graphics]::FromImage($bmp)
@@ -122,7 +105,7 @@ $offBottom = [System.Drawing.Color]::FromArgb(90, 90, 90)
 $onTop = [System.Drawing.Color]::FromArgb(255, 222, 130)
 $onBottom = [System.Drawing.Color]::FromArgb(176, 112, 28)
 
-foreach ($icon in "Skills", "Wishlist", "Players", "Recipes", "SkillTop") {
+foreach ($icon in "Skills", "Wishlist", "Players", "Recipes") {
     $shape = Get-Command "Draw-$icon"
     $variants = @{
         Off = Draw-Icon $shape $offTop $offBottom
