@@ -72,16 +72,18 @@ function SurvivorComfortsTestsPanel:refresh()
             setLabel(label, "...", YELLOW)
         elseif result.status == "pass" then
             setLabel(label, getText("IGUI_UnitTests_Success") .. " (" .. result.ms .. " ms)", goodColor)
+        elseif result.status == "skip" then
+            setLabel(label, "skipped: " .. tostring(result.message), GREY)
         else
             setLabel(label, getText("IGUI_UnitTests_Fail") .. ": " .. tostring(result.message), badColor)
         end
     end
-    local passed, failed = T.counts()
+    local passed, failed, skipped = T.counts()
     local text = #T.names() .. " test(s)"
     if T.isRunning() then
         text = text .. " - running"
-    elseif passed + failed > 0 then
-        text = text .. " - last run: " .. passed .. " passed, " .. failed .. " failed"
+    elseif passed + failed + skipped > 0 then
+        text = text .. " - last run: " .. passed .. " passed, " .. failed .. " failed, " .. skipped .. " skipped"
     end
     setLabel(self.summary, text, (failed > 0) and badColor or { r = 1, g = 1, b = 1 })
 end
