@@ -30,6 +30,7 @@ local OPTION_GROUPS = {
     { features = { "F09", "F15", "F17" } },  -- player list, members' skills opened from it, the best at each skill (a tab in it)
     { title = "UI_SurvivorComforts_Group_Search", features = { "F02", "F14" } }, -- F14's option also covers F02
     { features = { "F04" } },                -- reading time
+    { features = { "F18" } },                -- distance to a point
     { title = "UI_SurvivorComforts_Group_Recipes", features = { "F16", "F12", "F03", "F07" } },
     { title = "UI_SurvivorComforts_Group_HideButtons", features = { "F10", "F13" } },
 }
