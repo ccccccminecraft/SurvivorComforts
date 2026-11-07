@@ -326,6 +326,11 @@ windows = SurvivorComforts.addWindow({
     -- Multiplayer only: no button in single player.
     isAvailable = function() return isClient() end,
     onOpen = function(window)
+        -- F17 may have been switched while the window was closed (prerender
+        -- only runs while it is shown)
+        if hasSkillTop() ~= window.withTabs then
+            window:arrange()
+        end
         window:refresh()
         -- Ask right away; the "x minutes ago" texts are also brought up to date.
         window.lastRequest = getTimestampMs()
