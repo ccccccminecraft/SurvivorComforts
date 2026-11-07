@@ -8,11 +8,15 @@
 -- (server/SurvivorComforts/F09_PlayerList.lua), asked when the window opens,
 -- then every minute while it is open. Multiplayer only; in single player
 -- there is no button.
+--
+-- While F17 (the best at each skill) is on, the window has two tabs: the
+-- players, and F17's list (client/SurvivorComforts/F17_SkillTop.lua).
 
 require "SurvivorComforts/Core"
 require "SurvivorComforts/Window"
 require "SurvivorComforts/Commands"
 require "ISUI/ISScrollingListBox"
+require "ISUI/ISTabPanel"
 
 local FEATURE_ID = "F09"
 local LAYOUT_NAME = "survivorcomforts.players"
@@ -180,8 +184,7 @@ SurvivorComforts_PlayerListWindow = SurvivorComforts_Window:derive("SurvivorComf
 
 function SurvivorComforts_PlayerListWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
-    local th = self:titleBarHeight()
-    local list = SurvivorComforts_PlayerListBox:new(0, th, self.width, 100)
+    local list = SurvivorComforts_PlayerListBox:new(0, self:titleBarHeight(), self.width, 100)
     list:initialise()
     list:instantiate()
     list.font = UIFont.Small
@@ -189,9 +192,77 @@ function SurvivorComforts_PlayerListWindow:createChildren()
     list.itemheight = list.fontHgt + 8
     list.drawBorder = true
     list:setOnMouseDownFunction(self, SurvivorComforts_PlayerListWindow.onClickRow)
-    self:addChild(list)
     self.list = list
+    self:arrange()
     self:refresh()
+end
+
+-- Whether F17's tab should be there.
+local function hasSkillTop()
+    return SurvivorComforts.skillTop ~= nil and SurvivorComforts.skillTop.isAvailable()
+end
+
+-- The players' list straight in the window, or, while F17 is on, two tabs:
+-- the players and the best at each skill. Done again when F17 is switched
+-- on or off (see prerender).
+function SurvivorComforts_PlayerListWindow:arrange()
+    local withTabs = hasSkillTop()
+    if self.tabs then
+        self.tabs:removeView(self.list)
+        if self.skillTop then
+            self.tabs:removeView(self.skillTop)
+            SurvivorComforts.skillTop.removeList(self.skillTop)
+            self.skillTop = nil
+        end
+        self:removeChild(self.tabs)
+        self.tabs = nil
+    elseif self.list.parent == self then
+        self:removeChild(self.list)
+    end
+    self.list:setVisible(true)
+    local th = self:titleBarHeight()
+    if withTabs then
+        local tabs = ISTabPanel:new(0, th, self.width, 100)
+        tabs:initialise()
+        tabs:setEqualTabWidth(false)
+        tabs.target = self
+        tabs.onActivateView = SurvivorComforts_PlayerListWindow.onTab
+        self:addChild(tabs)
+        tabs:addView(getText("UI_SurvivorComforts_F09_TabPlayers"), self.list)
+        self.skillTop = SurvivorComforts.skillTop.newList(self.width, 100)
+        tabs:addView(getText("UI_SurvivorComforts_F17_Tab"), self.skillTop)
+        self.tabs = tabs
+    else
+        self.list:setY(th)
+        self:addChild(self.list)
+    end
+    self.withTabs = withTabs
+    self:fitChildren()
+end
+
+function SurvivorComforts_PlayerListWindow:onTab(tabs)
+    if tabs:getActiveView() == self.skillTop then
+        self.skillTop:onShown()
+    end
+end
+
+-- Keep the lists (or the tabs) filling the window.
+function SurvivorComforts_PlayerListWindow:fitChildren()
+    local th = self:titleBarHeight()
+    local h = math.max(0, self.height - th - self:resizeWidgetHeight())
+    local w = self.width
+    local function fit(child, height)
+        if child:getWidth() ~= w then child:setWidth(w) end
+        if child:getHeight() ~= height then child:setHeight(height) end
+    end
+    if self.tabs then
+        fit(self.tabs, h)
+        local viewHeight = math.max(0, h - self.tabs.tabHeight)
+        fit(self.list, viewHeight)
+        fit(self.skillTop, viewHeight)
+    else
+        fit(self.list, h)
+    end
 end
 
 -- An online player opens their skills (F15, when it is on).
@@ -206,11 +277,10 @@ end
 function SurvivorComforts_PlayerListWindow:prerender()
     ISCollapsableWindow.prerender(self)
     if self.list then
-        local th = self:titleBarHeight()
-        local rh = self:resizeWidgetHeight()
-        local h = math.max(0, self.height - th - rh)
-        if self.list:getWidth() ~= self.width then self.list:setWidth(self.width) end
-        if self.list:getHeight() ~= h then self.list:setHeight(h) end
+        if hasSkillTop() ~= self.withTabs then
+            self:arrange()
+        end
+        self:fitChildren()
     end
     if allPending then
         requestAll()
@@ -256,6 +326,11 @@ windows = SurvivorComforts.addWindow({
     -- Multiplayer only: no button in single player.
     isAvailable = function() return isClient() end,
     onOpen = function(window)
+        -- F17 may have been switched while the window was closed (prerender
+        -- only runs while it is shown)
+        if hasSkillTop() ~= window.withTabs then
+            window:arrange()
+        end
         window:refresh()
         -- Ask right away; the "x minutes ago" texts are also brought up to date.
         window.lastRequest = getTimestampMs()
@@ -273,6 +348,7 @@ SurvivorComforts.internals.F09 = {
     offlineRows = offlineRows,
     requestAll = requestAll,
     isRequestPending = function() return allPending end,
+    hasSkillTop = hasSkillTop,
     HIDE_AFTER = HIDE_AFTER,
     REQUEST_GAP = REQUEST_GAP,
 }

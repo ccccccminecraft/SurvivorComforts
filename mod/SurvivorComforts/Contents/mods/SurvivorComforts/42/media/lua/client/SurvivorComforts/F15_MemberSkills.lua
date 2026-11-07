@@ -72,18 +72,6 @@ function SurvivorComforts_MemberSkillsList:render()
     end
 end
 
--- Same order as the game's skill screen (ISCharacterInfo): the passive
--- category first, then categories by name, and skills by name in each.
-local function sortCategories(a, b)
-    if a.perk:isPassiv() and not b.perk:isPassiv() then return true end
-    if b.perk:isPassiv() and not a.perk:isPassiv() then return false end
-    return not string.sort(a.name, b.name)
-end
-
-local function sortSkills(a, b)
-    return a.name < b.name
-end
-
 ---------------------------------------------------------------------------
 -- Window
 ---------------------------------------------------------------------------
@@ -134,25 +122,14 @@ function SurvivorComforts_MemberSkillsWindow:setSkills(username, skills)
     end
     self.message = nil
 
-    local groups, order = {}, {}
-    SurvivorComforts.forEachSkill(function(_, perk)
-        local level = tonumber(skills[perk:getId()])
-        if not level then return end
-        local parent = perk:getParent()
-        local key = parent:getId()
-        if not groups[key] then
-            local parentPerk = PerkFactory.getPerk(parent)
-            groups[key] = { perk = parentPerk, name = parentPerk:getName(), rows = {} }
-            table.insert(order, groups[key])
-        end
-        table.insert(groups[key].rows, { name = perk:getName(), level = level })
+    -- In the same order as the game's skill screen (Skills.lua).
+    local groups = SurvivorComforts.skillGroups(function(perk)
+        return tonumber(skills[perk:getId()]) ~= nil
     end)
-    table.sort(order, sortCategories)
-    for _, group in ipairs(order) do
-        table.sort(group.rows, sortSkills)
+    for _, group in ipairs(groups) do
         self.list:addItem(group.name, { header = true })
         for _, row in ipairs(group.rows) do
-            self.list:addItem(row.name, { level = row.level })
+            self.list:addItem(row.name, { level = tonumber(skills[row.perk:getId()]) })
         end
     end
 end
