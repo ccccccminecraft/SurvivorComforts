@@ -222,6 +222,13 @@ local function onCreatePlayer(playerNum, player)
     labels[playerNum] = label
 end
 
+-- Whether the reading time is drawn under the player now (F18 draws its
+-- distance one line lower then).
+function SurvivorComforts.isReadingTimeShown(playerNum)
+    local tracker = trackers[playerNum]
+    return tracker ~= nil and labelParts(tracker) ~= nil
+end
+
 Events.OnCreatePlayer.Add(onCreatePlayer)
 Events.OnPlayerUpdate.Add(onPlayerUpdate)
 
