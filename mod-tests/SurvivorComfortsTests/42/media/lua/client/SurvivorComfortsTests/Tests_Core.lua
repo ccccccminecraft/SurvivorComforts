@@ -5,6 +5,7 @@ require "SurvivorComfortsTests/Runner"
 require "SurvivorComfortsTests/Helpers"
 require "SurvivorComforts/Core"
 require "SurvivorComforts/Recipes"
+require "SurvivorComforts/RecipeIndex"
 require "SurvivorComforts/Commands"
 require "SurvivorComforts/Skills"
 require "SurvivorComforts/PlayerName"
@@ -13,7 +14,7 @@ require "SurvivorComforts/Admin"
 local T = SurvivorComfortsTests
 local H = T.helpers
 
-local FEATURES = { "F02", "F03", "F04", "F06", "F07", "F08", "F09", "F10", "F12", "F13", "F14", "F15" }
+local FEATURES = { "F02", "F03", "F04", "F06", "F07", "F08", "F09", "F10", "F12", "F13", "F14", "F15", "F16", "F17", "F18" }
 
 ---------------------------------------------------------------------------
 -- A: no world needed
@@ -89,7 +90,7 @@ T.add("PlayerName: the username, or else the display name", function(t)
 end)
 
 T.add("Admin: everyone is admin in single player", function(t)
-    if isClient() then return t:fail("single player only") end
+    if isClient() then return t:skip("single player only") end
     t:equal(SurvivorComforts.isAdmin(H.player(t)), true)
 end)
 
@@ -107,7 +108,7 @@ local function setUpPing()
 end
 
 T.add("Commands: a command reaches the server side and the answer comes back", function(t)
-    if isClient() then return t:fail("single player only (the test command is not on a real server)") end
+    if isClient() then return t:skip("single player only (the test command is not on a real server)") end
     H.player(t)
     setUpPing()
     pong = nil
@@ -118,7 +119,7 @@ T.add("Commands: a command reaches the server side and the answer comes back", f
 end)
 
 T.add("CommandLimit: five a second, then the rest are dropped", function(t)
-    if isClient() then return t:fail("single player only (the limit runs on the server)") end
+    if isClient() then return t:skip("single player only (the limit runs on the server)") end
     local player = H.fakePlayer("limitTester" .. getTimestampMs())
     for i = 1, 5 do
         t:equal(SurvivorComfortsServer.allowCommand(player, "Tests"), true, "command " .. i)

@@ -31,31 +31,7 @@ function SurvivorComforts.forEachRecipeItem(recipe, kind, fn)
     return false
 end
 
--- fullType -> true for every item some crafting recipe makes. Recipes do not
--- change while playing, so this is built once, on first use.
-local craftable = nil
-
-local function buildIndex()
-    craftable = {}
-    local recipes = ScriptManager.instance:getAllCraftRecipes()
-    for i = 0, recipes:size() - 1 do
-        SurvivorComforts.forEachRecipeItem(recipes:get(i), "outputs", function(item)
-            craftable[item:getFullName()] = true
-        end)
-    end
-end
-
-function SurvivorComforts.hasRecipe(fullType)
-    if not craftable then
-        local ok, err = pcall(buildIndex)
-        if not ok then
-            -- If the index cannot be built, offer the option anyway.
-            SurvivorComforts.log("recipe index failed: " .. tostring(err))
-            craftable = setmetatable({}, { __index = function() return true end })
-        end
-    end
-    return craftable[fullType] == true
-end
+-- Whether an item has a recipe (SurvivorComforts.hasRecipe) is in RecipeIndex.lua.
 
 -- [playerNum] = { state, ... }, oldest first
 local histories = {}

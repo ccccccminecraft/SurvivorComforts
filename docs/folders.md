@@ -16,13 +16,15 @@
 | --- | --- |
 | `feature-list.md` | 機能の一覧（遊ぶ人向け） |
 | `install.md`・`install-server.md` | 導入（一人で遊ぶ・サーバー） |
+| `item-finder.md` | アイテム検索（F16）の使い方（遊ぶ人向け） |
 | `development.md` | 開発手順（手元で試す） |
 | `testing.md` | テスト（テスト用の MOD と、ゲームの中で動かすテスト） |
 | `folders.md` | このページ |
 | `features.md` | 機能の一覧（予定や見送りも含む、開発の管理用）と、機能ごとの仕様（`features/`） |
 | `dev-guide.md` | 開発ガイド（詳しいフォルダ構成、試し方、アップロードなど） |
 | `workshop.md` | ワークショップのページの原稿と、更新内容 |
-| `review-日付.md` | 点検の結果（全体の点検、F02・F15 の点検） |
+| `workshop-alpha.md` | アルファ版（Survivor Comforts (Alpha)）のワークショップのページの原稿と、更新内容 |
+| `review-日付.md` | 点検の結果（全体の点検、F02・F15 の点検、不正な操作の点検） |
 | `research.md` | 調査メモ |
 
 MOD 本体の中のファイル（機能ごとの Lua ファイルなど）は、[dev-guide.md の「フォルダ構成」](dev-guide.md#フォルダ構成)にあります。

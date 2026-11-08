@@ -4,16 +4,17 @@
 
 ```
 SurvivorComforts\           リポジトリのルート（git clone した場所）
-├── LICENSE                   MIT ライセンス
+├── LICENSE                   MIT ライセンス（deploy.ps1 が MOD の中にも LICENSE.txt としてコピーする）
 ├── README.md                 MOD の紹介と、各ドキュメントへのリンク
 ├── docs\                     遊ぶ人向けのページ（feature-list.md、install.md、install-server.md）、開発手順（development.md）、テスト（testing.md）、フォルダ構成（folders.md）、調査メモ、機能一覧（features.md）、このガイド、点検の結果（review-日付.md）
 │   └── features\             機能ごとの要望・調査結果・仕様・確認項目（Fxx_名前.md）
 ├── tools\
 │   ├── check.ps1             Luaの構文チェック（ゲーム本体のコンパイラを使う）と、翻訳キー・ゲームのLuaにない関数の点検
-│   ├── deploy.ps1            ゲームから読める場所へMODをコピーする
+│   ├── deploy.ps1            開発用のフォルダ（%USERPROFILE%\PZDev\Workshop）へMODをコピーする（LICENSE も MOD の中へ LICENSE.txt として入れる）
+│   ├── dev_game.ps1          deploy.ps1 でコピーして、開発用のフォルダでゲームを Steam ありで起動する（試す・アップロード）
 │   ├── test_server.ps1       テスト用のサーバーとゲーム2つを Steam なしで起動する（1台で複数人を試す）
 │   ├── test_debug.ps1        ゲームをデバッグモードで Steam なしで起動する（アイテムを出して試す）
-│   ├── TestLaunch.ps1        test_server.ps1 と test_debug.ps1 の共通処理
+│   ├── TestLaunch.ps1        test_server.ps1・test_debug.ps1・dev_game.ps1 の共通処理
 │   ├── GameDir.ps1           ゲームのフォルダを探す共通処理
 │   ├── make_icons.ps1        左のアイコン用の画像（media\ui\SurvivorComforts）を作り直す
 │   ├── make_english_names.ps1 英語名の表（EnglishNames.lua）を作り直す。ゲームを更新したら実行する
@@ -31,10 +32,10 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
             ├── icon.png               ゲームのMOD一覧で名前の横に出すアイコン（64x64）
             └── media\lua\
                 ├── client\SurvivorComforts\
-                │   ├── Commands.lua       サーバーとのやり取り（画面側）。サーバーに送る、サーバーから届いたものを機能に渡す（F06・F09で共通）
+                │   ├── Commands.lua       サーバーとのやり取り（画面側）。サーバーに送る、サーバーから届いたものを機能に渡す（F06・F09・F15で共通）
                 │   ├── Core.lua           共通処理とMod Options
                 │   ├── EnglishNames.lua   英語名の表（F14。tools\make_english_names.ps1 で作る。手で直さない）
-                │   ├── CraftMenu.lua      制作・建築の画面の右クリックメニュー（F03・F06で共通）
+                │   ├── CraftMenu.lua      製作・建築の画面の右クリックメニュー（F03・F06・F16で共通）
                 │   ├── F02_InventorySearch.lua
                 │   ├── F03_RecipeTrail.lua
                 │   ├── F04_ReadingTime.lua
@@ -47,16 +48,19 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
                 │   ├── F12_ItemRecipes.lua
                 │   ├── F13_HideUserPanel.lua
                 │   ├── F14_EnglishSearch.lua
-                │   ├── Recipes.lua        「レシピを見る」の処理と「戻る」の履歴（F03・F06・F12で共通）。レシピの材料・完成品のアイテムを1つずつ調べる処理（制作の画面の右クリック・F14でも使う）
+                │   ├── F16_RecipeFinder.lua   アイテム検索のウィンドウ（F16）
+                │   ├── RecipeCanMake.lua  今作れるか・持っている数（F16。本体の製作の仕組みを使い回す）
+                │   ├── RecipeIndex.lua    レシピの索引（製作・建築・料理・修理。F16）と、作れるアイテムかの判定（F03・F06・F12・F16で共通）
+                │   ├── Recipes.lua        「レシピを見る」の処理と「戻る」の履歴（F03・F06・F12・F16で共通）。レシピの材料・完成品のアイテムを1つずつ調べる処理（製作の画面の右クリック・F14・F16でも使う）
                 │   ├── Search.lua         検索の決まり（語の区切り方、ひらがなとカタカナを区別しない、英語名・日本語名で比べる）。F14・F02で共通
-                │   ├── Sidebar.lua        画面左のアイコンにボタンを並べる。画面の下に近づいたら次の列へ。本体のボタンを隠して詰める（F06・F08・F09・F10・F13で共通）
-                │   └── Window.lua         機能のウィンドウの作り（プレイヤーごとに作る・開閉・閉じたら画面から外す・位置と大きさを覚える）と、それを開く画面左のボタン・キー・その2つの設定。F06・F08・F09で共通
+                │   ├── Sidebar.lua        画面左のアイコンにボタンを並べる。画面の下に近づいたら次の列へ。本体のボタンを隠して詰める（F06・F08・F09・F10・F13・F16で共通）
+                │   └── Window.lua         機能のウィンドウの作り（プレイヤーごとに作る・開閉・閉じたら画面から外す・位置と大きさを覚える）と、それを開く画面左のボタン・キー・その2つの設定。F06・F08・F09・F15・F16で共通
                 ├── server\SurvivorComforts\
-                │   ├── CommandLimit.lua        1人が送れるコマンドの回数の制限（F06・F09で共通）
+                │   ├── CommandLimit.lua        1人が送れるコマンドの回数の制限（F06・F09・F15で共通）
                 │   ├── F06_SharedWishlist.lua  みんなのウィッシュリストの保存と配信（サーバーで動く）
                 │   ├── F09_PlayerList.lua      最終ログインの記録と配信（サーバーで動く。シングルでは動かない）
                 │   ├── F15_MemberSkills.lua    頼まれたプレイヤーのスキルを読んで返す（サーバーで動く。シングルでは動かない）
-                │   └── ServerCommands.lua      サーバーとのやり取り（サーバー側）。届いたものを回数の制限を通して機能に渡す、送る（シングルプレイでは画面側に直接渡す）。F06・F09で共通
+                │   └── ServerCommands.lua      サーバーとのやり取り（サーバー側）。届いたものを回数の制限を通して機能に渡す、送る（シングルプレイでは画面側に直接渡す）。F06・F09・F15で共通
                 └── shared\
                     ├── SurvivorComforts\
                     │   ├── Admin.lua           管理者の判定（キックできる人）。画面側とサーバー側の両方で使う（F06・F13で共通）
@@ -98,15 +102,32 @@ SurvivorComforts\           リポジトリのルート（git clone した場所
      powershell -File tools\check.ps1 -GameDir "E:\Games\ProjectZomboid" -Javac "C:\jdk\bin\javac.exe"
      ```
      （環境変数なら `PZ_GAME_DIR` と `JAVAC`）
-2. ゲームから読める場所へコピー（`%USERPROFILE%\Zomboid\Workshop\SurvivorComforts`）
+2. 開発用のフォルダにコピーして、そのフォルダでゲームを起動する（[開発用のフォルダ](#開発用のフォルダ)）
    ```
-   powershell -File tools\deploy.ps1
+   powershell -File tools\dev_game.ps1
    ```
-3. ゲームを起動し、メインメニューの「MOD」で **Survivor Comforts** を有効にする。
-4. シングルプレイ（またはホストしたマルチプレイ）で確認する。
-   - エラーは `%USERPROFILE%\Zomboid\console.txt` に出る。`[SurvivorComforts]` で検索する。
-   - デバッグモード（起動オプション `-debug`）なら、ゲーム内でLuaを再読み込みできる。
-5. 機能ごとの確認項目は、[features/](features/) のその機能のファイルの「確認項目」にある。
+   - `deploy.ps1` で `%USERPROFILE%\PZDev\Workshop\SurvivorComforts` にコピーし、MOD を有効にした状態で、Steam ありでゲームを起動する
+   - コピーだけなら `powershell -File tools\deploy.ps1`
+3. シングルプレイ（またはホストしたマルチプレイ）で確認する。
+   - エラーは `%USERPROFILE%\PZDev\console.txt` に出る。`[SurvivorComforts]` で検索する。
+   - デバッグモード（`tools\dev_game.ps1 -Debug`）なら、ゲーム内でLuaを再読み込みできる。Steam なしのデバッグモードなら `tools\test_debug.ps1`（[デバッグモードで試す](#デバッグモードで試す)）
+4. 機能ごとの確認項目は、[features/](features/) のその機能のファイルの「確認項目」にある。
+
+## 開発用のフォルダ
+
+いつも遊ぶゲーム（`%USERPROFILE%\Zomboid`）と、開発（試す・ワークショップに上げる）のデータを分けている（2026-11-01）。
+
+| 使い道 | データのフォルダ | この MOD |
+| --- | --- | --- |
+| いつも遊ぶ（ほかのプレイヤーと同じ版） | `%USERPROFILE%\Zomboid` | Steam で購読したもの（ワークショップから自動で入る） |
+| 開発・ワークショップへのアップロード | `%USERPROFILE%\PZDev` | `deploy.ps1` でコピーしたもの（`PZDev\Workshop\SurvivorComforts`） |
+| テスト（Steam なし） | `%USERPROFILE%\PZTest` | `test_debug.ps1`・`test_server.ps1` でコピーしたもの |
+
+- 分けている理由：ゲームは同じ MOD ID が2か所にあると、最初に見つかった方を使う。探す順は「ワークショップ用のフォルダ（`<データのフォルダ>\Workshop`）→ Steam で購読したもの → `<データのフォルダ>\mods`」。前は `deploy.ps1` で `%USERPROFILE%\Zomboid\Workshop` にコピーしていたので、いつものゲームでも、Steam で購読した版ではなく、開発中の版が使われていた。マルチプレイでサーバーと版が違うと、入れなかったり、気づかないまま違う版で遊んだりする
+- `tools\dev_game.ps1` は、ゲームを Steam ありで `-cachedir=%USERPROFILE%\PZDev` を付けて起動する（Steam を起動しておく）。セーブ・オプション・ログ（`console.txt`）も `PZDev` に分かれる
+- ワークショップのアイテムの ID を書いた `workshop.txt` も、`PZDev\Workshop\SurvivorComforts` にある。消すと、次のアップロードで別のアイテムが新しく作られてしまう
+- `%USERPROFILE%\Zomboid\Workshop\SurvivorComforts` は使わない。そこに置くと、いつものゲームで開発中の版が使われてしまう
+- 開発用のフォルダは、環境変数 `PZ_DEV_DIR` で変えられる
 
 ## デバッグモードで試す
 
@@ -194,12 +215,12 @@ Project Zomboid のアップデートが来たら、次を行う。
 - Steamのアカウントで、Steamワークショップの利用規約に同意している必要がある（初めてのときはアップロード画面に案内が出る）。
 
 ### 初回のアップロード
-1. 最新の状態をゲームから読める場所へコピーする。
+1. 最新の状態を開発用のフォルダへコピーして、そのフォルダでゲームを起動する（[開発用のフォルダ](#開発用のフォルダ)。Steam を起動しておく）。
    ```
-   powershell -File tools\deploy.ps1
+   powershell -File tools\dev_game.ps1
    ```
-2. ゲームを起動し、メインメニュー →「WORKSHOP」→「アイテムの作成と更新」を選ぶ。
-3. 「アイテムのディレクトリを選択」で **SurvivorComforts** を選ぶ（`%USERPROFILE%\Zomboid\Workshop\` の中のフォルダが並ぶ）。
+2. メインメニュー →「WORKSHOP」→「アイテムの作成と更新」を選ぶ。
+3. 「アイテムのディレクトリを選択」で **SurvivorComforts** を選ぶ（`%USERPROFILE%\PZDev\Workshop\` の中のフォルダが並ぶ）。
 4. 「アイテム詳細を編集」で次を入力する。
    - タイトル：`Survivor Comforts`
    - 説明：機能の一覧（`docs/feature-list.md`）の内容を元に書く（後からSteamのページでも直せる）
@@ -208,7 +229,7 @@ Project Zomboid のアップデートが来たら、次を行う。
    - 画像プレビューに `preview.png` が表示されていることを確かめる
 5. 「新規もしくは既存のアイテムですか?」で「新規のWORKSHOPアイテムです」を選ぶ。
 6. 「アイテムの公開準備」で、必要なら「変更履歴の編集」に内容を書き、「Steam WORKSHOPにアップロード!」を押す。
-7. 終わると、ゲームが `%USERPROFILE%\Zomboid\Workshop\SurvivorComforts\workshop.txt` に **Workshop ID**（数字）を書き込む。
+7. 終わると、ゲームが `%USERPROFILE%\PZDev\Workshop\SurvivorComforts\workshop.txt` に **Workshop ID**（数字）を書き込む。
    - deploy.ps1 はこのファイルを上書きしない。消すと次回「新規」扱いになり、別のアイテムができてしまうので注意。
    - リポジトリには入れない（`.gitignore` 済み）。IDはメンバーに伝える。
 8. 「作成したアイテムをSteamオーバーレイで開く」でページを開き、公開範囲が「未掲載」になっていること、URL（`https://steamcommunity.com/sharedfiles/filedetails/?id=<Workshop ID>`）を確かめる。
@@ -216,9 +237,9 @@ Project Zomboid のアップデートが来たら、次を行う。
 ### 更新するとき
 アップロードは、`main` に切り替えてから行う（[ブランチとリリース](#ブランチとリリース)）。
 
-1. `git switch main` で `main` にし、`git pull` で最新にする。`tools\check.ps1` → `tools\deploy.ps1` を実行する。
-   - `deploy.ps1` は手元のファイルをそのままコピーするので、`dev` のままだと、公開していない途中の変更まで上がってしまう
-2. メインメニュー →「WORKSHOP」→「アイテムの作成と更新」→ SurvivorComforts を選ぶ。`workshop.txt` があるので、既存のアイテムの更新になる。
+1. `git switch main` で `main` にし、`git pull` で最新にする。`tools\check.ps1` → `tools\dev_game.ps1` を実行する（開発用のフォルダへコピーして、Steam ありでゲームを起動する）。
+   - `deploy.ps1`（`dev_game.ps1` の中で動く）は手元のファイルをそのままコピーするので、`dev` のままだと、公開していない途中の変更まで上がってしまう
+2. ゲームのメインメニュー →「WORKSHOP」→「アイテムの作成と更新」→ SurvivorComforts を選ぶ。`workshop.txt` があるので、既存のアイテムの更新になる。
 3. 「変更履歴の編集」に変更内容（`docs\workshop.md` の、その版のコードブロック）を貼ってアップロードする。
 4. サーバーは再起動すると新しい版をダウンロードする。プレイヤーも、接続時に新しい版が自動で入る。
    - `mod.info` の `modversion` を上げておくと、どの版か分かりやすい。
@@ -228,6 +249,38 @@ Project Zomboid のアップデートが来たら、次を行う。
    git push origin v0.5.0
    git switch dev
    ```
+
+### アルファ版
+
+開発中の機能を、選んだ人だけが先に試せるようにする版（2026-11-02 に決定）。Steam ワークショップには版の分け方（ベータ版など）がないので、別のアイテムとして上げる。
+
+| | 安定版 | アルファ版 |
+| --- | --- | --- |
+| 名前 | Survivor Comforts | Survivor Comforts (Alpha) |
+| Workshop ID | `3829529741` | `3832140066`（2026-11-02 に初めて公開） |
+| MOD ID | `SurvivorComforts` | `SurvivorComfortsAlpha` |
+| 開発用のフォルダ | `PZDev\Workshop\SurvivorComforts` | `PZDev\Workshop\SurvivorComfortsAlpha` |
+| 上げるブランチ | `main` | `dev`（この決まりの例外） |
+| ページの文 | [workshop.md](workshop.md) | [workshop-alpha.md](workshop-alpha.md) |
+
+- 中身は `dev` のそのままで、`deploy.ps1 -Alpha` がコピーするときに `mod.info` だけ書き換える（MOD ID、名前、版の後ろに `-alpha` と `dev` のコミット、「一緒に使えない MOD」に安定版）
+- 中身のファイルの場所（`media/lua/client/SurvivorComforts/...`）は安定版と同じなので、2つを同時に有効にすると壊れる。`mod.info` の `incompatible=` に互いの MOD ID を書いて、ゲームの MOD の画面で止める（安定版の `mod.info` にも書いた。安定版のページに出るのは、次の安定版から）
+- コードの中の MOD ID（`Core.lua` の `MOD_ID`、オプションの保存名）は `SurvivorComforts` のまま。オプションの設定は安定版と共通になる
+- マルチプレイでは、サーバーの MOD の一覧どおりの MOD が使われるので、一人だけアルファ版にはできない。シングルプレイか、アルファ版を入れた別のサーバーで試してもらう
+- アルファ版の機能を安定版に入れたら（リリースの手順）、アルファ版も同じ内容で更新しておく
+
+アップロードの手順：
+
+1. `dev` で `tools\check.ps1` を通す
+2. アルファ版をコピーして、開発用のフォルダでゲームを起動する（Steam を起動しておく）
+   ```
+   powershell -File tools\dev_game.ps1 -Alpha
+   ```
+   - 初めてのときは、`workshop-alpha.md` の説明から `workshop.txt` が作られる
+3. メインメニュー →「WORKSHOP」→「アイテムの作成と更新」→ **SurvivorComfortsAlpha** を選ぶ
+   - 初めてのとき：「新規のWORKSHOPアイテムです」を選ぶ。公開設定が「未掲載」になっていることを確かめる。終わると `workshop.txt` に Workshop ID が書き込まれる（アルファ版は `3832140066`。この表と [workshop-alpha.md](workshop-alpha.md) に書いた）
+   - 2回目から：既存のアイテムの更新になる。「変更履歴の編集」に、`workshop-alpha.md` の更新内容を貼る
+4. タグは付けない（アルファ版は何度も上げ直すため）
 
 ### サーバーに入れる
 - サーバーの設定（`servertest.ini` などの `<サーバー名>.ini`）に次の2つを書く。

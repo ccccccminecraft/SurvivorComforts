@@ -14,12 +14,13 @@ local MODULE = "SurvivorComforts" -- the same as in ServerCommands.lua
 -- [command] = { featureId, fn }
 local listeners = {}
 
--- Sent as the first local player.
+-- Sent as the first local player. Returns whether it was sent: not while
+-- that player does not exist yet (early in joining a server).
 function SurvivorComforts.sendCommand(command, args)
     local player = getSpecificPlayer(0)
-    if player then
-        sendClientCommand(player, MODULE, command, args or {})
-    end
+    if not player then return false end
+    sendClientCommand(player, MODULE, command, args or {})
+    return true
 end
 
 -- fn(args) is called for every "command" the server sends; errors are logged.
